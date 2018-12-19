@@ -126,6 +126,7 @@
 (discount 10 5); 9.50
 (discount 29.90 50); 14.95
 
+; answer:
 (define (discount iniPrice discount)
   (* iniPrice
      (- 1 (/ discount 100))))
@@ -138,6 +139,7 @@
 (tip 29.23); 4.77
 (tip 7.54); 1.46
 
+;answer:
 (define (tip subtotal)
   (- (ceiling (+ subtotal
                  (* 0.15 subtotal)))
