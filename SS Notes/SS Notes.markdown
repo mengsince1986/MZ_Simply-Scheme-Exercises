@@ -322,9 +322,234 @@ In these first two chapters, our goal is to introduce the Scheme programming lan
       
     [github.com/mengsince1986/simplyScheme/blob/master/SS Exercises/Exercises 4.4-4.10.scm][6]  
   
+### Chapter 5 Words and Sentences  
+  
+* How to use word "square" itself rather than the value of that word as an expression.  
+      
+    If you just type `square` into Scheme, you will find out that square is a procedure:   
+      
+    ```lisp  
+    > square  
+    <PROCEDURE>  
+    ```  
+      
+    What you need is a way to say that you want to use the word “square” _itself,_ rather than the _value_ of that word, as an expression. The way to do this is to use `quote`:   
+      
+    ```lisp  
+    > (quote square)   
+    SQUARE   
+      
+    > (quote (tomorrow never knows))   
+    (TOMORROW NEVER KNOWS)  
+       
+    > (quote (things we said today))   
+    (THINGS WE SAID TODAY)   
+    ```  
+  
+* How does special form `quote` work?  
+      
+    `Quote` is a special form, since **its argument isn’t evaluated**. Instead, **it just returns the argument as is**.  
+  
+    * What is the abbreviation for `quote`?  
+          
+        Scheme programmers use `quote` a lot, so there is an abbreviation for it:   
+          
+        ```lisp  
+        > ’square   
+        SQUARE  
+           
+        > ’(old brown shoe)   
+        (old brown shoe)   
+        ```  
+          
+        Since Scheme uses the apostrophe as an abbreviation for `quote`, you can’t use one as an ordinary punctuation mark in a sentence. That’s why we’ve been avoiding titles like (can’t buy me love). To Scheme this would mean (can (quote t) buy me love)!   
+          
+        Actually, **it _is_ possible to put punctuation inside words as long as the entire word is enclosed in double-quote marks**, like this:   
+          
+        > ’("can’t" buy me love)   
+        ("can’t" BUY ME LOVE)  
+           
+        Words like that are called _**strings**._ We’re not going to use them in any examples until almost the end of the book. **Stay away from punctuation and you won’t get in trouble. However, question marks and exclamation points are okay.** (**Ordinary words, the ones that are neither strings nor numbers, are officially called _symbols._**)  
+  
+* Selectors  
+    * What are selectors?  
+          
+        So far all we’ve done with words and sentences is quote them. To do more interesting work, we need tools for two kinds of operations: We have to be able to take them apart, and we have to be able to put them together. We’ll start with **the take-apart tools; the technical term for them is _selectors._**  
+  
+    * How do procedures `first`, `last`, `butfirst` and `butlast` work?  
+          
+        ```lisp  
+        > (first ’something)   
+        S   
+          
+        > (first ’(eight days a week))   
+        EIGHT   
+          
+        > (first 910)   
+        9  
+           
+        > (last ’something)  
+        G  
+          
+        > (last ’(eight days a week))  
+        WEEK  
+          
+        > (last 910)   
+        0   
+          
+        > (butfirst ’something)   
+        OMETHING   
+          
+        > (butfirst ’(eight days a week))   
+        (DAYS A WEEK)   
+          
+        > (butfirst 910)   
+        10  
+           
+        > (butlast ’something)   
+        SOMETHIN   
+          
+        > (butlast ’(eight days a week))   
+        (EIGHT DAYS A)  
+           
+        > (butlast 910)   
+        91   
+        ```  
+          
+        > The procedures we’re about to show you are not part of standard, official Scheme. Scheme does provide ways to do these things, but the regular ways are somewhat more complicated and error-prone for beginners. We’ve provided a simpler way to do symbolic computing, using ideas developed as part of the Logo programming language.   
+          
+        Notice that **the `first` of a sentence is a word, while the `first` of a word is a letter.** (But there’s no separate data type called “letter”; a letter is the same as a one-letter word.) **The `butfirst` of a sentence is a sentence, and the `butfirst` of a word is a word. The corresponding rules hold for last and `butlast`**.   
+          
+        The names `butfirst` and `butlast` aren’t meant to describe ways to sled; they abbreviate “all but the first” and “all but the last.”  
+  
+    * How does selector `item` work?  
+          
+        There is, however, **a primitive selector `item` that takes two arguments, a number _n_ and a word or sentence, and returns the _n_th element of the second argument**.   
+          
+        ```lisp  
+        > (item 4 ’(being for the benefit of mister kite!))   
+        BENEFIT  
+           
+        > (item 4 ’benefit)   
+        E   
+        ```  
+  
+    * What is the difference between a sentence containing exactly one word and the word itself?  
+          
+        Don’t forget that a sentence containing exactly one word is different from the word itself, and selectors operate on the two differently:   
+          
+        ```lisp  
+        > (first ’because)   
+        B  
+           
+        > (first ’(because))  
+        BECAUSE  
+          
+        > (butfirst ’because)   
+        ECAUSE  
+           
+        > (butfirst ’(because))   
+        ()   
+          
+        The value of that last expression is the _empty sentence._ You can tell it’s a sentence because of the parentheses, and you can tell it’s empty because there’s nothing between them.   
+          
+        ```lisp  
+        > (butfirst ’a)   
+        ""  
+           
+        > (butfirst 1024)   
+        "024"  
+        ```  
+           
+        As these examples show, sometimes `butfirst` returns a word that has to have double-quote marks around it. The first example shows the _empty word,_ while the second shows a number that’s not in its ordinary form. (Its numeric value is 24, but you don’t usually see a zero in front.)   
+          
+        ```lisp  
+        > 024 24   
+        > "024" "024"   
+        ```  
+          
+        We’re going to try to avoid printing these funny words. But don’t be surprised if you see one as the return value from one of the selectors for words. (Notice that **you don’t have to put a single quote in front of the double quotes. Strings are self-evaluating, just as numbers are.**)  
+  
+    * What is the abbreviation of `butfirst` and `butlast`?  
+          
+        Since `butfirst` and `butlast` are so hard to type, there are abbreviations `bf` and `bl`.  
+  
+* Constructors  
+    * What are constructors?  
+          
+        **Functions for putting things together are called _constructors._** For now, we just have two of them: `word` and `sentence`.  
+  
+    * How do `word` and `sentence` work?  
+          
+        **`Word` takes any number of words as arguments and joins them all together into one humongous word**:   
+          
+        ```lisp  
+        > (word ’ses ’qui ’pe ’da ’lian ’ism)   
+        SESQUIPEDALIANISM   
+          
+        > (word ’now ’here)  
+        NOWHERE  
+          
+        > (word 35 893)   
+        35893   
+        ```  
+          
+        **`Sentence` is similar, but slightly different, since it can take both words and sentences as arguments**:   
+          
+        ```lisp  
+        > (sentence ’carry ’that ’weight)   
+        (CARRY THAT WEIGHT)  
+           
+        > (sentence ’(john paul) ’(george ringo))   
+        (JOHN PAUL GEORGE RINGO)  
+        ```  
+           
+        `Sentence` is also too hard to type, so there’s the abbreviation `se`.   
+          
+        ```lisp  
+        > (se ’(one plus one) ’makes 2)   
+        (ONE PLUS ONE MAKES 2)   
+        ```  
+          
+        By the way, why did we have to quote makes in the last example, but not 2? It’s because numbers are **self-evaluating**, as we said in Chapter 3. **We have to quote `makes because otherwise Scheme would look for something named makes instead of using the word itself. But numbers can’t be the names of things; they represent themselves.** (In fact, you could quote the 2 and it wouldn’t make any difference)  
+  
+* First-Class Words and Sentences  
+    * What are first-class words and sentences?  
+          
+        **A programming language should let you express your ideas in terms that match _your_ way of thinking, not the computer’s way**.  
+          
+        Technically, we say that words and sentences should be **_first-class data_** in our language. This means that **a sentence, for example, can be an argument to a procedure; it can be the value returned by a procedure; we can give it a name; and we can build aggregates whose elements are sentences**.  
+  
+* Pitfalls  
+      
+    * We’ve been avoiding **apostrophes** `'` in our words and sentences because they’re abbreviations for the quote special form. You must also avoid **periods** `.`, **commas** `,`, **semicolons** `;`, **quotation marks** `"`, **vertical bars** `|`, and, of course, **parentheses** `()`, since all of these have special meanings in Scheme. You may, however, use **question marks** `?` and **exclamation points** `!`.   
+    * Although we’ve already mentioned the need to avoid names of primitives when choosing formal parameters, we want to remind you specifically about the names `word` and `sentence`. These are often very tempting formal parameters, because many procedures have words or sentences as their domains. We’ve been using `wd` and `sent` as formal parameters instead of `word` and `sentence`, and we recommend that practice.   
+    * There’s a difference between a word and a single-word sentence. For example, people often fall into the trap of thinking that the `butfirst` of a two-word sentence such as (sexy sadie) is the second word, but it’s not. It’s a one-word-long sentence. For example, its count is one, not five.   
+    * We mentioned earlier that sometimes Scheme has to put double-quote marks around words. Just ignore them; don’t get upset if your procedure returns `"6-of-hearts"` instead of just `6-of-hearts`.   
+    * `Quote` doesn’t mean "print".   
+    * If you see an error message like   
+    ```lisp  
+    > (+ 3 (bf 1075))   
+    ERROR: INVALID ARGUMENT TO +: "075"  
+    ```  
+       
+    try entering the expression   
+      
+    ```lisp  
+    > (strings-are-numbers #t)   
+    OKAY  
+    ```  
+       
+    and try again. (The extension to Scheme that allows arithmetic operations to work on nonstandard numbers like "075" makes ordinary arithmetic slower than usual. So we’ve provided a way to turn the extension on and off. Invoking strings-are-numbers with the argument #f turns off the extension.)*  
+  
+* Exercises 5.1-5.12  
+      
+    [github.com/mengsince1986/simplyScheme/blob/master/SS Exercises/Exercises 5.1-5.12.scm][7]  
+  
 [1]: https://github.com/mengsince1986/simplyScheme/blob/master/SS%20Exercises/Exercises%202.1-2.9.scm  
 [2]: https://github.com/mengsince1986/simplyScheme/blob/master/SS%20Exercises/Exercises%203.1-3.9.scm  
 [3]: dnd.png  
 [4]: otc.png  
 [5]: https://github.com/mengsince1986/simplyScheme/blob/master/SS%20Exercises/Exercises%204.1-4.3.scm  
 [6]: https://github.com/mengsince1986/simplyScheme/blob/master/SS%20Exercises/Exercises%204.4-4.10.scm  
+[7]: https://github.com/mengsince1986/simplyScheme/blob/master/SS%20Exercises/Exercises%205.1-5.12.scm  
