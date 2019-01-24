@@ -675,10 +675,10 @@ In these first two chapters, our goal is to introduce the Scheme programming lan
               
             ```lisp  
             (define (vowel? letter)   
-            	(member? letter ’aeiou))   
+                (member? letter ’aeiou))   
               
             (define (positive? number)   
-            	(> number 0))   
+                (> number 0))   
             ```  
   
     * What is the difference between `equal?` and `=` in Scheme?  
@@ -1020,6 +1020,10 @@ In these first two chapters, our goal is to introduce the Scheme programming lan
       
     [github.com/mengsince1986/simplyScheme/blob/master/SS Exercises/Exercises 6.1-6.4.scm][9]  
   
+* Exercises 6.5-6.14  
+      
+    [github.com/mengsince1986/simplyScheme/blob/master/SS Exercises/Exercises 6.5-6.14.scm][10]  
+  
 [1]: https://github.com/mengsince1986/simplyScheme/blob/master/SS%20Exercises/Exercises%202.1-2.9.scm  
 [2]: https://github.com/mengsince1986/simplyScheme/blob/master/SS%20Exercises/Exercises%203.1-3.9.scm  
 [3]: dnd.png  
@@ -1029,3 +1033,4 @@ In these first two chapters, our goal is to introduce the Scheme programming lan
 [7]: https://github.com/mengsince1986/simplyScheme/blob/master/SS%20Exercises/Exercises%205.1-5.12.scm  
 [8]: https://github.com/mengsince1986/simplyScheme/blob/master/SS%20Exercises/Exercises%205.13-5.21.scm  
 [9]: https://github.com/mengsince1986/simplyScheme/blob/master/SS%20Exercises/Exercises%206.1-6.4.scm  
+[10]: https://github.com/mengsince1986/simplyScheme/blob/master/SS%20Exercises/Exercises%206.5-6.14.scm  
