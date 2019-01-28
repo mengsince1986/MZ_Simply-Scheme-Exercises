@@ -1024,6 +1024,193 @@ In these first two chapters, our goal is to introduce the Scheme programming lan
       
     [github.com/mengsince1986/simplyScheme/blob/master/SS Exercises/Exercises 6.5-6.14.scm][10]  
   
+### Chapter 7 Variables  
+  
+* What is a variable?  
+      
+    A _**variable**_ is a connection between a name and a value.  
+  
+* Where does the name variable come from?  
+      
+    The name _**variable**_ comes from algebra. Many people are introduced to variables in high school algebra classes, where the emphasis is on solving equations. “If _x_ 3 − 8 = 0, what is the value of _x_?” In problems like these, although we call _x_ a variable, it’s really a _named constant!_ In this particular problem, _x_ has the value 2. **In any such problem, at first we don’t know the value of _x_, but we understand that it does have some particular value, and that value isn’t going to change in the middle of the problem**.  
+  
+* Is a formal parameter variable?  
+      
+    In functional programming, what we mean by “variable” is like a named constant in mathematics. Since a variable is the connection between a name and a value, **a formal parameter in a procedure definition isn’t a variable; it’s just a name. But when we invoke the procedure with a particular argument, that name is associated with a value, and a variable is created. If we invoke the procedure again, a _new_ variable is created, perhaps with a different value**.  
+  
+* What are the two possible sources of confusion about variables?  
+      
+    There are two possible sources of confusion about this. One is that **you may have programmed before in a programming language like BASIC or Pascal, in which a variable often _does_ get a new value, even after it’s already had a previous value assigned to it**. Programs in those languages tend to be full of things like “X = X + 1.” Back in Chapter 2 we told you that this book is about something called “functional programming,” but we haven’t yet explained exactly what that means. (Of course we _have_ introduced a lot of functions, and that is an important part of it.) Part of what we mean by functional programming is that once a variable exists, we aren’t going to _change_ the value of that variable.   
+      
+    The other possible source of confusion is that **in Scheme, unlike the situation in algebra, we may have more than one variable with the same name at the same time.** That’s because we may invoke one procedure, and the body of that procedure may invoke another procedure, and each of them might use the same formal parameter name. There might be one variable named x with the value 7, and another variable named x with the value 51, at the same time. The pitfall to avoid is thinking “x has changed its value from 7 to 51.”  
+  
+* How Little People Do Variables?  
+    * Does the inner procedure know the values of the local variables that belong to the upper procedure?  
+          
+        Another important point about **the way little people do variables is that they can’t read each others’ minds. In particular, they don’t know about the values of the local variables that belong to the little people who hired them.** For example, the following attempt to compute the value 10 won’t work:   
+          
+        ```lisp  
+        (define (f x)  
+          (g 6))  
+          
+        (define (g y)  
+          (+ x y))  
+            
+        (f 4)  
+        ; ERROR -- VARIABLE X IS UNBOUND.   
+        ```  
+        We hire Franz to compute (f 4). He associates x with 4 and evaluates (g 6) by hiring Gloria. Gloria associates y with 6, but she doesn’t have any value for x, so she’s in trouble.   
+          
+        The solution is for Franz to tell Gloria that x is 4:   
+          
+        ```lisp  
+        (define (f x)  
+          (g x 6))  
+          
+        (define (g x y)  
+          (+ x y))  
+          
+        (f 4) 10   
+        ```  
+  
+* Global and Local Variables  
+    * How to define a global variable?  
+          
+        Just as we’ve been using `define` to associate names with procedures globally, we can also use it for other kinds of data:   
+          
+        (define pi 3.141592654)  
+          
+        (+ pi 5) ;8.141592654  
+          
+        (define song ’(I am the walrus))  
+           
+        (last song) ;WALRUS  
+           
+        **Once defined, a global variable can be used anywhere**, just as a defined procedure can be used anywhere.   
+          
+        **When the name of a global variable appears in an expression, the corresponding value must be substituted, just as actual argument values are substituted for formal parameters.**   
+          
+        > (What if there is a global variable whose name happens to be used as a formal parameter in this procedure? Scheme’s rule is that the formal parameter takes precedence, but even though Scheme knows what to do, conflicts like this make your program harder to read.)  
+  
+    * What is a local variable?  
+          
+        The association of a formal parameter (a name) with an actual argument (a value) is called a _**local variable**._  
+  
+* The Truth about Substitution  
+    * How does `let` work in Scheme?  
+          
+        We’re going to write a procedure that solves **quadratic equations**.   
+          
+        ![][11]  
+          
+        ```lisp  
+        (define (roots a b c)  
+          (se (/ (+ (- b) (sqrt (- (* b b) (* 4 a c))))   
+                 (* 2 a))  
+              (/ (- (- b) (sqrt (- (* b b) (* 4 a c))))   
+                 (* 2 a))))   
+        ```  
+          
+        One thing we can do is to compute the square root and use that as the actual argument to a helper procedure that does the rest of the job:   
+          
+        ```lisp  
+        (define (roots a b c)  
+          (roots1 a b c (sqrt (- (* b b) (* 4 a c)))))   
+          
+        (define (roots1 a b c discriminant)  
+          (se (/ (+ (- b) discriminant) (* 2 a))   
+              (/ (- (- b) discriminant) (* 2 a))))   
+        ```  
+          
+        We’ve solved the problem we posed for ourselves initially: avoiding the redundant computation of the discriminant (the square-root part of the formula). The cost, though, is that we had to define an auxiliary procedure roots1 that doesn’t make much sense on its own. (That is, you’d never invoke roots1 for its own sake; only roots uses it.)   
+          
+        **Scheme provides a notation to express a computation of this kind more conveniently. It’s called `let`**:   
+          
+        ```lisp  
+        (define (roots a b c)  
+          (let ((discriminant (sqrt (- (* b b) (* 4 a c)))))   
+            (se (/ (+ (- b) discriminant) (* 2 a))  
+                (/ (- (- b) discriminant) (* 2 a)))))   
+        ```  
+          
+        Our new program is just an abbreviation for the previous version: In effect, it creates a temporary procedure just like roots1, but without a name, and invokes it with the specified argument value. But the let notation rearranges things so that we can say, in the right order, “let the variable discriminant have the value (sqrt. . .) and, using that variable, compute the body.”   
+          
+        **`Let` is a special form that takes two arguments. The first is a sequence of name-value pairs enclosed in parentheses. (In this example, there is only one name-value pair.) The second argument, the _body_ of the let, is the expression to evaluate.**   
+          
+        Now that we have this notation, we can use it with more than one name-value connection to eliminate even more redundant computation:  
+          
+        ```lisp   
+        (define (roots a b c)  
+          (let ((discriminant (sqrt (- (* b b) (* 4 a c))))   
+                (minus-b (- b))   
+                (two-a (* 2 a)))  
+            (se (/ (+ minus-b discriminant) two-a)   
+                (/ (- minus-b discriminant) two-a))))  
+        ```  
+          
+        In this example, the first argument to `let` includes three name-value pairs. It’s as if we’d defined and invoked a procedure like the following:   
+          
+        ```lisp  
+        (define (roots1 discriminant minus-b two-a) ...)   
+        ```  
+          
+        Like `cond`, **`let` uses parentheses both with the usual meaning (invoking a procedure) and to group sub-arguments that belong together. This grouping happens in two ways. Parentheses are used to group a name and the expression that provides its value. Also, an additional pair of parentheses surrounds the entire collection of name-value pairs.**  
+  
+* Pitfalls  
+      
+    * ⇒ If you’ve programmed before in other languages, you may be accustomed to a style of programming in which you _change_ the value of a variable by assigning it a new value. You may be tempted to write   
+    ```lisp  
+    > (define x (+ x 3)) ;; no-no  
+    ```   
+    Although some versions of Scheme do allow such redefinitions, so that you can correct errors in your procedures, they’re not strictly legal. **A definition is meant to be _permanent_ in functional programming**.   
+      
+    * **When you create more than one temporary variable at once using let, all of the expressions that provide the values are computed before any of the variables are created. Therefore, you can’t have one expression depend on another**:   
+    ```lisp  
+    (let ((a (+ 4 7))  ;; wrong!   
+            (b (* a 5)))   
+        (+ a b))  
+    ```  
+    Don’t think that `a` gets the value 11 and therefore `b` gets the value 55. That `let` expression is equivalent to defining a helper procedure   
+      
+    ```lisp  
+    (define (helper a b)  
+      (+ a b))  
+    ```  
+    and then invoking it:  
+    ```lisp  
+    (helper (+ 4 7) (* a 5))  
+    ```  
+    **The argument expressions, as always, are evaluated _before_ the function is invoked.** The expression (* a 5) will be evaluated using the _global_ value of a, if there is one. If not, an error will result. If you want to use a in computing b, you must say   
+    ```lisp  
+    (let ((a (+ 4 7)))  
+      (let ((b (* a 5)))  
+        (+ a b)))   
+    ;66  
+    ```   
+      
+    * `**Let**`’s notation is tricky because, like `**cond**`, it uses parentheses that don’t mean procedure invocation. Don’t teach yourself magic formulas like “two open parentheses before the let variable and three close parentheses at the end of its value.” Instead, think about the overall structure:   
+      
+    >(let variables body)  
+      
+    `**Let**` takes exactly two arguments. The first argument to `**let**` is one or more name-value groupings, all in parentheses:   
+      
+    >((name1 value1) (name2 value2) (name3 value3) . . .)   
+      
+    **Each name is a single word; each value can be any expression, usually a procedure invocation**. If it’s a procedure invocation, then parentheses are used with their usual meaning.   
+      
+    **The second argument to `let` is the expression to be evaluated using those variables**.   
+      
+    Now put all the pieces together:   
+      
+    > (let ((name1 (fn1 arg1))  
+            (name2 (fn2 arg2))   
+            (name3 (fn3 arg3)))   
+        body)  
+  
+* Exercises 7.1-7.2  
+      
+    [github.com/mengsince1986/simplyScheme/blob/master/SS Exercises/Exercises 7.1-7.2.scm][12]  
+  
 [1]: https://github.com/mengsince1986/simplyScheme/blob/master/SS%20Exercises/Exercises%202.1-2.9.scm  
 [2]: https://github.com/mengsince1986/simplyScheme/blob/master/SS%20Exercises/Exercises%203.1-3.9.scm  
 [3]: dnd.png  
@@ -1034,3 +1221,5 @@ In these first two chapters, our goal is to introduce the Scheme programming lan
 [8]: https://github.com/mengsince1986/simplyScheme/blob/master/SS%20Exercises/Exercises%205.13-5.21.scm  
 [9]: https://github.com/mengsince1986/simplyScheme/blob/master/SS%20Exercises/Exercises%206.1-6.4.scm  
 [10]: https://github.com/mengsince1986/simplyScheme/blob/master/SS%20Exercises/Exercises%206.5-6.14.scm  
+[11]: asy.png  
+[12]: https://github.com/mengsince1986/simplyScheme/blob/master/SS%20Exercises/Exercises%207.1-7.2.scm  
