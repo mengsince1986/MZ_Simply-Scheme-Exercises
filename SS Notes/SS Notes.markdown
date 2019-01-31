@@ -1211,6 +1211,379 @@ In these first two chapters, our goal is to introduce the Scheme programming lan
       
     [github.com/mengsince1986/simplyScheme/blob/master/SS Exercises/Exercises 7.1-7.2.scm][12]  
   
+* Exercises 7.3-7.4  
+      
+    [github.com/mengsince1986/simplyScheme/blob/master/SS Exercises/Exercises 7.3-7.4.scm][13]  
+  
+## Part III Functions as Data  
+  
+### Chapter 8 Higher-Order Functions  
+  
+* `every`  
+    * How does `every` work?  
+          
+        ```scheme  
+        (define (first-letters sent)   
+          (every first sent))   
+          
+        (first-letters ’(here comes the sun)) ;(H C T S)   
+          
+        (first-letters ’(lucy in the sky with diamonds)) ;(L I T S W D)   
+        ```  
+          
+        **`every` takes two arguments. The second argument is a sentence, but the `first` is something new: a _procedure_ used as an argument to another procedure.** Notice that there are no parentheses around the word first in the body of first-letters! By now you’ve gotten accustomed to seeing parentheses whenever you see the name of a function. But **parentheses indicate an _invocation_ of a function, and we aren’t invoking `first` here. We’re using `first`, the procedure itself, as an argument to every**.  
+  
+    * What is **higher-order function/procedure**?  
+          
+        **A function that takes another function as one of its arguments, as `every` does, is called a _higher-order function._** If we focus our attention on procedures, the mechanism through which Scheme computes functions, we think of `every` as a procedure that takes another procedure as an argument—a **_higher-order procedure._**  
+  
+* `keep`  
+    * How does `keep` work?  
+          
+        **The `keep` function takes a predicate and a sentence as arguments. It returns a sentence containing only the words of the argument sentence for which the predicate is true.**   
+          
+        ```scheme  
+        (keep even? ’(1 2 3 4 5)) ;(2 4)   
+        ```  
+          
+        `keep` will also accept a word as its second argument. In this case, it applies the predicate to every letter of the word and returns another word:   
+          
+        ```scheme  
+        (keep number? ’zonk23hey9) ;239   
+        ```  
+  
+* `accumulate`  
+    * What is the difference between `accumulate` and `every`/`keep`?  
+          
+        **In `every` and `keep`, each element of the second argument contributes _independently_ to the overall result.** That is, `every` and `keep` apply a procedure to a single element at a time. The overall result is a collection of individual results, with no interaction between elements of the argument. This doesn’t let us say things like “Add up all the numbers in a sentence,” where the desired output is a function of the entire argument sentence taken as a whole. We can do this with a procedure named `accumulate`.  
+  
+    * How does `accumulate` work?  
+          
+        **`accumulate` takes a procedure and a sentence as its arguments. It applies that procedure to two of the words of the sentence. Then it applies the procedure to the result we got back and another element of the sentence, and so on. It ends when it’s combined all the words of the sentence into a single result.**   
+          
+        ```scheme  
+        (accumulate + ’(6 3 4 -5 7 8 9)) ;32  
+           
+        (accumulate word ’(a c l u)) ;ACLU   
+          
+        (accumulate max ’(128 32 134 136)) ;136  
+           
+        (define (hyphenate word1 word2)   
+          (word word1 ’- word2))   
+          
+        (accumulate hyphenate ’(ob la di ob la da)) ;OB-LA-DI-OB-LA-DA   
+        ```  
+          
+        `accumulate` can also take a word as its second argument, using the letters as elements:   
+          
+        ```scheme  
+        (accumulate + 781) ;16   
+        (accumulate sentence ’colin) ;(C O L I N)   
+        ```  
+  
+* Combining Higher-Order Functions  
+    * How to use combined higher-order functions to add up all the numbers in a sentence?  
+          
+        What if we want to add up all the numbers in a sentence but ignore the words that aren’t numbers? First we `keep` the numbers in the sentence, then we `accumulate` the result with `+`. It’s easier to say in Scheme:   
+          
+        ```scheme  
+        (define (add-numbers sent)   
+          (accumulate + (keep number? sent)))   
+          
+        (add-numbers ’(4 calling birds 3 french hens 2 turtle doves)) ;9   
+          
+        (add-numbers ’(1 for the money 2 for the show 3 to get ready and 4 to go)) ;10   
+        ```  
+  
+    * How to use combined higher-order functions to write a `count` procedure?  
+          
+        We also have enough tools to write a version of the `count` procedure, which finds the number of words in a sentence or the number of letters in a word.   
+          
+        First, we’ll define a procedure `always-one` that returns 1 no matter what its argument is. We’ll `every` `always-one` over our argument sentence, which will result in a sentence of as many ones as there were words in the original sentence. Then we can use `accumulate` with `+` to add up the ones.   
+          
+        ```lisp  
+        (define (always-one arg)   
+          
+        (define (count sent)  
+          (accumulate + (every always-one sent)))  
+           
+        (count ’(the continuing story of bungalow bill))   
+        ;6   
+        ```  
+  
+    * How to use combined higher-order functions to write an `acronym` procedure?  
+          
+        You can now understand the `acronym` procedure from Chapter 1:   
+          
+        ```scheme  
+        (define (acronym phrase)   
+          (accumulate word (every first (keep real-word? phrase))))   
+          
+        (acronym ’(reduced instruction set computer)) ;RISC  
+           
+        (acronym ’(structure and interpretation of computer programs)) ;SICP   
+        ```  
+  
+* Choosing the Right Tool  
+    * When to use `every`?  
+          
+        **`every` transforms each element of a word or sentence individually. The result sentence usually contains as many elements as the argument.**   
+          
+        > What we mean by “usually” is that `every` is most often used with an argument function that returns a single word. If the function returns a sentence whose length might not be one, then the number of words in the overall result could be anything!   
+          
+        ![][14]  
+  
+    * When to use `keep`?  
+          
+        **`keep` selects certain elements of a word or sentence and discards the others. The elements of the result are elements of the argument, without transformation, but the result may be smaller than the original.**   
+          
+        ![][15]  
+  
+    * When to use `accumulate`?  
+          
+        **`accumulate` transforms the entire word or sentence into a single result by combining all of the elements in some way.**   
+          
+        ![][16]  
+  
+    * What is the difference between `every`, `keep` and `accumulate`?  
+          
+        ![][17]  
+  
+* First-Class Functions and First-Class Sentences  
+    * What are the two aspects of Scheme that permit the higher-order function expressions?  
+          
+        Two aspects of Scheme combine to permit this mode of expression.   
+          
+        One, which we’ve mentioned earlier, is that **sentences are first-class data. You can use an entire sentence as an argument to a procedure.** You can type a quoted sentence in, or you can compute a sentence by putting words together.   
+          
+        The second point is that **functions are also first-class. This lets us write a procedure like `pigl` that applies to a single word, and then combine that with every to translate an entire sentence to Pig Latin.** If Scheme didn’t have first-class functions, we couldn’t have general-purpose tools like `keep` and `every`, because we couldn’t say which function to extend to all of a sentence. You’ll see later that without every it would still be possible to write a specific `pigl-sent` procedure and separately write a `first-letters` procedure. But **the ability to use a procedure as argument to another procedure lets us _generalize_ the idea of “apply this function to every word of the sentence.**”  
+  
+* Repeated  
+    * How does `repeated` work?  
+          
+        **The procedure `repeated` takes two arguments, a procedure and a number, and returns a new procedure. The returned procedure is one that invokes the original procedure repeatedly.**   
+          
+        For example, (repeated bf 3) returns a function that takes the `butfirst` of the `butfirst` of the `butfirst` of its argument.   
+          
+        Notice that all our examples start with two open parentheses. If we just invoked repeated at the Scheme prompt, we would get back a procedure, like this:   
+        ```scheme  
+        (repeated square 4)   
+        ; #<PROCEDURE>   
+        ```  
+          
+        The procedure that we get back isn’t very interesting by itself, so we invoke it, like this:   
+        ```scheme  
+        ((repeated square 4) 2)   
+        ;65536  
+        ```  
+          
+        All along we’ve been saying that you evaluate a compound expression in two steps: First, you evaluate all the subexpressions. Then you apply the first value, which has to be a procedure, to the rest of the values. But until now the first subexpression has always been just a single word, the name of a procedure. Now we see that **the first expression might be an invocation of a higher-order function, just as any of the argument subexpressions might be function invocations.**  
+  
+    * How to use `repeated` to define `item`?  
+          
+        We can use `repeated` to define `item`, which returns a particular element of a sentence:   
+          
+        ```scheme  
+        (define (item n sent)  
+         (first ((repeated bf (- n 1)) sent)))   
+          
+        (item 1 ’(a day in the life))  
+        ;A  
+          
+        (item 4 ’(a day in the life))  
+        ;THE  
+        ```  
+  
+* Pitfalls  
+    * Some people seem to fall in love with `every` and try to use it in all problems, even when `keep` or `accumulate` would be more appropriate.  
+    * If you find yourself using a predicate function as the first argument to `every`, you almost certainly mean to use `keep` instead.  
+          
+        For example, we want to write a procedure that determines whether any of the words in its argument sentence are numbers:   
+        ```scheme  
+        (define (any-numbers? sent)   
+          (accumulate or (every number? sent))) ;; wrong!    
+        ```  
+        This is wrong for two reasons. First, **since Boolean values aren’t words, they can’t be members of sentences**:   
+          
+        ```scheme  
+        (sentence #T #F)  
+        ERROR: ARGUMENT TO SENTENCE NOT A WORD OR SENTENCE: #F   
+        (every number? ’(a b 2 c 6))  
+        ERROR: ARGUMENT TO SENTENCE NOT A WORD OR SENTENCE: #T   
+        ```  
+        Second, even if you could have a sentence of Booleans, **Scheme doesn’t allow a special form, such as `or`, as the argument to a higher-order function.** Depending on your version of Scheme, the incorrect `any-numbers?` procedure might give an error message about either of these two problems.   
+          
+        > As we said in Chapter 4, special forms aren’t procedures, and aren’t first-class.   
+          
+        Instead of using `every`, select the numbers from the argument and count them:   
+        ```scheme  
+        (define (any-numbers? sent)   
+          (not (empty? (keep number? sent))))   
+        ```  
+  
+    * The `keep` function always returns a result of the same type as its second argument. `Every` always returns a sentence.  
+          
+        **The `keep` function always returns a result of the same type (i.e., word or sentence) as its second argument.** This makes sense because if you’re selecting a subset of the words of a sentence, you want to end up with a sentence; but if you’re selecting a subset of the letters of a word, you want a word.   
+          
+        **`Every`, on the other hand, always returns a sentence.** You might think that it would make more sense for every to return a word when its second argument is a word. Sometimes that _is_ what you want, but sometimes not. For example:   
+        ```scheme  
+        (define (spell-digit digit)   
+          (item (+ 1 digit)   
+                ’(zero one two three four five six seven eight nine)))   
+          
+        (every spell-digit 1971) ;(ONE NINE SEVEN ONE)   
+        ```  
+          
+        In the cases where you do want a word, you can just `accumulate` `word` the sentence that `every` returns.  
+  
+    * `every` expects its first argument to be a function of just one argument.  
+          
+        If you invoke `every` with a function such as `quotient`, which expects two arguments, you will get an error message from `quotient`, complaining that it only got one argument and wanted to get two.   
+          
+        Some people try to get around this by saying things like   
+          
+        ```shceme  
+        (every (quotient 6) ’(1 2 3)) ;; wrong!   
+        ```  
+          
+        This is a sort of wishful thinking. The intent is that Scheme should interpret the first argument to `every` as a fill-in-the-blank template, so that every will compute the values of   
+          
+        ```scheme  
+        (quotient 6 1)   
+        (quotient 6 2)   
+        (quotient 6 3)   
+        ```  
+          
+        But of course **what Scheme really does is the same thing it always does: It evaluates the argument expressions, then invokes `every`.** So Scheme will try to compute (quotient 6) and will give an error message.   
+          
+        We picked `quotient` for this example because it requires exactly two arguments. Many Scheme primitives that ordinarily take two arguments, however, will accept only one. Attempting the same wishful thinking with one of these procedures is still wrong, but the error message is different. For example, suppose you try to add 3 to each of several numbers this way:   
+          
+        ```scheme  
+        (every (+ 3) ’(1 2 3)) ;; wrong!   
+        ```  
+          
+        The first argument to `every` in this case isn’t “the procedure that adds 3,” but the result returned by invoking `+` with the single argument 3. `(+ 3)` returns the number 3, which isn’t a procedure. So you will get an error message like “Attempt to apply non-procedure 3.”  
+  
+    * If `every`'s argument procedure returns **an empty sentence** it will disappear in the result while if **an empty word** it will appear in the result.  
+          
+        If the procedure you use as the argument to `every` returns an empty sentence, then you may be surprised by the results:   
+          
+        ```scheme  
+        (define (beatle-number n)   
+          (if (or (< n 1) (> n 4))   
+              ’()  
+              (item n ’(john paul george ringo))))   
+          
+        (beatle-number 3)  
+        ; GEORGE  
+          
+        (beatle-number 5)  
+        ; ()  
+          
+        (every beatle-number ’(2 8 4 0 1))   
+        ; (PAUL RINGO JOHN)   
+        ```  
+          
+        What happened to the 8 and the 0? Pretend that every didn’t exist, and you had to do it the hard way:   
+          
+        ```scheme  
+        (se (beatle-number 2) (beatle-number 8) (beatle-number 4)   
+            (beatle-number 0) (beatle-number 1))   
+        ```  
+          
+        Using result replacement, we would get  
+          
+        ```scheme   
+        (se ’paul ’() ’ringo ’() ’john)   
+        ```  
+        which is just (PAUL RINGO JOHN).   
+          
+        On the other hand, **if `every`’s argument procedure returns an empty _word,_ it will appear in the result**.   
+          
+        ```scheme  
+        (every bf ’(i need you))  
+        ; ("" EED OU)  
+        ```  
+          
+        The sentence returned by `every` has three words in it: the empty word, eed, and ou.  
+  
+    * Don't confuse `first` with `every`  
+          
+        Don’t confuse  
+        ```scheme  
+        (first ’(one two three four))  
+        ```  
+        with  
+        ```scheme   
+        (every first ’(one two three four))  
+        ```  
+          
+        In the first case, we’re applying the procedure `first` to a sentence; in the second, we’re applying `first` four separate times, to each of the four words separately.  
+  
+    * What happens if using a one-word sentence or one-letter word as argument to `accumulate`?  
+          
+        It returns that word or that letter, without even invoking the given procedure. This makes sense if you’re using something like `+` or `max` as the accumulator, but it’s disconcerting that  
+          
+        ```scheme  
+        (accumulate se ’(one-word))   
+        ```  
+        returns the _word_ one-word.  
+  
+    * What happens if you give `accumulate` an empty sentence or word?  
+          
+        `accumulate` accepts empty arguments for some combiners, but not for others:   
+          
+        ```scheme  
+        (accumulate + ’())   
+        ; 0  
+           
+        (accumulate max ’())  
+        ERROR: CAN’T ACCUMULATE EMPTY INPUT WITH THAT COMBINER  
+        ```  
+           
+        **The combiners that can be used with an empty sentence or word are `+`,`*`, `word`, and `sentence`. `accumulate` checks specifically for one of these combiners.**   
+          
+        Why should these four procedures, and no others, be allowed to accumulate an empty sentence or word? The difference between these and other combiners is that you can invoke them with no arguments, whereas `max`, for example, requires at least one number:   
+          
+        ```scheme  
+        (+)   
+        ;0   
+          
+        (max)  
+        ERROR: NOT ENOUGH ARGUMENTS TO #<PROCEDURE>.   
+        ```  
+          
+        **`accumulate` actually invokes the combiner with no arguments in order to find out what value to return for an empty sentence or word.** We would have liked to implement accumulate so that _any_ procedure that can be invoked with no arguments would be accepted as a combiner to accumulate the empty sentence or word. Unfortunately, Scheme does not provide a way for a program to ask, “How many arguments will this procedure accept?” The best we could do was to build a particular set of zero-argument-okay combiners into the definition of accumulate.   
+          
+        Don’t think that the returned value for an empty argument is always zero or empty.   
+        ```scheme  
+        (accumulate * ’())   
+        ;1  
+        ```  
+           
+        The explanation for this behavior is that **any function that works with no arguments returns its _identity element_** in that case. What’s an identity element? The function `+` has the identity element 0 because (+ _anything_ 0) returns the _anything._ Similarly, the empty word is the identity element for word. In general, a **function’s identity element has the property that when you invoke the function with the identity element and something else as arguments, the return value is the something else. It’s a Scheme convention that a procedure with an identity element returns that element when invoked with no arguments.**   
+          
+        > PC Scheme returns zero for an invocation of `max` with no arguments, but that’s the wrong answer. If anything, the answer would have to be −∞.  
+  
+    * `repeated` isn’t a function of three arguments.  
+          
+        The use of two consecutive open parentheses to invoke the procedure returned by a procedure is a strange-looking notation:   
+          
+        ```scheme  
+        ((repeated bf 3) 987654)  
+        ```  
+          
+        Don’t confuse this with the similar-looking `cond` notation, in which the outer parentheses have a special meaning (delimiting a `cond` clause). Here, the parentheses have their usual meaning. The inner parentheses invoke the procedure repeated with arguments bf and 3. The value of that expression is a procedure. It doesn’t have a name, but for the purposes of this paragraph let’s pretend it’s called `bfthree`. Then the outer parentheses are basically saying (bfthree 987654); they apply the unnamed procedure to the argument 987654.   
+        In other words, there are two sets of parentheses because there are two functions being invoked: `repeated` and the function returned by repeated. So don’t say   
+        ```scheme  
+        (repeated bf 3 987654) ;; wrong  
+        ```  
+        just because it looks more familiar. **`repeated` isn’t a function of three arguments**.  
+  
+* Exercises 8.1-8.3  
+      
+    [github.com/mengsince1986/simplyScheme/blob/master/SS Exercises/Exercises 8.1-8.3.scm][18]  
+  
 [1]: https://github.com/mengsince1986/simplyScheme/blob/master/SS%20Exercises/Exercises%202.1-2.9.scm  
 [2]: https://github.com/mengsince1986/simplyScheme/blob/master/SS%20Exercises/Exercises%203.1-3.9.scm  
 [3]: dnd.png  
@@ -1223,3 +1596,9 @@ In these first two chapters, our goal is to introduce the Scheme programming lan
 [10]: https://github.com/mengsince1986/simplyScheme/blob/master/SS%20Exercises/Exercises%206.5-6.14.scm  
 [11]: asy.png  
 [12]: https://github.com/mengsince1986/simplyScheme/blob/master/SS%20Exercises/Exercises%207.1-7.2.scm  
+[13]: https://github.com/mengsince1986/simplyScheme/blob/master/SS%20Exercises/Exercises%207.3-7.4.scm  
+[14]: tvp.png  
+[15]: dgq.png  
+[16]: pbb.png  
+[17]: mld.png  
+[18]: https://github.com/mengsince1986/simplyScheme/blob/master/SS%20Exercises/Exercises%208.1-8.3.scm  
