@@ -1584,6 +1584,10 @@ In these first two chapters, our goal is to introduce the Scheme programming lan
       
     [github.com/mengsince1986/simplyScheme/blob/master/SS Exercises/Exercises 8.1-8.3.scm][18]  
   
+* Exercises 8.4-8.14  
+      
+    [github.com/mengsince1986/simplyScheme/blob/master/SS Exercises/Exercises 8.4-8.14.scm][19]  
+  
 [1]: https://github.com/mengsince1986/simplyScheme/blob/master/SS%20Exercises/Exercises%202.1-2.9.scm  
 [2]: https://github.com/mengsince1986/simplyScheme/blob/master/SS%20Exercises/Exercises%203.1-3.9.scm  
 [3]: dnd.png  
@@ -1602,3 +1606,4 @@ In these first two chapters, our goal is to introduce the Scheme programming lan
 [16]: pbb.png  
 [17]: mld.png  
 [18]: https://github.com/mengsince1986/simplyScheme/blob/master/SS%20Exercises/Exercises%208.1-8.3.scm  
+[19]: https://github.com/mengsince1986/simplyScheme/blob/master/SS%20Exercises/Exercises%208.4-8.14.scm  
