@@ -1588,6 +1588,205 @@ In these first two chapters, our goal is to introduce the Scheme programming lan
       
     [github.com/mengsince1986/simplyScheme/blob/master/SS Exercises/Exercises 8.4-8.14.scm][19]  
   
+### Chapter 9 Lambda  
+  
+* What is `lambda`?  
+      
+    **`lambda` is the name of a special form that generates procedures**. It takes some information about the function you want to create as arguments and it returns the procedure.   
+      
+    ```scheme  
+    (define (add-three-to-each sent)  
+      (every (lambda (number) (+ number 3)) sent))   
+      
+    (add-three-to-each ’(1 9 9 2))   
+    ; (4 12 12 5)   
+    ```  
+      
+    **Don’t make the mistake of thinking that `lambda` is the argument to `every`. The argument is _the procedure returned by_ `lambda`.**   
+      
+    Creating a procedure by using `lambda` is very much like creating one with `define`, as we’ve done up to this point, except that we don’t specify a name. **When we create a procedure with `define`, we have to indicate the procedure’s name, the names of its arguments (i.e., the formal parameters), and the expression that it computes (its body). With `lambda` we still provide the last two of these three components.**   
+      
+    **As we said, `lambda` is a special form. This means that its arguments are not evaluated when you invoke it. The first argument is a sentence containing the formal parameters; the second argument is the body. What lambda returns is an unnamed procedure.**  
+  
+* Procedures that Return Procedures  
+    * How to create a procedure that returns procedures?  
+          
+        **An even more powerful use of lambda is to provide the value returned by some procedure that you write.** Here’s the classic example:   
+          
+        ```scheme  
+        (define (make-adder num)   
+          (lambda (x) (+ x num)))   
+          
+        ((make-adder 4) 7)   
+        ; 11   
+          
+        (every (make-adder 6) ’(2 4 8))   
+        ; (8 10 14)   
+        ```  
+          
+        The value of the expression `(make-adder 4)` is a _procedure,_ not a number. That unnamed procedure is the one that adds 4 to its argument.   
+          
+        Here’s a procedure whose argument is a procedure:   
+          
+        ```scheme  
+        (define (same-arg-twice fn)   
+          (lambda (arg) (fn arg arg)))   
+          
+        ((same-arg-twice word) ’hello)   
+        ; HELLOHELLO   
+          
+        ((same-arg-twice *) 4)   
+        ; 16   
+        ```  
+          
+        When we evaluate `(same-arg-twice word)` we substitute the procedure word for the formal parameter `fn`, and the result is   
+          
+        >(lambda (arg) (word arg arg))  
+  
+* The Truth about `Define`  
+    * What are the two activities combined in `define`?  
+          
+        The notation we’ve been using with `define` is an abbreviation that combines two activities: **creating a procedure and giving a name to something.**   
+          
+        When we say   
+          
+        ```scheme  
+        (define (square x) (* x x))  
+        ```  
+          
+        it’s actually an abbreviation for  
+          
+        ```scheme   
+        (define square (lambda (x) (* x x)))  
+        ```  
+          
+        In this example, the job of `lambda` is to create a procedure that multiplies its argument by itself; the job of `define` is to name that procedure square.  
+  
+    * What does `global` mean?  
+          
+        In the past, without quite saying so, we’ve talked as if the name of a procedure were understood differently from other names in a program. In thinking about an expression such as   
+          
+        ```scheme  
+        (* x x)  
+        ```  
+          
+        we’ve talked about substituting some actual value for the `x` but took the `*` for granted as meaning the multiplication function.   
+          
+        The truth is that we have to substitute a value for the `*` just as we do for the `x`. It just happens that `*` has been predefined to have the multiplication procedure as its value. This definition of `*` is _global_. **“Global” means that it’s not a formal parameter of a procedure, like x in square, but has a permanent value established by define.**  
+  
+    * How to use `define` in combination with the function-creating functions?  
+          
+        ```scheme  
+        (define square (same-arg-twice *))  
+          
+        (square 7)  
+        ; 49  
+          
+        (define fourth-power (repeated square 2))   
+          
+        (fourth-power 5)  
+        ; 625  
+        ```  
+  
+* The Truth about `Let`  
+    * What is the mechanism under `let`?  
+          
+        In Chapter 7 we introduced `let` as an abbreviation for the situation in which we would otherwise define a helper procedure in order to give names to commonly-used values in a calculation.  
+          
+        ```scheme  
+        (define (roots a b c)  
+          (let ((discriminant (sqrt (- (* b b) (* 4 a c)))))   
+            (se (/ (+ (- b) discriminant) (* 2 a))  
+                (/ (- (- b) discriminant) (* 2 a)))))   
+        ```  
+          
+        now that we know about unnamed procedures, we can see that **`let` is merely an abbreviation for creating and invoking an anonymous procedure**:   
+          
+        > (define (roots a b c)   
+          **(**(lambda (discriminant)   
+                 (se (/ (+ (- b) discriminant) (* 2 a)) (/ (- (- b) discriminant) (* 2 a))))   
+             **(sqrt(-(*** **bb)(*** **4ac))))**)  
+          
+        What’s shown in boldface above is the part that invokes the procedure created by the `lambda`, including the actual argument expression.   
+          
+        Just as the notation to define a procedure with parentheses around its name is an abbreviation for a `define` and a `lambda`, **the `let` notation is an abbreviation for a `lambda` and an invocation.**  
+  
+* Name Conflicts  
+      
+    When a procedure is created inside another procedure, what happens if you use the same formal parameter name in both?   
+      
+    ```scheme  
+    (define (f x)  
+      (lambda (x) (+ x 3)))  
+    ```  
+      
+    Answer: Don’t do it.   
+      
+    What actually happens is that the inner x wins; that’s the one that is substituted into the body. But if you find yourself in this situation, you are almost certainly doing something wrong, such as using non-descriptive names like x for your variables.  
+  
+* Named and Unnamed Functions  
+    * When to name a function and when not?  
+          
+        **If we’re going to use a procedure more than once, and if there’s a meaningful name for it that will help clarify the program, then we define the procedure with `define` and give it a name.**   
+          
+        ```scheme  
+        (define (square x) (* x x))  
+        ```  
+          
+        `square` deserves a name both because we use it often and because there is a good traditional name for it that everyone understands. More important, **by giving `square` a name, we are shifting attention from the process by which it works (invoking the multiplication procedure) to its _purpose,_ computing the square of a number. From now on we can think about squaring as though it were a Scheme primitive. This idea of naming something and forgetting the details of its implementation is what we’ve been calling “abstraction.”**  
+  
+* Pitfalls  
+    * Don't mix the two notations of `define`  
+          
+        It’s very convenient that `define` has an abbreviated form to define a procedure using a hidden `lambda`, but because there are two notations that differ only subtly—one has an extra set of parentheses—you could use the wrong one by mistake. If you say   
+          
+        ```scheme  
+        (define (pi) 3.141592654)  
+        ```  
+          
+        you’re not defining a variable whose value is a number. Instead the value of `pi` will be a _procedure._ It would then be an error to say (* 2 pi)  
+  
+    * When should the body of your procedure be a `lambda` expression?  
+          
+        When should the body of your procedure be a `lambda` expression? It’s easy to go overboard and say “I’m writing a procedure so I guess I need lambda” even when the procedure is supposed to return a word.   
+          
+        The secret is to remember the ideas of _domain_ and _range_ that we talked about in Chapter 2. **What is the range of the function you’re writing? Should it return a procedure? If so, its body might be a `lambda` expression. (It might instead be an invocation of a higher-order procedure, such as repeated, that returns a procedure.) If your procedure doesn’t return a procedure, its body won’t be a `lambda` expression. (Of course your procedure might still use a `lambda` expression as an argument to some _other_ procedure, such as every.)**  
+           
+        For example, here is a procedure to keep the words of a sentence that contain the letter h. The domain of the function is sentences, and its range is also sentences. (That is, it takes a sentence as argument and returns a sentence as its value.)   
+          
+        ```scheme  
+        (define (keep-h sent)  
+          (keep (lambda (wd) (member? ’h wd)) sent))   
+        ```  
+          
+        By contrast, here is a function of a letter that returns a _procedure_ to keep words containing that letter.  
+          
+        ```scheme   
+        (define (keeper letter)   
+          (lambda (sent)   
+            (keep (lambda (wd) (member? letter wd)) sent)))   
+        ``  
+          
+        The procedure `keeper` has letters as its domain and procedures as its range. The procedure _returned by_ `keeper` has sentences as its domain and as its range, just as `keep-h` does. In fact, we can use `keeper` to define `keep-h`:   
+          
+        ```scheme  
+        (define keep-h (keeper ’h))   
+        ```  
+  
+    * Don’t confuse the **_creation_** of a procedure with the **_invocation_** of one.  
+          
+        **`Llambda` creates a procedure. The procedure is invoked in response to an expression whose first subexpression represents that procedure. That is, the first subexpression could be the _name_ of the procedure, or it could be a lambda expression if you want to create a procedure and invoke it right away**:   
+          
+        ```scheme  
+        ((lambda (x) (+ x 3)) 6)   
+        ```  
+          
+        **In particular, when you create a procedure, you specify its formal parameters—the _names_ for its arguments. When you invoke the procedure, you specify _values_ for those arguments.** (In this example, the lambda expression includes the formal parameter x, but the invocation provides the actual argument 6.)  
+  
+* Exercises 9.1-9.3  
+      
+    [github.com/mengsince1986/simplyScheme/blob/master/SS Exercises/Exercises 9.1-9.3.scm][20]  
+  
 [1]: https://github.com/mengsince1986/simplyScheme/blob/master/SS%20Exercises/Exercises%202.1-2.9.scm  
 [2]: https://github.com/mengsince1986/simplyScheme/blob/master/SS%20Exercises/Exercises%203.1-3.9.scm  
 [3]: dnd.png  
@@ -1607,3 +1806,4 @@ In these first two chapters, our goal is to introduce the Scheme programming lan
 [17]: mld.png  
 [18]: https://github.com/mengsince1986/simplyScheme/blob/master/SS%20Exercises/Exercises%208.1-8.3.scm  
 [19]: https://github.com/mengsince1986/simplyScheme/blob/master/SS%20Exercises/Exercises%208.4-8.14.scm  
+[20]: https://github.com/mengsince1986/simplyScheme/blob/master/SS%20Exercises/Exercises%209.1-9.3.scm  
