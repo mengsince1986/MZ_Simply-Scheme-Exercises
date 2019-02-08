@@ -1787,6 +1787,10 @@ In these first two chapters, our goal is to introduce the Scheme programming lan
       
     [github.com/mengsince1986/simplyScheme/blob/master/SS Exercises/Exercises 9.1-9.3.scm][20]  
   
+* Exercises 9.4-9.17  
+      
+    [github.com/mengsince1986/simplyScheme/blob/master/SS Exercises/Exercises 9.4-9.17.scm][21]  
+  
 [1]: https://github.com/mengsince1986/simplyScheme/blob/master/SS%20Exercises/Exercises%202.1-2.9.scm  
 [2]: https://github.com/mengsince1986/simplyScheme/blob/master/SS%20Exercises/Exercises%203.1-3.9.scm  
 [3]: dnd.png  
@@ -1807,3 +1811,4 @@ In these first two chapters, our goal is to introduce the Scheme programming lan
 [18]: https://github.com/mengsince1986/simplyScheme/blob/master/SS%20Exercises/Exercises%208.1-8.3.scm  
 [19]: https://github.com/mengsince1986/simplyScheme/blob/master/SS%20Exercises/Exercises%208.4-8.14.scm  
 [20]: https://github.com/mengsince1986/simplyScheme/blob/master/SS%20Exercises/Exercises%209.1-9.3.scm  
+[21]: https://github.com/mengsince1986/simplyScheme/blob/master/SS%20Exercises/Exercises%209.4-9.17.scm  
