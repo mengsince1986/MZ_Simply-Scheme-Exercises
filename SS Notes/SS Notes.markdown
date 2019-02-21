@@ -2495,6 +2495,316 @@ In these first two chapters, our goal is to introduce the Scheme programming lan
       
     [github.com/mengsince1986/simplyScheme-mindmap-exercises/blob/master/SS Exercises/Exercises 10.1-10.4.scm][34]  
   
+## Part IV Recursion  
+  
+### What is the idea of recursion?  
+  
+The idea of **recursion**—as usual, it sounds simpler than it actually is—**is that one of the smaller parts can be the _same_ function we are trying to implement**.   
+  
+**Recursion is the idea of self-reference applied to computer programs**. Here’s an example:   
+  
+>“I’m thinking of a number between 1 and 20.”  
+(Her number is between 1 and 20. I’ll guess the halfway point.) “10.”  
+“Too low.”  
+(Hmm, her number is between 11 and 20. I’ll guess the halfway point.) “15.” “Too high.”  
+(That means her number is between 11 and 14. I’ll guess the halfway point.) “12.” “Got it!”   
+  
+We can write a procedure to do this:   
+  
+```scheme  
+(define (game low high)  
+  (let ((guess (average low high)))   
+    (cond ((too-low? guess) (game (+ guess 1) high))   
+          ((too-high? guess) (game low (- guess 1)))   
+          (else ’(I win!)))))   
+```  
+  
+This isn’t a complete program because we haven’t written `too-low?` and `too-high?`. But it illustrates the idea of a problem that contains a version of itself as a subproblem: We’re asked to find a secret number within a given range. We make a guess, and if it’s not the answer, we use that guess to create another problem in which the same secret number is known to be within a smaller range. **The self-reference of the problem description is expressed in Scheme by a procedure that invokes itself as a subprocedure**.  
+  
+### Chapter 11 Introduction to Recursion  
+  
+* The `downup` problem  
+      
+    Here’s the first problem we’ll solve. We want a function that works like this:   
+      
+    ```scheme  
+    (downup ’ringo)  
+    ;(RINGO RING RIN RI R RI RIN RING RINGO)   
+      
+    (downup ’marsupial)  
+    ;(MARSUPIAL  
+     MARSUPIA  
+     MARSUPI  
+     MARSUP  
+     MARSU  
+     MARS  
+     MAR  
+     MA  
+     M  
+     MA  
+     MAR  
+     MARS  
+     MARSU  
+     MARSUP  
+     MARSUPI  
+     MARSUPIA  
+     MARSUPIAL)  
+    ```  
+      
+    We’re going to solve this problem using recursion. **It turns out that the idea of recursion is both very powerful—we can solve a _lot_ of problems using it—and rather tricky to understand.** That’s why we’re going to explain recursion several different ways in the coming chapters. Even after you understand one of them, you’ll probably find that thinking about recursion from another point of view enriches your ability to use this idea. **The explanation in this chapter is based on the _combining method._**  
+  
+    * A Separate Procedure for Each Length  
+        * How to define a version of `downup` for one-letter words?  
+              
+            Since we don’t yet know how to solve the `downup` problem in general, let’s start with a particular case that we _can_ solve. We’ll write a version of `downup` that works only for one-letter words:   
+              
+            ```scheme  
+            (define (downup1 wd) (se wd))   
+              
+            (downup1 ’a)   
+            ;(A)   
+            ```  
+  
+        * How to define a version of `downup` for two-letter words?  
+              
+            Now let’s see if we can do two-letter words:   
+              
+            ```scheme  
+            (define (downup2 wd)   
+              (se wd (first wd) wd))   
+              
+            (downup2 ’be)   
+            ; (BE B BE)   
+            ```  
+  
+        * How to define a version of `downup` for three-letter words?  
+              
+            ```scheme  
+            (define (downup3 wd)  
+              (se wd  
+                  (bl wd)  
+                  (first wd)  
+                  (bl wd)  
+                  wd))  
+              
+            (downup3 ’foo)   
+            ;(FOO FO F FO FOO)  
+            ```  
+               
+            We could continue along these lines, writing procedures `downup4` and so on. If we knew that the longest word in English had 83 letters, we could write all of the single-length `downups` up to `downup83`, and then write one overall `downup` procedure that would consist of an enormous `cond` with 83 clauses, one for each length.   
+              
+            But that’s a terrible idea. We’d get really bored, and start making a lot of mistakes, if we tried to work up to `downup83` this way.  
+  
+    * Use What You Have to Get What You Need  
+        * How to use `downup2` to simplify `downup3`?  
+              
+            The next trick is to notice that the middle part of what `(downup3 ’foo)` does is just like `(downup2 ’fo)`:   
+              
+            ![][35]  
+              
+            So we can find the parts of `downup3` that are responsible for those three words:   
+              
+            ![][36]  
+              
+            and replace them with an invocation of `downup2`:   
+              
+            ```scheme  
+            (define (downup3 wd)   
+              (se wd (downup2 (bl wd)) wd))  
+            ```  
+  
+        * How to use `downup3` to help with `downup4`?  
+              
+            How about `downup4`? Once we’ve had this great idea about using `downup2` to help with `downup3`, it’s not hard to continue the pattern:   
+              
+            ```scheme  
+            (define (downup4 wd)   
+              (se wd (downup3 (bl wd)) wd))   
+              
+            (downup4 ’paul)  
+            ;(PAUL PAU PA P PA PAU PAUL)   
+            ```  
+              
+            The reason we can fit the body of `downup4` on one line is that most of its work is done for it by `downup3`. If we continued writing each new `downup` procedure independently, as we did in our first attempt at `downup3`, our procedures would be getting longer and longer. But this new way avoids that.   
+              
+            ```scheme  
+            (define (downup59 wd)  
+              (se wd (downup58 (bl wd)) wd))   
+            ```  
+              
+            Also, although it may be harder to notice, we can even rewrite `downup2` along the same lines:   
+              
+            ```scheme  
+            (define (downup2 wd)  
+              (se wd (downup1 (bl wd)) wd))   
+            ```  
+  
+    * Notice That They're All the Same  
+        * How to combine the 59 versions of `downup` into a single procedure?  
+              
+            Although `downup59` was easy to write, the problem is that it won’t work unless we also define `downup58`, which in turn depends on `downup57`, and so on. This is a lot of repetitive, duplicated, and redundant typing. Since these procedures are all basically the same, what we’d like to do is combine them into a single procedure:   
+              
+            ```scheme  
+            (define (downup wd)               ;; first version   
+              (se wd (downup (bl wd)) wd))  
+            ```  
+               
+            Isn’t this a great idea? We’ve written one short procedure that serves as a kind of abbreviation for 59 other ones.  
+  
+    * Notice That They're Almost All the Same  
+        * Why the first version of `downup` doesn't work?  
+              
+            Unfortunately, it doesn’t work.   
+              
+            ```scheme  
+            (downup ’toe)  
+            ;ERROR: Invalid argument to BUTLAST: ""   
+            ```  
+            What’s gone wrong here? Not quite every numbered `downup` looks like   
+              
+            ```scheme  
+            (define (downup_n wd)   
+              (se wd (downup_n-1 (bl wd)) wd))  
+            ```  
+              
+            The only numbered `downup` that doesn’t follow the pattern is `downup1`:   
+              
+            ```scheme  
+            (define (downup1 wd)   
+              (se wd))   
+            ```  
+  
+        * How to debug the `downup` procedure?  
+              
+            So if we collapse all the numbered downups into a single procedure, we have to treat one-letter words as a special case:   
+              
+            ```scheme  
+            (define (downup wd)   
+              (if (= (count wd) 1)   
+                  (se wd)  
+                  (se wd (downup (bl wd)) wd)))   
+              
+            (downup ’toe)   
+            ; (TOE TO T TO TOE)   
+              
+            (downup ’banana)  
+            ;(BANANA BANAN BANA BAN BA B BA BAN BANA BANAN BANANA)   
+            ```  
+              
+            This version of `downup` will work for any length word, from a to pneumonoultramicroscopicsilicovolcanoconinosis or beyond.  
+  
+    * Base Case and Recursive Calls  
+        * How does `downup` illustrates the structure of recursive procedures?  
+              
+            `downup` illustrates the structure of every recursive procedure. There is a choice among expressions to evaluate: At least one is **a _recursive_ case, in which the procedure (e.g., `downup`) itself is invoked with a smaller argument**; at least one is **a _base_ case, that is, one that can be solved without calling the procedure recursively.** For `downup`, the base case is a single-letter argument.   
+              
+            We’re telling Scheme: “In order to find `downup` of a word, find `downup` of another word.” The secret is that it’s not just any old other word. The new word is _smaller_ than the word we were originally asked to `downup`. So we’re saying, “In order to find `downup` of a word, find `downup` of a shorter word.” We are posing a whole slew of _subproblems_ asking for the `downup` of words smaller than the one we started with. So if someone asks us the `downup` of happy, along the way we have to compute the `downups` of happ, hap, ha, and h.  
+  
+        * How to make a recursive procedure work?  
+              
+            **A recursive procedure doesn’t work unless every possible argument can eventually be reduced to some base case.** When we are asked for `downup` of h, the procedure just knows what to do without calling itself recursively.   
+              
+            We’ve just said that there has to be a base case. I**t’s also important that each recursive call has to get us somehow closer to the base case.** For `downup`, “closer” means that in the recursive call we use a shorter word. If we were computing a numeric function, the base case might be an argument of zero, and the recursive calls would use smaller numbers.  
+  
+* The Pig Latin Problem  
+    * What does Pig Latin procedure do?  
+          
+        Let’s take another example; we’ll write the Pig Latin procedure that we showed off in Chapter 1. **We’re trying to take a word, move all the initial consonants to the end, and add “ay.”**  
+  
+    * What is the base case for Pig Latin procedure?  
+          
+        The simplest case is that there are no initial consonants to move:   
+          
+        ```  
+        (define (pigl0 wd)   
+          (word wd ’ay))   
+          
+        (pigl0 ’alabaster)   
+        ; ALABASTERAY   
+        ```  
+          
+        (This will turn out to be **the base case** of our eventual recursive procedure.)  
+  
+    * How to define `pig11` to deal with a word starting with one consonant?  
+          
+        ```scheme  
+        (define (pig11 wd)  
+          (word (word (bf wd) (first wd))   
+                ’ay))  
+           
+        (pigl1 ’pastrami)   
+        ;ASTRAMIPAY   
+        ```  
+          
+        We want to replace `(word _something_ ’ay)` with `(pigl0 _something_)`. If we use pigl0 to attach the _ay_ at the end, our new version of `pig11` looks like this:   
+          
+        ```scheme  
+        (define (pigl1 wd)  
+          (pig10 (word (bf wd) (first wd))))  
+        ```  
+  
+    * How to define `pig12` and `pig13` to deal with a word starting with two and three consonants?  
+          
+        How about a word starting with two consonants? We can just move the first consonant to the end of the word, and handle the result, a word with only one consonant in front, with `pig11`:   
+          
+        ```scheme  
+        (define (pigl2 wd)  
+          (pig11 (word (bf wd) (first wd))))  
+          
+        (pigl2 ’trample)   
+        ; AMPLETRAY   
+        ```  
+          
+        For a three-initial-consonant word we move one letter to the end and call `pigl2`: (  
+          
+        ```scheme  
+        define (pig13 wd)   
+          (pig12 (word (bf wd) (first wd))))  
+          
+        > (pig13 ’chrome)   
+        ; OMECHRAY   
+        ```  
+  
+    * How to define `pigl` to work for any word?  
+          
+        So how about a version that will work for any word? The recursive case will involve taking the `pigl` of `(word (bf wd) (first wd))`, to match the pattern we found in `pig11`, `pig12`, and `pig13`. The base case will be a word that begins with a vowel, for which we’ll just add _ay_ on the end, as `pig10` does:   
+          
+        ```scheme  
+        (define (pigl wd)  
+          (if (member? (first wd) 'aeiou)   
+              (word wd 'ay)  
+              (pigl (word (bf wd) (first wd)))))   
+        ```  
+  
+        * How does `pigl`'s recursive call poses a "smaller" subproblems?  
+              
+            It’s an unusual sense in which `pigl`’s recursive call poses a “smaller” subproblem. If we’re asked for the `pigl` of _scheme_, we construct a new word, _chemes_, and ask for `pigl` of that. This doesn’t seem like much progress. We were asked to translate _scheme_, a six-letter word, into Pig Latin, and in order to do this we need to translate _chemes_, another six-letter word, into Pig Latin.   
+              
+            But actually this _is_ progress, because for Pig Latin the base case isn’t a one-letter word, but rather a word that starts with a vowel. _Scheme_ has three consonants before the first vowel; _chemes_ has only two consonants before the first vowel.   
+              
+            _Chemes_ doesn’t begin with a vowel either, so we construct the word _hemesc_ and try to `pigl` that. In order to find `(pigl'hemesc)` we need to know (pigl'emesch). Since _emesch_ _does_ begin with a vowel, `pigl` returns _emeschay_. Once we know (pigl 'emesch), we’ve thereby found the answer to our original question.  
+  
+* Problems for You to Try  
+    * How to use **combining method** to develop recursive procedures?  
+          
+        You’ve now seen two examples of recursive procedures that we developed using the **combining method**.   
+  
+        * We started by writing special-case procedures to handle small problems of a particular size,   
+        * then simplified the larger versions by using smaller versions as helper procedures.   
+        * Finally we combined all the nearly identical individual versions into a single recursive procedure, taking care to handle the base case separately.  
+    * Problems to try  
+          
+        ```scheme  
+        (explode ’dynamite)   
+        ; (D Y N A M I T E)   
+          
+        (letter-pairs ’george)   
+        ; (GE EO OR RG GE)   
+        ```  
+        [github.com/mengsince1986/Simply-Scheme-notes-exercises/blob/master/SS Exercises/C11-explode-letter-pairs.scm][37]  
+  
+    * Our Solutions  
+  
 # …  
   
   
@@ -2532,3 +2842,6 @@ In these first two chapters, our goal is to introduce the Scheme programming lan
 [32]: ftx.png  
 [33]: https://github.com/mengsince1986/simplyScheme-mindmap-exercises/blob/master/SS%20Examples/C10-Complete%20Program%20Listing.scm  
 [34]: https://github.com/mengsince1986/simplyScheme-mindmap-exercises/blob/master/SS%20Exercises/Exercises%2010.1-10.4.scm  
+[35]: mju.png  
+[36]: yia.png  
+[37]: https://github.com/mengsince1986/Simply-Scheme-notes-exercises/blob/master/SS%20Exercises/C11-explode-letter-pairs.scm  
