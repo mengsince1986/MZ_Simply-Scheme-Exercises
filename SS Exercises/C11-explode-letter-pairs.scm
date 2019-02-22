@@ -12,8 +12,8 @@
 ; **********************************************************
 
 (define (letter-pairs wd)
-  (if (<= (count wd) 2)
-      (sentence wd)
+  (if (<= (count wd) 1)
+      '()
       (sentence (letter-pairs (butlast wd))
                 (word (last (butlast wd)) (last wd)))))
 
