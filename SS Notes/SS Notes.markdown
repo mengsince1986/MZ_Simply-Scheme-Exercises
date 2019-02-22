@@ -2804,6 +2804,173 @@ This isn’t a complete program because we haven’t written `too-low?` and `too
         [github.com/mengsince1986/Simply-Scheme-notes-exercises/blob/master/SS Exercises/C11-explode-letter-pairs.scm][37]  
   
     * Our Solutions  
+        * How to develop the `explode` recursive procedure?  
+            * How to find the simplest case for `explode`?  
+                  
+                What’s the smallest word we can explode? There’s no reason we can’t explode an empty word:   
+                  
+                ```scheme  
+                (define (explode0 wd)   
+                  '())   
+                ```  
+                  
+                That wasn’t very interesting, though. It doesn’t suggest a pattern that will apply to larger words.  
+  
+            * How to find the patterns in the cases of `explore`?  
+                  
+                Let’s try a few larger cases:   
+                  
+                ```scheme  
+                (define (explode1 wd)   
+                  (se wd))   
+                  
+                (define (explode2 wd)  
+                  (se (first wd) (last wd)))   
+                  
+                (define (explode3 wd)  
+                  (se (first wd) (first (bf wd)) (last wd)))   
+                ```  
+                  
+                With `explode3` the procedure is starting to get complicated enough that we want to find a way to use `explode2` to help. What `explode3` does is to pull three separate letters out of its argument word, and collect the three letters in a sentence. Here’s a sample:   
+                  
+                ```scheme  
+                (explode3 ’tnt) (T N T)   
+                ```  
+                  
+                `Explode2` pulls _two_ letters out of a word and collects them in a sentence. So we could let `explode2` deal with two of the letters of our three-letter argument, and handle the remaining letter separately:   
+                  
+                ```scheme  
+                (define (explode3 wd)  
+                  (se (first wd) (explode2 (bf wd))))   
+                ```  
+                  
+                We can use similar reasoning to define `explode4` in terms of `explode3`:   
+                  
+                ```scheme  
+                (define (explode4 wd)   
+                  (se (first wd) (explode3 (bf wd))))   
+                ```  
+  
+            * How to define the base case and `explore`?  
+                  
+                Now that we see the pattern, what’s the base case? Our first three numbered explodes are all different in shape from `explode3`, but now that we know what the pattern should be we’ll find that we can write `explode2` in terms of `explode1`, and even `explode1` in terms of explode0:   
+                  
+                ```scheme  
+                (define (explode2 wd)  
+                  (se (first wd) (explode1 (bf wd))))   
+                  
+                (define (explode1 wd)  
+                  (se (first wd) (explode0 (bf wd))))  
+                ```   
+                  
+                We would never have thought to write `explode1` in that roundabout way, especially since `explode0` pays no attention to its argument, so **computing the `butfirst` doesn’t contribute anything to the result, but by following the pattern we can let the recursive case handle one-letter and two-letter words, so that only zero-letter words have to be special**:   
+                  
+                ```scheme  
+                (define (explode wd)  
+                  (if (empty? wd)  
+                      ’()  
+                      (se (first wd) (explode (bf wd)))))  
+                ```  
+  
+        * How to develop the `letter-pairs` recursive procedure?  
+            * How to find the simplest case for `letter-pairs`?  
+                  
+                Now for `letter-pairs`. What’s the smallest word we can use as its argument? Empty and one-letter words have no letter pairs in them:   
+                  
+                ```scheme  
+                (define (letter-pairs0 wd)  
+                  '())  
+                (define (letter-pairs1 wd)  
+                  '())  
+                ```  
+  
+            * How to find the patterns in the cases of `letter-pairs`?  
+                  
+                ```scheme  
+                (define (letter-pairs2 wd)   
+                  (se wd))   
+                  
+                (define (letter-pairs3 wd)   
+                  (se (bl wd) (bf wd)))   
+                  
+                (define (letter-pairs4 wd)  
+                  (se (bl (bl wd))  
+                        (bl (bf wd))  
+                        (bf (bf wd))))  
+                ```  
+                  
+                Again,we want to simplify `letter-pairs4` by using `letter-pairs3` to help. The problem is similar to `explode`: The value returned by `letter-pairs4` is a three-word sentence, and we can use `letter-pairs3` to generate two of those words.   
+                  
+                ![][38]  
+                  
+                  
+                This gives rise to the following procedure:   
+                  
+                ```scheme  
+                (define (letter-pairs4 wd)  
+                  (se (bl (bl wd))  
+                        (letter-pairs3 (bf wd))))  
+                ```  
+                  
+                Does this pattern work for defining `letter-pairs5` in terms of `letter-pairs4`?   
+                  
+                ```scheme  
+                (define (letter-pairs5 wd)                ;; wrong   
+                  (se (bl (bl wd))   
+                       (letter-pairs4 (bf wd))))   
+                  
+                (letter-pairs5 'bagel)   
+                ; (BAG AG GE EL)   
+                ```  
+                The problem is that `(bl (bl wd))` means “the first two letters of wd” only when wd has four letters. In order to be able to generalize the pattern, we need a way to ask for the first two letters of a word that works no matter how long the word is. You wrote a procedure to solve this problem in Exercise 5.15:   
+                  
+                ```scheme  
+                (define (first-two wd)  
+                  (word (first wd) (first (bf wd))))   
+                ```  
+                  
+                Now we can use this for `letter-pairs4` and `letter-pairs5`:   
+                  
+                ```scheme  
+                (define (letter-pairs4 wd)   
+                  (se (first-two wd) (letter-pairs3 (bf wd))))   
+                  
+                (define (letter-pairs5 wd)  
+                  (se (first-two wd) (letter-pairs4 (bf wd))))   
+                ```  
+                  
+                _This_ pattern _does_ generalize.  
+  
+            * How to define `letter-pairs`?  
+                  
+                ```scheme  
+                (define (letter-pairs wd)   
+                  (if (<= (count wd) 1)   
+                      ’()  
+                      (se (first-two wd)  
+                            (letter-pairs (bf wd)))))   
+                ```  
+                  
+                Note that we treat two-letter and three-letter words as recursive cases and not as base cases. Just as in the example of `explode`, we noticed that we could rewrite `letter-pairs2` and `letter-pairs3` to follow the same pattern as the larger cases:   
+                  
+                ```scheme  
+                (define (letter-pairs2 wd)  
+                  (se (first-two wd)  
+                        (letter-pairs1 (bf wd))))   
+                  
+                (define (letter-pairs3 wd)  
+                  (se (first-two wd)  
+                        (letter-pairs2 (bf wd))))   
+                ```  
+  
+* Pitfalls  
+      
+    * **Every recursive procedure must include two parts: one or more recursive cases, in which the recursion reduces the size of the problem, and one or more base cases, in which the result is computable without recursion.** For example, our first attempt at `downup` fell into this pitfall because we had no base case.   
+      
+    * Don’t be too eager to write the recursive procedure. As we showed in the `letter-pairs` example, what looks like a generalizable pattern may not be.  
+* Exercises 11.1-11.3  
+      
+    [github.com/mengsince1986/Simply-Scheme-notes-exercises/blob/master/SS Exercises/Exercises 11.1-11.3.scm][39]  
   
 # …  
   
@@ -2845,3 +3012,5 @@ This isn’t a complete program because we haven’t written `too-low?` and `too
 [35]: mju.png  
 [36]: yia.png  
 [37]: https://github.com/mengsince1986/Simply-Scheme-notes-exercises/blob/master/SS%20Exercises/C11-explode-letter-pairs.scm  
+[38]: wbf.png  
+[39]: https://github.com/mengsince1986/Simply-Scheme-notes-exercises/blob/master/SS%20Exercises/Exercises%2011.1-11.3.scm  
