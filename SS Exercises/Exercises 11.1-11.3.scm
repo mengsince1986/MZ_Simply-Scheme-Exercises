@@ -21,25 +21,23 @@
 
 ; Here are some special-case count-ums procedures for sentences of particular lengths:
 
-#|
-(define (count-ums0 sent)
-  0)
+;(define (count-ums0 sent)
+;  0)
 
-(define (count-ums1 sent)
-  (if (equal? ’um (first sent))
-      1
-      0))
+;(define (count-ums1 sent)
+;  (if (equal? ’um (first sent))
+;      1
+;      0))
 
-(define (count-ums2 sent)
-  (if (equal? ’um (first sent))
-      (+ 1 (count-ums1 (bf sent)))
-      (count-ums1 (bf sent))))
+;(define (count-ums2 sent)
+;  (if (equal? ’um (first sent))
+;      (+ 1 (count-ums1 (bf sent)))
+;      (count-ums1 (bf sent))))
 
-(define (count-ums3 sent)
-  (if (equal? ’um (first sent))
-      (+ 1 (count-ums2 (bf sent)))
-      (count-ums2 (bf sent))))
-|#
+;(define (count-ums3 sent)
+;  (if (equal? ’um (first sent))
+;      (+ 1 (count-ums2 (bf sent)))
+;      (count-ums2 (bf sent))))
 
 ;Write count-ums recursively.
 
@@ -66,21 +64,19 @@
 
 ;Here are some some special-case phone-unspell procedures:
 
-#|
-(define (phone-unspell1 wd)
-  (unspell-letter wd))
+;(define (phone-unspell1 wd)
+;  (unspell-letter wd))
 
-(define (phone-unspell2 wd)
-  (word (unspell-letter (first wd))
-        (unspell-letter (first (bf wd)))))
+;(define (phone-unspell2 wd)
+;  (word (unspell-letter (first wd))
+;        (unspell-letter (first (bf wd)))))
 
-(define (phone-unspell3 wd)
-  (word (unspell-letter (first wd))
-        (unspell-letter (first (bf wd)))
-        (unspell-letter (first (bf (bf wd))))))
+;(define (phone-unspell3 wd)
+;  (word (unspell-letter (first wd))
+;        (unspell-letter (first (bf wd)))
+;        (unspell-letter (first (bf (bf wd))))))
 
-Write phone-unspell recursively.
-|#
+;Write phone-unspell recursively.
 
 ; answer:
 (define (phone-unspell wd)
