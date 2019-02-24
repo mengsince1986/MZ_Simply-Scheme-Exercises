@@ -2972,6 +2972,10 @@ This isn’t a complete program because we haven’t written `too-low?` and `too
       
     [github.com/mengsince1986/Simply-Scheme-notes-exercises/blob/master/SS Exercises/Exercises 11.1-11.3.scm][39]  
   
+* Exercises 11.4-11.7  
+      
+    [github.com/mengsince1986/Simply-Scheme-notes-exercises/blob/master/SS Exercises/Exercises 11.4-11.7.scm][40]  
+  
 # …  
   
   
@@ -3014,3 +3018,4 @@ This isn’t a complete program because we haven’t written `too-low?` and `too
 [37]: https://github.com/mengsince1986/Simply-Scheme-notes-exercises/blob/master/SS%20Exercises/C11-explode-letter-pairs.scm  
 [38]: wbf.png  
 [39]: https://github.com/mengsince1986/Simply-Scheme-notes-exercises/blob/master/SS%20Exercises/Exercises%2011.1-11.3.scm  
+[40]: https://github.com/mengsince1986/Simply-Scheme-notes-exercises/blob/master/SS%20Exercises/Exercises%2011.4-11.7.scm  
