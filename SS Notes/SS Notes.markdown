@@ -2976,6 +2976,501 @@ This isn’t a complete program because we haven’t written `too-low?` and `too
       
     [github.com/mengsince1986/Simply-Scheme-notes-exercises/blob/master/SS Exercises/Exercises 11.4-11.7.scm][40]  
   
+### Chapter 12 The Leap of Faith  
+  
+* From the Combining Method to the Leap of Faith  
+    * How does leap of faith method work overall?  
+          
+        Once you understand the idea of recursion, writing the individual procedures is wasted effort.   
+          
+        **In the leap of faith method, we short-circuit this process in two ways. First, we don’t bother thinking about small examples; we begin with, for example, a seven-letter word. Second, we don’t use our example to write a particular numbered procedure; we write the recursive version directly.**  
+  
+    * Example: Reverse  
+        * What does `reverse` do?  
+              
+            We’re going to write, using the leap of faith method, a recursive procedure to reverse the letters of a word:   
+              
+            ```scheme  
+            (reverse ’beatles)   
+            ; SELTAEB   
+            ```  
+  
+        * How to find a slightly smaller subproblem for `(reverse 'beatles)`  
+              
+            Is there a `reverse` of a smaller argument lurking within that return value? Yes, many of them.  For example, `LTA` is the reverse of the word `ATL`. But it will be most helpful if we find a smaller subproblem that’s only _slightly_ smaller. (This idea corresponds to writing `letter-pairs7` using `letter-pairs6` in the combining method.) The closest smaller subproblem to our original problem is to find the `reverse` of a word one letter shorter than `beatles`.   
+              
+            ```scheme  
+            (reverse ’beatle)   
+            ; ELTAEB   
+            ```  
+              
+            This result is pretty close to the answer we want for `reverse` of `beatles`. What’s the relationship between `ELTAEB`, the answer to the smaller problem, and `SELTAEB`, the answer to the entire problem? There’s one extra letter, `S`, at the beginning. Where did the extra letter come from? Obviously, it’s the last letter of `beatles`.   
+              
+            > There’s also a relationship between `(reverse 'eatles)` and `(reverse 'beatles)`, with the extra letter `b` at the end. We could take either of these subproblems as a starting point and end up with a working procedure.   
+               
+            This may seem like a sequence of trivial observations leading nowhere. But as a result of this investigation, we can translate what we’ve learned directly into Scheme. In English: “the `reverse` of a word consists of its last letter followed by the `reverse` of its `butlast`.” In Scheme:   
+              
+            ```scheme  
+            (define (reverse wd)                             ;; unfinished   
+              (word (last wd)   
+                        (reverse (bl wd))))   
+            ```  
+  
+        * The Leap of Faith  
+            * Why does "the leap of faith" work?  
+                  
+                If we think of this Scheme fragment merely as a statement of a true fact about `reverse`, it’s not very remarkable. The amazing part is that this fragment is _runnable!_  It doesn’t _look_ runnable because it invokes itself as a helper procedure, and—if you haven’t already been through the combining method—that looks as if it can’t work. “How can you use `reverse` when you haven’t written it yet?”   
+                  
+                _The **leap of faith method** is the assumption that the procedure we’re in the middle of writing already works. That is, if we’re thinking about writing a `reverse` procedure that can compute `(reverse ’paul)`, we assume that `(reverse ’aul)` will work._   
+                  
+                Of course it’s not _really_ a leap of faith, in the sense of something accepted as miraculous but not understood. The assumption is justified by our understanding of the combining method. For example, we understand that the four-letter `reverse` is relying on the three-letter version of the problem, not really on itself, so there’s no circular reasoning involved. And we know that if we had to, we could write `reverse1` through `reverse3` “by hand.”   
+                  
+                The reason that our technique in this chapter may seem more mysterious than the combining method is that this time we are thinking about the problem top-down. In the combining method, we had already written whatever3 before we even raised the question of whatever4. Now we start by thinking about the larger problem and assume that we can rely on the smaller one. Again, we’re entitled to that assumption because we’ve gone through the process from smaller to larger so many times already.   
+                  
+                _The leap of faith method, once you understand it, is faster than the combining method for writing new recursive procedures, because we can write the recursive solution immediately, without bothering with many individual cases. The reason we showed you the combining method first is that the leap of faith method seems too much like magic, or like “cheating,” until you’ve seen several believable recursive programs. **The combining method is the way to learn about recursion; the leap of faith method is the way to write recursive procedures once you’ve learned.**_  
+  
+        * The Base Case  
+            * How to finish `reverse` with its base case?  
+                  
+                Of course, our definition of reverse isn’t finished yet: As always, we need a base case. But base cases are the easy part. **Base cases transform simple arguments into simple answers, and you can do that transformation in your head.**  
+                   
+                For example, what’s the simplest argument to reverse? If you answered “a one-letter word” then pick a one-letter word and decide what the result should be:   
+                  
+                ```scheme  
+                (reverse ’x)   
+                ; X   
+                ```  
+                  
+                `reverse` of a one-letter word should just be that same word:  
+                  
+                ```scheme   
+                (define (reverse wd)   
+                  (if (= (count wd) 1)   
+                      wd  
+                      (word (last wd)   
+                                (reverse (bl wd)))))   
+                ```  
+  
+    * Example: Factorial  
+        * How to use the leap of faith to solve the `factorial` problem?  
+              
+            The factorial of a number _n_ is defined as 1 x 2 x ... x _n_. So the factorial of 5(written “5!”) is 1 x 2 x 3 x 4 x 5. Suppose you want Scheme to figure out the factorial of some large number, such as 843. You start from the definition: 843! is 1 x 2 x ... x 842 x 843. Now you have to look for another factorial problem whose answer will help us find the answer to 843!. You might notice that 2!, that is, 1 x 2, is part of 843!, but that doesn’t help very much because there’s no simple relationship between 2! and 843!. A more fruitful observation would be that 842! is 1 x ... x 842—that is, all but the last number in the product we’re trying to compute. So 843! = 843 x 842!. In general, _n_! is _n_ x (_n_ − 1)!. We can embody this idea in a Scheme procedure:   
+              
+            ```scheme  
+            (define (factorial n)                      ;; first version   
+              (* n (factorial (- n 1))))   
+            ```  
+              
+            **Asking for `(_n_ − 1)!` is the leap of faith. We’re expressing an answer we don’t know, 843!, in terms of another answer we don’t know, 842!. But since 842! is a smaller, similar subproblem, we are confident that the same algorithm will find it.**   
+              
+            What makes us confident? We imagine that we’ve worked on this problem using the combining method, so that we’ve written procedures like these:   
+              
+            ```scheme  
+            (define (factorial1 n)  
+              1)  
+            (define (factorial2 n)  
+              (* 2 (factorial1 (- n 1))))  
+            (define (factorial3 n)  
+              (* 3 (factorial2 (- n 1))))  
+            ;;...  
+            (define (factorial842 n)  
+              (* 842 (factorial841 (- n 1))))   
+            ```  
+              
+            **and therefore we’re entitled to use those lower-numbered versions in finding the factorial of 843. We haven’t actually written them, but we could have, and that’s what justifies using them. The reason we can take 842! on faith is that 842 is smaller than 843; it’s the smaller values that we’re pretending we’ve already written.**   
+              
+            Remember that in the `reverse` problem we mentioned that we could have chosen either the `butfirst` or the `butlast` of the argument as the smaller subproblem? In the case of the factorial problem we don’t have a similar choice. **If we tried to subdivide the problem as**   
+              
+            ```scheme  
+            6! = 1 x (2 x 3 x 4 x 5 x 6)  
+            ```  
+              
+            **then the part in parentheses would _not_ be the factorial of a smaller number.**   
+              
+            > As it happens, the part in parentheses does equal the factorial of a number, 6 itself. But expressing the solution for 6 in terms of the solution for 6 doesn’t lead to a recursive procedure; we have to express this solution in terms of a _smaller_ one.   
+              
+            As the base case for factorial, we’ll use 1! = 1.   
+              
+            ```scheme  
+            (define (factorial n)   
+              (if (= n 1)   
+                  1  
+                  (* n (factorial (- n 1)))))   
+            ```  
+  
+    * Likely Guesses for Smaller Subproblem  
+        * What's the first argument-guessing technique?  
+              
+            To make the leap of faith method work, we have to find a smaller, similar subproblem whose solution will help solve the given problem. How do we find such a smaller subproblem?   
+              
+            **In the examples so far, we’ve generally found it by finding a smaller, similar _return value_ within the return value we’re trying to achieve. Then we worked backward from the smaller solution to figure out what smaller argument would give us that value.** For example, here’s how we solved the `reverse` problem:   
+              
+            >original argument                                     beatles  
+            desired return value                                   SELTAEB  
+            smaller return value                                   ELTAEB  
+            corresponding argument                            beatle  
+            relationship of arguments                           beatle is (bl 'beatles)  
+            relationship of return values                       SELTAEB is (word 's 'ELTAEB)   
+              
+            Scheme expression                  
+            ```scheme  
+            (word (last arg)   
+                      (reverse (bl arg)))  
+            ```  
+               
+            Similarly, we looked at the definition of 843! and noticed within it the factorial of a smaller number, 842.  
+  
+        * What's the second argument-guessing technique?  
+              
+            But a smaller return value won’t necessarily leap out at us in every case. If not, there are some likely guesses we can try. For example, **if the problem is about integers, it makes sense to try _n_ − 1 as a smaller argument. If the problem is about words or sentences, try the `butfirst` or the `butlast`. (Often, as in the reverse example, either will be helpful.) Once you’ve guessed at a smaller argument, see what the corresponding return value should be, then compare that with the original desired return value as we’ve described earlier.**  
+  
+        * Do the two argument-guessing technique always work?  
+              
+            In fact, these two argument-guessing techniques would have suggested the same subproblems that we ended up using in our two examples so far. The reason we didn’t teach these techniques from the beginning is that we don’t want you to think they’re essential parts of the leap of faith method. **These are just good guesses; they don’t always work. When they don’t, you have to be prepared to think more flexibly.**  
+  
+    * Example: `downup`  
+        * How to define `downup` with the leap of faith?  
+              
+            Here’s how we might rewrite `downup` using the leap of faith method. Start by looking at the desired return value for a medium-sized example:   
+              
+            ```scheme  
+            (downup ’paul)  
+            ; (PAUL PAU PA P PA PAU PAUL)   
+            ```  
+              
+            Since this is a procedure whose argument is a word, we guess that the `butfirst` or the `butlast` might be helpful.   
+              
+            ```scheme  
+            (downup ’aul)   
+            ; (AUL AU A AU AUL)   
+              
+            (downup ’pau)   
+            ; (PAU PA P PA PAU)  
+            ```  
+               
+            This is a case in which it matters which we choose; the solution for the `butfirst` of the original argument doesn’t help, but the solution for the `butlast` is most of the solution for the original word. All we have to do is add the original word itself at the beginning and end:   
+              
+            ```scheme  
+            (define (downup wd)                       ;; no base case   
+               (se wd (downup (bl wd)) wd))   
+            ```  
+              
+            As before, this is missing the base case, but by now you know how to fill that in.  
+  
+    * Example: Evens  
+        * What does `evens` do?  
+              
+            Here’s a case in which mindlessly guessing `butfirst` or `butlast` doesn’t lead to a ver y good solution. We want **a procedure that takes a sentence as its argument and returns a sentence of the even-numbered words of the original sentence**:   
+              
+            ```scheme  
+            (evens '(i want to hold your hand))   
+            ; (WANT HOLD HAND)  
+            ```  
+  
+        * Why guessing `butfirst` or `butlast` doesn't work for `evens`?  
+              
+            We look at evens of the `butfirst` and `butlast` of this sentence:   
+              
+            ```scheme  
+            (evens '(want to hold your hand))   
+            ; (TO YOUR)   
+              
+            (evens '(i want to hold your))   
+            ; (WANT HOLD)   
+            ```  
+              
+            `butfirst` is clearly not helpful; it gives all the wrong words. `butlast` looks promising. The relationship between evens of the bigger sentence and evens of the smaller sentence is that the last word of the larger sentence is missing from evens of the smaller sentence.   
+              
+            ```scheme  
+            (define (losing-evens sent)                          ;; no base case  
+               (se (losing-evens (bl sent))   
+                     (last sent)))   
+            ```  
+              
+            For a base case, we’ll take the empty sentence:   
+              
+            ```scheme  
+            (define (losing-evens sent)   
+               (if (empty? sent)   
+                   '()  
+                   (se (losing-evens (bl sent))   
+                         (last sent))))   
+              
+            (losing-evens '(i want to hold your hand))   
+            ; (I WANT TO HOLD YOUR HAND)   
+            ```  
+            This isn’t quite right.   
+              
+            It’s true that `evens` of `(i want to hold your hand)` is the same as `evens` of `(i want to hold your)` plus the word hand at the end. But what about `evens` of `(i want to hold your)`? By the reasoning we’ve been using, we would expect that to be evens of `(i want to hold)` plus the word `your`. But since the word `your` is the fifth word of the argument sentence, it shouldn’t be part of the result at all. Here’s how evens should work:   
+              
+            ```scheme  
+            (evens ’(i want to hold your))   
+            ; (WANT HOLD)  
+               
+            (evens ’(i want to hold))   
+            ; (WANT HOLD)  
+            ```  
+  
+        * How to develop the recursive procedure of `evens`?  
+              
+            **When the sentence has an odd number of words, its `evens` is the same as the evens of its `butlast`**.   
+              
+            > It may feel strange that in the case of an odd-length sentence, the answer to the recursive subproblem is the same as the answer to the original problem, rather than a smaller answer. But remember that it’s the argument, not the return value, that has to get smaller in each recursive step.   
+              
+            So here’s our new procedure:   
+              
+            ```scheme  
+            (define (evens sent)  
+               (cond ((empty? sent) ’())   
+                         ((odd? (count sent))   
+                          (evens (bl sent)))   
+                         (else (se (evens (bl sent))   
+                                        (last sent)))))   
+            ```  
+              
+            **This version works, but it’s more complicated than necessary. What makes it complicated is that on each recursive call we switch between two kinds of problems: even-length and odd-length sentences. If we dealt with the words two at a time, each recursive call would see the same kind of problem.**   
+              
+            Once we’ve decided to go through the sentence two words at a time, we can reopen the question of whether to go right-to-left or left-to-right. It will turn out that the latter gives us the simplest procedure:   
+              
+            ```scheme  
+            (define (evens sent)                           ;; best version   
+               (if (<= (count sent) 1)   
+                    '()  
+                    (se (first (bf sent))   
+                          (evens (bf (bf sent))))))   
+            ```  
+              
+            **Since we go through the sentence two words at a time, an odd-length argument sentence always gives rise to an odd-length recursive subproblem. Therefore, it’s not good enough to check for an empty sentence as the only base case. We need to treat both the empty sentence and one-word sentences as base cases.**  
+  
+    * Simplifying Base Case  
+        * How to pick a **base case** in general?  
+              
+            In general, we recommend **using the smallest possible base case argument, because that usually leads to the simplest procedures. For example, consider using the empty word, empty sentence, or zero instead of one-letter words, one-word sentences, or one.**  
+  
+        * How to find a simpler base case for `reverse`?  
+              
+            How can you go about finding the simplest possible base case? Our first example in this chapter was `reverse`. We arbitrarily chose to use one-letter words as the base case:   
+              
+            ```scheme  
+            (define (reverse wd)   
+               (if (= (count wd) 1)   
+                   wd  
+                   (word (last wd)   
+                             (reverse (bl wd)))))   
+            ```  
+              
+            Suppose we want to consider whether a smaller base case would work. One approach is to **pick an argument that would be handled by the current base case, and see what would happen if we tried to let the recursive step handle it instead.** (To go along with this experiment, we pick a smaller base case, since the original base case should now be handled by the recursive step.) In this example, we pick a one-letter word, let’s say `m`, and use that as the value of `wd` in the expression   
+              
+            ```scheme  
+            (word (last wd)   
+                      (reverse (bl wd)))   
+            ```  
+              
+            The result is  
+              
+            ```scheme   
+            (word (last 'm)   
+               (reverse (bl 'm)))   
+            ```  
+              
+            which is the same as   
+              
+            ```scheme  
+            (word 'm  
+                      (reverse " "))   
+            ```  
+              
+            We want this to have as its value the word `M`. This will work out provided that (reverse " ") has the empty word as its value. So we could rewrite the procedure this way:   
+              
+            ```scheme  
+            (define (reverse wd)  
+               (if (empty? wd)  
+                " "  
+                (word (last word)   
+                          (reverse (bl word)))))   
+            ``  
+  
+        * What's the principle to choose the return value for a base case?  
+              
+            We were led to this empty-word base case by working downward from the needs of the one-letter case. However, it’s also important to ensure that the return value used for the empty word is the correct value, not only to make the recursion work, but for an empty word in its own right. That is, we have to convince ourselves that `(reverse " ")` should return an empty word. But it should; the reverse of any word is a word containing the same letters as the original word. If the original has no letters, the reverse must have no letters also. This exemplifies **a general principle: Although we choose a base case argument for the sake of the recursive step, we must choose the corresponding return value for the sake of the argument itself, not just for the sake of the recursion.**  
+  
+            * Why `downup` can't use an empty word as its base case?  
+                  
+                We’ll try the base case reduction technique on `downup`:   
+                  
+                ```scheme  
+                (define (downup wd)   
+                   (if (= (count wd) 1)   
+                       (se wd)  
+                       (se wd (downup (bl wd)) wd)))   
+                ```  
+                  
+                If we want to use the empty word as the base case, instead of one-letter words, then we have to ensure that the recursive case can return a correct answer for a one-letter word. The behavior we want is   
+                  
+                ```scheme  
+                (downup ’a)  
+                ; (A)  
+                ```  
+                  
+                But if we substitute `’a` for `wd` in the recursive-case expression we get   
+                  
+                ```scheme  
+                (se 'a (downup " ") 'a)   
+                ```  
+                  
+                which will have two copies of the word `A` in its value no matter what value we give to `downup` of the empty word. We can’t avoid treating one-letter words as a base case.  
+  
+            * Why `factorial` can't use 0 as its base case?  
+                  
+                In writing `factorial`, we used 1 as the base case.   
+                  
+                ```scheme  
+                (define (factorial n)   
+                   (if (= n 1)   
+                       1  
+                       (* n (factorial (- n 1)))))  
+                ```  
+                   
+                Our principle of base case reduction suggests that we try for 0. To do this, we substitute 1 for n in the recursive case expression:   
+                  
+                ```scheme  
+                (* 1 (factorial 0))  
+                ```  
+                  
+                We'd like this to have the value 1; this will be true only if we define 0! = 1. Now we can say   
+                  
+                ```scheme  
+                (define (factorial n)   
+                   (if (= n 0)   
+                       1  
+                       (* n (factorial (- n 1)))))   
+                ```  
+                  
+                In this case, the new procedure is no simpler than the previous version. Its only advantage is that it handles a case, 0!, that mathematicians find useful.  
+  
+            * Why `letter-pairs` can't use an empty word as its base case?  
+                  
+                Here’s another example in which we can’t reduce the base case to an empty word. In Chapter 11 we used the combining method to write `letter-pairs`:   
+                  
+                ```scheme  
+                (define (letter-pairs wd)   
+                   (if (<= (count wd) 1)   
+                      '( )  
+                      (se (first-two wd)  
+                            (letter-pairs (bf wd)))))   
+                  
+                (define (first-two wd)  
+                   (word (first wd) (first (bf wd))))  
+                ```  
+                   
+                It might occur to you that one-letter words could be handled by the recursive case, and the base case could then handle only the empty word. But if you try to evaluate the expression for the recursive case as applied to a one-letter word, you find that   
+                  
+                ```scheme  
+                (first-two 'a)   
+                ```  
+                  
+                is equivalent to   
+                  
+                ```scheme  
+                (word (first 'a) (first (bf 'a)))  
+                ```  
+                  
+                which is an error. There is no second letter of a one-letter word. As soon as you see the expression `(first (bf wd))` within this program, you know that one-letter words must be part of the base case. The same kind of reasoning can be used in many problems; **the base case must handle anything that’s too small to fit the needs of the recursive case.**  
+  
+    * Pitfalls  
+        * A recursive case that doesn’t make progress  
+              
+            One possible pitfall is a recursive case that doesn’t make progress, that is, one that doesn’t reduce the size of the problem in the recursive call. For example, let’s say we’re trying to write the procedure down that works this way:   
+              
+            ```scheme  
+            (down 'town)   
+            ; (TOWN TOW TO T)   
+            ```  
+              
+            Here’s an incorrect attempt:   
+              
+            ```scheme  
+            (define (down wd)                       ;; wrong!   
+               (if (empty? wd)  
+                   '( )  
+                   (se wd (down (first wd)))))  
+            ```  
+              
+            The recursive call looks as if it reduces the size of the problem, but try it with an actual example. What’s `first` of the word `splat`? What’s `first` of that result? What’s `first` of _that_ result?  
+  
+        * Try to do the second step of the procedure “by hand” instead of trusting the recursion to do it.  
+              
+            A pitfall that sounds unlikely in the abstract but is actually surprisingly common is to try to do the second step of the procedure “by hand” instead of trusting the recursion to do it. For example, here’s another attempt at that down procedure:   
+              
+            ```scheme  
+            (define (down wd)           ;; incomplete   
+               (se wd . . .))  
+            ```  
+               
+            You know the first word in the result has to be the argument word. Then what? The next thing is the same word with its last letter missing:   
+              
+            ```scheme  
+            (define (down wd)           ;; wrong!   
+               (se wd (bl wd) ...))  
+            ```  
+               
+            _Instead of taking care of the entire rest of the problem with a recursive call, it’s tempting to take only one more step, figuring out how to include the second word of the required solution. But that approach won’t get you to a general recursive solution._ **Just take the first step and then trust the recursion for the rest**:   
+              
+            ```scheme  
+            (define (down wd)  
+               (if (empty? wd)  
+                   '( )  
+                   (se wd (down (bl wd)))))  
+  
+        * The value returned in the base case of your procedure must be in the range of the function you are representing.  
+              
+            **If your function is supposed to return a number, it must return a number all the time, even in the base case.** You can use this idea to help you check the correctness of the base case expression.   
+              
+            For example, in `downup`, the base case returns `(se wd)` for the base case argument of a one-letter word. How did we think to enclose the word in a sentence? We know that in the recursive cases `downup` always returns a sentence, so that suggests to us that it must return a sentence in the base case also.  
+  
+        * If your base case doesn’t make sense in its own right, it probably means that you’re trying to compensate for a mistake in the recursive case.  
+              
+            For example, suppose you’ve fallen into the pitfall of trying to handle the second word of a sentence by hand, and you’ve written the following procedure:   
+              
+            ```scheme  
+            (define (square-sent sent)               ;; wrong   
+               (if (empty? sent)   
+                   '( )  
+                   (se (square (first sent))  
+                         (square (first (bf sent)))   
+                         (square-sent (bf sent)))))   
+              
+            (square-sent '(2 3))  
+            ; ERROR: Invalid argument to FIRST: ( )   
+            ```  
+              
+            After some experimentation, you find that you can get this example to work by changing the base case:   
+              
+            ```scheme  
+            (define (square-sent sent)               ;; still wrong  
+               (if (= (count sent) 1)   
+                   '( )  
+                   (se (square (first sent))  
+                         (square (first (bf sent)))   
+                         (square-sent (bf sent)))))   
+              
+            (square-sent '(2 3))  
+            ; (4 9)  
+            ```  
+              
+            The trouble is that the base case doesn’t make sense on its own:   
+              
+            ```scheme  
+            (square-sent '(7))  
+            ; ( )  
+            ```  
+              
+            In fact, this procedure doesn’t work for any sentences of length other than two. **The moral is that it doesn’t work to correct an error in the recursive case by introducing an absurd base case.**  
+  
+    * Exercises 12.1-12.4  
+          
+        [github.com/mengsince1986/Simply-Scheme-notes-exercises/blob/master/SS Exercises/Exercises 12.1-12.4.scm][41]  
+  
 # …  
   
   
@@ -3019,3 +3514,4 @@ This isn’t a complete program because we haven’t written `too-low?` and `too
 [38]: wbf.png  
 [39]: https://github.com/mengsince1986/Simply-Scheme-notes-exercises/blob/master/SS%20Exercises/Exercises%2011.1-11.3.scm  
 [40]: https://github.com/mengsince1986/Simply-Scheme-notes-exercises/blob/master/SS%20Exercises/Exercises%2011.4-11.7.scm  
+[41]: https://github.com/mengsince1986/Simply-Scheme-notes-exercises/blob/master/SS%20Exercises/Exercises%2012.1-12.4.scm  

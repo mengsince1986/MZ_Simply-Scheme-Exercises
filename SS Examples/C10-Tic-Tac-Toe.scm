@@ -139,5 +139,3 @@
 ; ***************************** ttt
 (define (ttt position me)
   (ttt-choose (find-triples position) me))
-
-
