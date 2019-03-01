@@ -3471,6 +3471,10 @@ This isn’t a complete program because we haven’t written `too-low?` and `too
           
         [github.com/mengsince1986/Simply-Scheme-notes-exercises/blob/master/SS Exercises/Exercises 12.1-12.4.scm][41]  
   
+    * Exercises 12.5-12.13  
+          
+        [github.com/mengsince1986/Simply-Scheme-notes-exercises/blob/master/SS Exercises/Exercises 12.5-12.13.scm][42]  
+  
 # …  
   
   
@@ -3515,3 +3519,4 @@ This isn’t a complete program because we haven’t written `too-low?` and `too
 [39]: https://github.com/mengsince1986/Simply-Scheme-notes-exercises/blob/master/SS%20Exercises/Exercises%2011.1-11.3.scm  
 [40]: https://github.com/mengsince1986/Simply-Scheme-notes-exercises/blob/master/SS%20Exercises/Exercises%2011.4-11.7.scm  
 [41]: https://github.com/mengsince1986/Simply-Scheme-notes-exercises/blob/master/SS%20Exercises/Exercises%2012.1-12.4.scm  
+[42]: https://github.com/mengsince1986/Simply-Scheme-notes-exercises/blob/master/SS%20Exercises/Exercises%2012.5-12.13.scm  
