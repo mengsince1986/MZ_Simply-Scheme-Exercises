@@ -1,6 +1,5 @@
 ; C10 Tic-Tac-Toe
 
-
 ; ***************************** Find-triples: finds all the letters in all eight winning combinations.
 
 ; ************* Substitute-triple: finds all three letters corresponding to three squares.

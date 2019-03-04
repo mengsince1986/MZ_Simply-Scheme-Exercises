@@ -74,5 +74,3 @@
 
 ; 10.5 Modify ttt to play chess.
 
-
-
