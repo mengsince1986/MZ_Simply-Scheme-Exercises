@@ -341,4 +341,71 @@
 
 ; In some versions of poker, each player gets seven cards and can choose any five of the seven to make a hand. How would it change your program if the argument were a sentence of seven cards? (For example, in five-card poker there is only one possible category for a hand, but in seven-card you have to pick the best category that can be made from your cards.) Fix your program so that it works for both five-card and seven-card hands.
 
+; ********************************************************** Solution
+; Note: The following solution only return one of the best kind hands.
+; for example, the peocedure poker-7-value chooses a hand of straight over three of kind,
+; but it doesn't always return the best straight combination of straight when there are more than one straight hands in the seven cards.
+; to make the poker-7-value choose the best combination within on category of hands, more procedures are to be developed, like best-straight-flush?, best-four-of-kind etc.
+; **********************************************************
+
+; ********************************************************** poker-7-value: return the best hand value from the 7 cards
+; **************************** poker-7-value-helper
+(define (poker-7-value hands-7)
+  (let ((possible-hands (cal-possible-hands hands-7)))
+    (poker-value (poker-7-value-helper possible-hands))))
+
+(define (poker-7-value-helper possible-hands)
+  (if (= (count possible-hands) 1)
+      (to-hand-sent (first possible-hands))
+      (higher-hand (to-hand-sent (first possible-hands))
+                   (poker-7-value-helper (butfirst possible-hands)))))
+
+; **************************** higher-hand: return the higher-value hand from two hands
+(define (higher-hand hand-1 hand-2)
+  (if (> (hand-scores hand-1) (hand-scores hand-2))
+      hand-1
+      hand-2))
+
+; **************************** hand-scores: give scores to each knid of hand
+(define (hand-scores hand)
+  (cond ((if-royal-flush? hand) 10)
+        ((if-straight-flush? hand) 9)
+        ((if-four-of-kind? hand) 8)
+        ((if-full-house? hand) 7)
+        ((if-flush? hand) 6)
+        ((if-straight? hand) 5)
+        ((if-three-of-kind? hand) 4)
+        ((if-two-pair? hand) 3)
+        ((if-pair? hand) 2)
+        (else 1)))
+
+; **************************** to-hand-sent: transfer hand word (s8s9has10c3) to hand sentence (s8 s9 ha s10 c3)
+(define (to-hand-sent wd)
+  (cond ((empty? wd) '())
+        ((equal? (first (butfirst wd)) 1)
+         (sentence (word (first wd) (first (butfirst wd)) (first (butfirst (butfirst wd))))
+                   (to-hand-sent (butfirst (butfirst (butfirst wd))))))
+        ((sentence (word (first wd) (first (butfirst wd)))
+                   (to-hand-sent (butfirst (butfirst wd)))))))
+
+; ********************************************************** cal-possible-hands: return the possible hands of 7 cards
+(define (cal-possible-hands hands)
+  (possible-combinations 5 hands))
+
+; **************************** possible-combinations: return all the possible combinations (ele-num elements) in a sentence
+(define (possible-combinations ele-num sent)
+  (cond ((= ele-num 1) sent)
+        ((empty? sent) '())
+        (else (sentence (append-every-group (first sent)
+                                            (possible-combinations (- ele-num 1) (butfirst sent)))
+                        (possible-combinations ele-num (butfirst sent))))))
+
+; **************************** append-every-group: append a word to every group in a sentence
+(define (append-every-group wd sent)
+  (if (empty? sent)
+      '()
+      (sentence (word wd (first sent))
+                (append-every-group wd (butfirst sent)))))
+
+
 ; Another possible modification to the program is to allow for playing with “wild” cards. If you play with “threes wild,” it means that if there is a three in your hand you’re allowed to pretend it’s whatever card you like. For this modification, your program will require a second argument indicating which cards are wild. (When you play with wild cards, there’s the possibility of having five of a kind. This beats a straight flush.)
