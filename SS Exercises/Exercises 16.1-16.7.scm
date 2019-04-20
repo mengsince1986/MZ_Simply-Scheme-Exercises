@@ -49,7 +49,7 @@
 
 ; **********************************************************
 
-; 16.6 Show sentences of length 2, 3 and 5 that match the pattern
+; 16.6 Show sentences of length 2, 3 and 4 that match the pattern
 
 '(*x *y &y &x)
 
@@ -59,9 +59,21 @@
 
 ; the pattern match any sentence with two identical symbols (not including void) at the beginning and end and two identical symbols (not including void) in the middle.
 
-; no sentence of length 2/3/5 will match the pattern, because the pattern needs exactly two pairs of identical symbols and each symbol at least contain 1 word.
+; no sentence of length 2/3 will match the pattern, because the pattern needs exactly two pairs of identical symbols and each symbol at least contain 1 word.
+
+; length 4
+'(symbol-1 symbol-2 symbol-2 symbol-1)
 
 ; **********************************************************
+
+; 16.7 List all the sentences of length 6 or less, starting with a b a , that match the pattern
+
+; (*x *y *y *x)
+
+; solution:
+'(a b a a b a) ; x a b a! y ! ; x ! y a b a!
+'(a b a a a b) ; x a b ! y a!
+'(a b a b a a) ; x a ! y b a!
 
 
 
