@@ -427,7 +427,7 @@
 
 (define (match-using-known-values pattern sent known-values)
   (cond ((empty? pattern)
-         (if (empty? sent) known-values ’failed))
+         (if (empty? sent) known-values 'failed))
         ((special? (first pattern))
          (let ((placeholder (first pattern)))
            (match-special (first placeholder)
