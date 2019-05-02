@@ -38,8 +38,7 @@
 ; when the sent is empty, the modified match-using-known-values returns the same result '() as the original
 ; when the sent is not empty, the modified match-using-known-values returns the the known-values '() while the original returns 'failed
 
-; for example,
-; the function
+; for example, the function
 (match-using-known-values '() '(not-empty sentence) '())
 ; returns '() in the modified procedure
 ; while in the original it returns 'failed.
@@ -155,6 +154,54 @@
 (match '(?x is *y !x) '(! is an exclamation point !))
 
 ; Can you suggest a way to fix this problem?
+
+; Analysis:
+; The glitch happens when the procedure comes to
+(match-special '! 'x '() '(!) '(x ! ! y an exclamation point !))
+
+; when the procedure tries to operate
+(let ((old-value (lookup x '(x ! ! y an exclamation point !)))))
+; the old-value gets '() instead of '! (where the error happens).
+
+; The error is due to look-up's sub-procedure get-value.
+; When look-up compares (first known-values) ('x in this case) with the current name 'x, it returns
+(get-value (bf known-values))
+; which in this case is
+(get-value (bf '(x ! ! y an exclamation point !)))
+; get-value returns the first placeholder's value in its argument stuff with a recursive call and has
+(equal? (first stuff) '!)
+; as its base case, which stops accumulation the value sentence when it comes to '! -- the divider in the database-- and this is the root cause of the error. The base case works well in most cases except it encounters '! as a placeholder's value. In this situation, get-value will ignore '! and other values after it.
+
+; Solution:
+
+; To avoid '! as a placeholder's value from contaminating the procedure, the '! divider in the database structure can be changed into a series of complicated words made up with special symbols, for example,
+
+'!---!
+
+;;; Known values database abstract data type
+
+(define (lookup name known-values)
+  (cond ((empty? known-values) 'no-value)
+        ((equal? (first known-values) name)
+         (get-value (bf known-values)))
+        (else (lookup name (skip-value known-values)))))
+
+(define (get-value stuff)
+  (if (equal? (first stuff) '!---!)
+      '()
+      (se (first stuff) (get-value (bf stuff)))))
+
+(define (skip-value stuff)
+  (if (equal? (first stuff) '!---!)
+      (bf stuff)
+      (skip-value (bf stuff))))
+
+(define (add name value known-values)
+  (if (empty? name)
+      known-values
+     (se known-values name value '!---!)))
+
+; although it can't 100% prevent procedure match from being contaminated by the placeholder's matching value, since it can always cause similar errors by making didver part of the placeholder's value.
 
 
 ; **********************************************************
