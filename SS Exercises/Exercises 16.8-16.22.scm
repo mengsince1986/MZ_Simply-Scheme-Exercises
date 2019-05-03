@@ -156,6 +156,8 @@
 ; Can you suggest a way to fix this problem?
 
 ; Analysis:
+; The match example above will return 'failed instead of '(x ! ! y an exclamation point).
+
 ; The glitch happens when the procedure comes to
 (match-special '! 'x '() '(!) '(x ! ! y an exclamation point !))
 
@@ -174,11 +176,11 @@
 
 ; Solution:
 
-; To avoid '! as a placeholder's value from contaminating the procedure, the '! divider in the database structure can be changed into a series of complicated words made up with special symbols, for example,
+; To avoid '! as a placeholder's value from contaminating the procedure, the '! divider in the database structure can be changed into a series of complicated characters made up with special symbols, for example,
 
 '!---!
 
-;;; Known values database abstract data type
+;;; Updated known values database abstract data type
 
 (define (lookup name known-values)
   (cond ((empty? known-values) 'no-value)
@@ -210,6 +212,208 @@
 
 (match '(*3front *back) '(your mother should know))
 ; (FRONT YOUR MOTHER SHOULD ! BACK KNOW !)
+
+; Solution:
+
+; modified matcher with strict *+num+placeholder
+
+; ********************************************************************************************** accept patten and sentence
+
+(define (match pattern sent)
+  (match-using-known-values pattern sent '()))
+
+; ********************************************************************************************** general matching
+
+; <-----> match-using-known-values
+; <-----> accept pattern, sentence and known-values as arguments
+
+; <-----> list five general categorises for matching:
+; <-----> 1. pattern is empty
+; <-----> 2. first pattern is strict special *
+; <-----> 2. first pattern is special placeholder (* & ? !)
+; <-----> 3. sentence is empty
+; <-----> 4. one by one non-special word matching
+; <-----> 5. else
+
+; <-----> invoke:
+; <-----> strict? (if pattern is not empty)
+; <-----> match-strict (if first pattern is strict)
+; <-----> special? (if first pattern is not strict)
+; <-----> match-special (if first pattern is special)
+; <-----> match-using-known-values (if check non-special word)
+
+(define (match-using-known-values pattern sent known-values)
+  (cond ((empty? pattern)
+         (if (empty? sent) known-values 'failed))
+        ((strict? (first pattern))
+         (let ((placeholder (bf (first pattern))))
+           (match-strict (get-num placeholder)
+                         (but-num placeholder)
+                         (bf pattern)
+                         sent
+                         known-values)))
+        ((special? (first pattern))
+         (let ((placeholder (first pattern)))
+           (match-special (first placeholder)
+                          (bf placeholder)
+                          (bf pattern)
+                          sent
+                          known-values)))
+        ((empty? sent) 'failed)
+        ((equal? (first pattern) (first sent))
+         (match-using-known-values (bf pattern) (bf sent) known-values))
+        (else 'failed)))
+
+; <-----> strict?
+(define (strict? wd)
+  (and (> (count wd) 2)
+       (equal? '* (first wd))
+       (number? (first (bf wd)))))
+
+; <-----> get-num
+(define (get-num wd)
+  (cond ((empty? wd) "")
+        ((number? (first wd))
+         (word (first wd) (get-num (bf wd))))
+        (else (get-num (bf wd)))))
+
+; <-----> but-num
+(define (but-num wd)
+  (cond ((empty? wd) "")
+        ((not (number? (first wd)))
+         (word (first wd) (but-num (bf wd))))
+        (else (but-num (bf wd)))))
+
+; <-----> special?
+; <-----> accept wd as argument
+(define (special? wd)
+  (member? (first wd) '(* & ? !)))
+
+; ********************************************************************************************** strict pattern matching
+
+; <-----> match-strict
+
+(define (match-strict strict-howmany name pattern-rest sent known-values)
+ (let ((old-value (lookup name known-values)))
+   (if (not (equal? old-value 'no-value))
+       (if (= (count old-value) strict-howmany)
+           (already-known-match
+             old-value pattern-rest sent known-values)
+           'failed)
+       (ms-helper strict-howmany name pattern-rest '() sent known-values))))
+
+; <-----> ms-helper
+(define (ms-helper strict-howmany name pattern-rest sent-matched sent known-values)
+  (cond ((= strict-howmany 0) (match-using-known-values pattern-rest
+                                                        sent
+                                                        (add name sent-matched known-values)))
+        ((empty? sent) 'failed)
+        (else (ms-helper (- strict-howmany 1)
+                         name
+                         pattern-rest
+                         (se sent-matched (first sent))
+                         (bf sent)
+                         known-values))))
+
+; ********************************************************************************************** special pattern matching
+
+(define (match-special howmany name pattern-rest sent known-values)
+  (let ((old-value (lookup name known-values)))
+    (cond ((not (equal? old-value 'no-value))
+           (if (length-ok? old-value howmany)
+               (already-known-match
+                 old-value pattern-rest sent known-values)
+               'failed))
+          ((equal? howmany '?)
+           (longest-match name pattern-rest sent 0 #t known-values))
+          ((equal? howmany '!)
+           (longest-match name pattern-rest sent 1 #t known-values))
+          ((equal? howmany '*)
+           (longest-match name pattern-rest sent 0 #f known-values))
+          ((equal? howmany '&)
+           (longest-match name pattern-rest sent 1 #f known-values)))))
+
+
+; <-----> length-ok?
+
+(define (length-ok? value howmany)
+  (cond ((empty? value) (member? howmany '(? *)))
+        ((not (empty? (bf value))) (member? howmany '(* &)))
+        (else #t)))
+
+; <-----> already-known-match
+
+(define (already-known-match value pattern-rest sent known-values)
+  (let ((unmatched (chop-leading-substring value sent)))
+    (if (not (equal? unmatched 'failed))
+        (match-using-known-values pattern-rest unmatched known-values)
+        'failed)))
+
+; <-----> chop-leading-substring
+
+(define (chop-leading-substring value sent)
+  (cond ((empty? value) sent)
+        ((empty? sent) 'failed)
+        ((equal? (first value) (first sent))
+         (chop-leading-substring (bf value) (bf sent)))
+        (else 'failed)))
+
+; <-----> longest-match
+
+(define (longest-match name pattern-rest sent min max-one? known-values)
+  (cond ((empty? sent)
+         (if (= min 0)
+             (match-using-known-values pattern-rest
+                                       sent
+                                       (add name '() known-values))
+             'failed))
+        (max-one?
+          (lm-helper name pattern-rest (se (first sent))
+                     (bf sent) min known-values))
+        (else (lm-helper name pattern-rest
+                         sent '() min known-values))))
+
+; <-----> lm-helper
+
+(define (lm-helper name pattern-rest
+                   sent-matched sent-unmatched min known-values)
+  (if (< (length sent-matched) min)
+      'failed
+      (let ((tentative-result (match-using-known-values
+                                pattern-rest
+                                sent-unmatched
+                                (add name sent-matched known-values))))
+        (cond ((not (equal? tentative-result 'failed)) tentative-result)
+              ((empty? sent-matched) 'failed)
+              (else (lm-helper name
+                               pattern-rest
+                               (bl sent-matched)
+                               (se (last sent-matched) sent-unmatched)
+                               min
+                               known-values))))))
+
+;;; Known values database abstract data type
+
+(define (lookup name known-values)
+  (cond ((empty? known-values) 'no-value)
+        ((equal? (first known-values) name)
+         (get-value (bf known-values)))
+        (else (lookup name (skip-value known-values)))))
+
+(define (get-value stuff)
+  (if (equal? (first stuff) '!---!)
+      '()
+      (se (first stuff) (get-value (bf stuff)))))
+
+(define (skip-value stuff)
+  (if (equal? (first stuff) '!---!)
+      (bf stuff)
+      (skip-value (bf stuff))))
+
+(define (add name value known-values)
+  (if (empty? name)
+      known-values
+     (se known-values name value '!---!)))
 
 
 ; **********************************************************
