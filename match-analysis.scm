@@ -1,5 +1,3 @@
-; modified matcher with strict *+num+placeholder
-
 ; ********************************************************************************************** accept patten and sentence
 
 ; <-----> match
@@ -22,29 +20,26 @@
 ; <-----> 4. one by one non-special word matching
 ; <-----> 5. else
 
+; <-----> create (if special? is invoked):
+; <-----> (first pattern) as wd
+
+; <-----> let placeholder get (first pattern)
+
+; <-----> create (if match-special is invoked):
+; <-----> (first placeholder) as howmany
+; <-----> (bf placeholder) as name
+; <-----> (bf pattern) as pattern-rest
+; <-----> sent as sent
+; <-----> known-values as knwon-values
+
 ; <-----> invoke:
-; <-----> strict? (if pattern is not empty)
-; <-----> match-strict (if first pattern is strict)
-; <-----> special? (if first pattern is not strict)
+; <-----> special? (if pattern is not empty)
 ; <-----> match-special (if first pattern is special)
 ; <-----> match-using-known-values (if check non-special word)
 
 (define (match-using-known-values pattern sent known-values)
   (cond ((empty? pattern)
          (if (empty? sent) known-values 'failed))
-        ((plus-num? (first pattern))
-         (let ((placeholder (first pattern)))
-           (match-plus-num (bf placeholder)
-                           (bf pattern)
-                           sent
-                           known-values)))
-        ((strict? (first pattern))
-         (let ((placeholder (bf (first pattern))))
-           (match-strict (get-num placeholder)
-                         (but-num placeholder)
-                         (bf pattern)
-                         sent
-                         known-values)))
         ((special? (first pattern))
          (let ((placeholder (first pattern)))
            (match-special (first placeholder)
@@ -57,85 +52,10 @@
          (match-using-known-values (bf pattern) (bf sent) known-values))
         (else 'failed)))
 
-; <----->plus-num?
-(define (plus-num? wd)
-  (equal? '+ (first wd)))
-
-; <-----> strict?
-(define (strict? wd)
-  (and (> (count wd) 2)
-       (equal? '* (first wd))
-       (number? (first (bf wd)))))
-
-; <-----> get-num
-(define (get-num wd)
-  (cond ((empty? wd) "")
-        ((number? (first wd))
-         (word (first wd) (get-num (bf wd))))
-        (else (get-num (bf wd)))))
-
-; <-----> but-num
-(define (but-num wd)
-  (cond ((empty? wd) "")
-        ((not (number? (first wd)))
-         (word (first wd) (but-num (bf wd))))
-        (else (but-num (bf wd)))))
-
 ; <-----> special?
 ; <-----> accept wd as argument
 (define (special? wd)
   (member? (first wd) '(* & ? !)))
-
-; ********************************************************************************************** plus number pattern
-
-; <-----> match-plus-num
-
-(define (match-plus-num name pattern-rest sent known-values)
-  (let ((old-value (lookup name known-values)))
-    (if (not (equal? old-value 'no-value))
-        (if (and (number? (first old-value))
-                 (= (count old-value) 1))
-            (already-known-match
-              old-value pattern-rest sent known-values)
-            'failed)
-        (if (not (empty? sent))
-            (mpn-helper name pattern-rest (first sent) (bf sent) known-values)
-            'failed))))
-
-; <-----> mpn-helper
-
-(define (mpn-helper name pattern-rest sent-matched sent known-values)
-  (if (number? (first sent-matched))
-      (match-using-known-values pattern-rest
-                                sent
-                                (add name sent-matched known-values))
-      'failed))
-
-; ********************************************************************************************** strict pattern matching
-
-; <-----> match-strict
-
-(define (match-strict strict-howmany name pattern-rest sent known-values)
- (let ((old-value (lookup name known-values)))
-   (if (not (equal? old-value 'no-value))
-       (if (= (count old-value) strict-howmany)
-           (already-known-match
-             old-value pattern-rest sent known-values)
-           'failed)
-       (ms-helper strict-howmany name pattern-rest '() sent known-values))))
-
-; <-----> ms-helper
-(define (ms-helper strict-howmany name pattern-rest sent-matched sent known-values)
-  (cond ((= strict-howmany 0) (match-using-known-values pattern-rest
-                                                        sent
-                                                        (add name sent-matched known-values)))
-        ((empty? sent) 'failed)
-        (else (ms-helper (- strict-howmany 1)
-                         name
-                         pattern-rest
-                         (se sent-matched (first sent))
-                         (bf sent)
-                         known-values))))
 
 ; ********************************************************************************************** special pattern matching
 
@@ -275,16 +195,16 @@
         (else (lookup name (skip-value known-values)))))
 
 (define (get-value stuff)
-  (if (equal? (first stuff) '!---!)
+  (if (equal? (first stuff) '!)
       '()
       (se (first stuff) (get-value (bf stuff)))))
 
 (define (skip-value stuff)
-  (if (equal? (first stuff) '!---!)
+  (if (equal? (first stuff) '!)
       (bf stuff)
       (skip-value (bf stuff))))
 
 (define (add name value known-values)
   (if (empty? name)
       known-values
-     (se known-values name value '!---!)))
+     (se known-values name value '!)))
