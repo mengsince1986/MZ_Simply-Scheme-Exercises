@@ -1,3 +1,7 @@
+---
+title: "Part V Abstraction"
+---
+
 # Part V Abstraction
 
 **What are the two kinds of abstraction specified in this part?**
@@ -270,11 +274,11 @@ their structure is preserved in the result.
 ### Other Primitives for Lists
 
 * `list?` --  returns `#t` if its argument is a list, `#f` otherwise.
-* `equal?` 
+* `equal?`
 * `member` -- like `member?` except for two differences: Its second argument must be a list (but can be a structured list); and instead of returning #t it returns the portion of the argument list starting with the element equal to the first argument.
 
 ```scheme
-(member ’d '(a b c d e f g))
+(member 'd '(a b c d e f g))
 ; (D E F G)
 
 (member 'h '(a b c d e f g))
@@ -287,8 +291,89 @@ This is the main example in Scheme of the *semipredicate* idea that we mentioned
 
 ```scheme
 (list-ref ’(happiness is a warm gun) 3)
-; WARM 
+; WARM
 ```
 
 * `length` -- the same with `count` except that it doesn't work on words.
 
+---
+
+### Association Lists
+
+**What is an association list?**
+
+A list of names and corresponding values is called an *association list*, or an *a-list*.
+
+**How to look up a name in an a-list?**
+
+The Scheme primitive `assoc`
+
+```scheme
+(assoc 'george
+       '((john lennon) (paul mccartney)
+         (george harrison) (ringo starr)))
+; (GEORGE HARRISON)
+
+(assoc 'x '((i 1) (v 5) (x 10) (l 50) (c 100) (d 500) (m 1000)))
+; (X 10)
+
+(assoc 'ringo '((mick jagger) (keith richards) (brian jones)
+                (charlie watts) (bill wyman)))
+; #F
+```
+
+```scheme
+(define dictionary
+'((window fenetre) (book livre) (computer ordinateur)
+  (house maison) (closed ferme) (pate pate) (liver foie)
+  (faith foi) (weekend (fin de semaine))
+  ((practical joke) attrape) (pal copain)))
+
+(define (translate wd)
+  (let ((record (assoc wd dictionary)))
+    (if record
+        (cadr record)
+        '(parlez -vous anglais?))))
+```
+
+`assoc` returns `#f` if it can’t find the entry you’re looking for in your association list.
+
+---
+
+### Functions That Take Variable Numbers of Arguments
+
+**How to use dot `.` to represent any number of arguments?**
+
+```scheme
+(define (increasing? number . rest -of-numbers)
+  (cond ((null? rest -of-numbers) #t)
+        ((> (car rest -of-numbers) number)
+         (apply increasing? rest -of-numbers))
+        (else #f)))
+
+(increasing? 4 12 82)
+; #T
+
+(increasing? 12 4 82 107)
+; #F
+```
+
+In listing the formal parameters of a procedure, you can *use a dot just before the last parameter to mean that that parameter ( rest-of-numbers in this case) represents any number of arguments, including zero. The value that will be associated with this parameter when the procedure is invoked will be a list whose elements are the actual argument values.*
+
+*The number of formal parameters before the dot determines the minimum number of arguments that must be used when your procedure is invoked. There can be only one formal parameter after the dot.*
+
+**How does procedure `apply` work?**
+
+`apply` takes two arguments, a procedure and a list. Apply invokes the given procedure with the elements of the given list as its arguments, and returns whatever value the procedure returns. Therefore, the following two expressions are equivalent:
+
+```scheme
+(+ 3 4 5) (apply + '(3 4 5))
+```
+
+**What is a rest parameter?**
+
+A parameter that follows a dot and therefore represents a variable number of arguments is called a *rest parameter*.
+
+---
+
+### Recursion on Arbitrary Structured Lists
