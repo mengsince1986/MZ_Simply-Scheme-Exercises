@@ -2,8 +2,6 @@
 title: "Part V Abstraction"
 ---
 
-# Part V Abstraction
-
 **What are the two kinds of abstraction specified in this part?**
 
 - data abstraction
@@ -38,7 +36,7 @@ We used list structure to hold known-values databases, such as
 ((FRONT (YOUR MOTHER)) (BACK (SHOULD KNOW)))
 ```
 
-\*Lists are at the core of what Lisp has been about from its beginning. (In fact the name “Lisp” stands for “LISt Processing.”)\*\*
+_Lists are at the core of what Lisp has been about from its beginning. (In fact the name "Lisp" stands for "LISt Processing.")_
 
 ---
 
@@ -64,7 +62,7 @@ We used list structure to hold known-values databases, such as
 
 <img src="images/list.png" width="400">
 
-- `cons` -- takes tow arguments, an element and a list and returns a new list whose `car` is the first argument and whose `cdr` is the second.
+- `cons` -- takes two arguments, an element and a list and returns a new list whose `car` is the first argument and whose `cdr` is the second.
 
 ```scheme
 (cons 'for '(no one))
@@ -285,7 +283,7 @@ their structure is preserved in the result.
 ; #F
 ```
 
-This is the main example in Scheme of the *semipredicate* idea that we mentioned earlier in passing. It doesn’t have a question mark in its name because it returns values other than #t and #f , but it works as a predicate because any non- #f value is considered true.
+This is the main example in Scheme of the *semipredicate* idea that we mentioned earlier in passing. It doesn’t have a question mark in its name because it returns values other than #t and #f , but it works as a predicate because any non-#f value is considered true.
 
 * `list-ref` -- like `item` execpt it counts items from zero instead of from one and takes its arguments in the other order:
 
@@ -333,7 +331,7 @@ The Scheme primitive `assoc`
   (let ((record (assoc wd dictionary)))
     (if record
         (cadr record)
-        '(parlez -vous anglais?))))
+        '(parlez-vous anglais?))))
 ```
 
 `assoc` returns `#f` if it can’t find the entry you’re looking for in your association list.
@@ -345,10 +343,10 @@ The Scheme primitive `assoc`
 **How to use dot `.` to represent any number of arguments?**
 
 ```scheme
-(define (increasing? number . rest -of-numbers)
-  (cond ((null? rest -of-numbers) #t)
-        ((> (car rest -of-numbers) number)
-         (apply increasing? rest -of-numbers))
+(define (increasing? number . rest-of-numbers)
+  (cond ((null? rest-of-numbers) #t)
+        ((> (car rest-of-numbers) number)
+         (apply increasing? rest-of-numbers))
         (else #f)))
 
 (increasing? 4 12 82)
@@ -367,7 +365,9 @@ In listing the formal parameters of a procedure, you can *use a dot just before 
 `apply` takes two arguments, a procedure and a list. Apply invokes the given procedure with the elements of the given list as its arguments, and returns whatever value the procedure returns. Therefore, the following two expressions are equivalent:
 
 ```scheme
-(+ 3 4 5) (apply + '(3 4 5))
+(+ 3 4 5)
+
+(apply + '(3 4 5))
 ```
 
 **What is a rest parameter?**
@@ -377,3 +377,94 @@ A parameter that follows a dot and therefore represents a variable number of arg
 ---
 
 ### Recursion on Arbitrary Structured Lists
+
+**If the entire book is stored in a list structure. How to define a function to lookup how many times a word apears in the book?**
+
+```scheme
+(define (deep-appearances wd structure)     ; higher-order version
+  (if (word? structure)
+  (if (equal? structure wd) 1 0)
+  (reduce +
+          (map (lambda (sublist) (deep-appearances wd sublist))
+               structure))))
+```
+
+**How to define `deep-appearances` without higher-order procedures?**
+
+We deal with the base case—words—just as before. But for lists we do what we often do in trying to simplify a list problem: We divide the list into its first element (its `car`) and all the rest of its elements (its `cdr`).
+
+```scheme
+(define (deep-appearances wd structure)    ; compact-version
+  (cond ((equal? wd structure) 1)          ; base case: desired word
+        ((word? structure) 0)              ; base case: other word
+        ((null? structure) 0)              ; base case: empty list
+        (else (+ (deep-appearances wd (car structure))
+                 (deep-appearances wd (cdr structure))))))
+```
+
+**In `deep-appearances` the desired result is a single number. What if we want to build a new list-of-lists structure? Having used `car` and `cdr` to disassemble a structure, we can use `cons` to build a new one.**
+
+For example, we’ll translate our entire book into Pig Latin:
+
+```scheme
+(define (deep-pigl structure)
+  (cond ((word? structure) (pigl structure))
+        ((null? structure) '())
+        (else (cons (deep-pigl (car structure))
+                    (deep-pigl (cdr structure))))))
+```
+
+Compare `deep-pigl` with an every-pattern list recursion such as `praise` on page 285. Both look like
+
+`(cons ( something (car argument)) ( something (cdr argument)))`
+
+And yet these procedures are profoundly different. `praise` is a simple left-to-right walk through the elements of a sequence; `deep-pigl` dives in and out of sublists.  The difference is a result of the fact that `praise` does one recursive call, for the `cdr` , while `deep-pigl` does two, for the `car` as well as the `cdr`. The pattern exhibited by `deep-pigl` is called `car-cdr` recursion. (Another name for it is “tree recursion,” for a reason we’ll see in the next chapter.)
+
+---
+
+### Pitfalls
+
+* Just as we mentioned about the names `word` and `sentence` , resist the temptation to use `list` as a formal parameter. We use `lst` instead, but other alternatives are capital `L` or `seq` (for “sequence”).
+
+* The list constructor `cons` does not treat its two arguments equivalently. The second one must be the list you’re trying to extend. There is no equally easy way to extend a list on the right (although you can put the new element into a one-element list and use `append` ). If you get the arguments backward, you’re likely to get funny-looking results that aren’t lists, such as
+
+```scheme
+((3 . 2) . 1)
+```
+
+The result you get when you `cons` onto something that isn’t a list is called a _pair_. It’s sometimes called a “dotted pair” because of what it looks like when printed:
+
+```scheme
+(cons 'a 'b)
+; (A . B)
+```
+
+It’s just the printed representation that’s dotted, however; the dot isn’t part of the pair any more than the parentheses around a list are elements of the list. Lists are made of pairs; that’s why `cons` can construct lists. But we’re not going to talk about any pairs that aren’t part of lists, so you don’t have to think about them at all, except to know that if dots appear in your results you’re consing backward.
+
+* Don’t get confused between lists and sentences. Sentences have no internal structure; the good aspect of this is that it’s hard to make mistakes about building the structure, but the bad aspect is that you might need such a structure. You can have lists whose elements are sentences, but it’s confusing if you think of the same structure sometimes as a list and sometimes as a sentence.
+
+* In reading someone else’s program, it’s easy not to notice that a procedure is making two recursive calls instead of just one. If you notice only the recursive call for the `cdr`, you might think you’re looking at a sequential recursion.
+
+* If you’re writing a procedure whose argument is a list-of-lists, it may feel funny to let it also accept a word as the argument value. People therefore sometimes insist on a list as the argument, leading to an overly complicated base case. If your base case test says
+
+```scheme
+(word? (car structure))
+```
+
+then think about whether you’d have a better-organized program if the base case were
+
+```scheme
+(word? structure)
+```
+
+* Remember that in a deep-structure recursion you may need two base cases, one for reaching an elementRemember that in a deep-structure recursion you may need two base cases, one for
+reaching an element that isn’t a sublist, and the other for an empty list, with no elements
+at all. (Our deep-appearances procedure is an example.) Don’t forget the empty-list
+case. that isn’t a sublist, and the other for an empty list, with no elements at all. (Our deep-appearances procedure is an example.) Don’t forget the empty-list case.
+
+---
+
+**Exercises 17.1-17.3**
+
+
+**Exercises 17.4-17.16**
