@@ -92,6 +92,11 @@
 
 ; 17.8 Write member.
 
+; solution:
+(define (member elm lst)
+  (cond ((null? lst) #f)
+        ((equal? elm (car lst)) lst)
+        (else (member elm (cdr lst)))))
 
 ; **********************************************************
 
