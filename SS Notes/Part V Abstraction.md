@@ -283,7 +283,7 @@ their structure is preserved in the result.
 ; #F
 ```
 
-This is the main example in Scheme of the *semipredicate* idea that we mentioned earlier in passing. It doesn’t have a question mark in its name because it returns values other than #t and #f , but it works as a predicate because any non-#f value is considered true.
+This is the main example in Scheme of the *semipredicate* idea that we mentioned earlier in passing. It doesn’t have a question mark in its name because it returns values other than #t and #f , but it works as a predicate because any non-`#f` value is considered true.
 
 * `list-ref` -- like `item` execpt it counts items from zero instead of from one and takes its arguments in the other order:
 
@@ -457,10 +457,7 @@ then think about whether you’d have a better-organized program if the base cas
 (word? structure)
 ```
 
-* Remember that in a deep-structure recursion you may need two base cases, one for reaching an elementRemember that in a deep-structure recursion you may need two base cases, one for
-reaching an element that isn’t a sublist, and the other for an empty list, with no elements
-at all. (Our deep-appearances procedure is an example.) Don’t forget the empty-list
-case. that isn’t a sublist, and the other for an empty list, with no elements at all. (Our deep-appearances procedure is an example.) Don’t forget the empty-list case.
+* Remember that in a deep-structure recursion you may need two base cases, one for reaching an element that isn’t a sublist, and the other for an empty list, with no elements at all. (Our `deep-appearances` procedure is an example.) Don’t forget the empty-list case.
 
 ---
 

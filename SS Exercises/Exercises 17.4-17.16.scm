@@ -58,7 +58,7 @@
   (if (null? lst-1)
       lst-2
       (append-2-helper (cdr lst-1)
-                (cons (car lst-1) lst-2))))
+                       (cons (car lst-1) lst-2))))
 
 ; solution for multi-argument append:
 
@@ -102,7 +102,149 @@
 
 ; 17.9 Write list-ref.
 
+; solution:
+(define (list-ref lst index)
+  (cond ((< index 0) '(error - index is less than the minimum range))
+        ((> index (- (length lst) 1)) '(error - index is more than the maximum range))
+        ((= index 0) (car lst))
+        (else (list-ref (cdr lst) (- index 1)))))
 
 ; **********************************************************
 
 ; 17.10 Write length.
+
+; solution:
+(define (length lst)
+  (if (null? lst)
+      0
+      (+ 1 (length (cdr lst)))))
+
+; **********************************************************
+
+; 17.11 Write before-in-list?, which takes a list and two elements of the list. It should return #t if the second argument appears in the list argument before the third argument:
+
+(before-in-list? '(back in the ussr) 'in 'ussr)
+; #T
+
+(before-in-list? '(back in the ussr) 'the 'back)
+; #F
+
+; The procedure should also return #f if either of the supposed elements doesn’t appear at all.
+
+; solution:
+(define (before-in-list? lst elm-1 elm-2)
+  (let ((elm-1-chop (member elm-1 lst))
+        (elm-2-chop (member elm-2 lst)))
+    (cond ((or (not elm-1-chop) (not elm-2-chop)) #f)
+          ((> (length elm-1-chop) (length elm-2-chop)) #t)
+          (else #f))))
+
+; **********************************************************
+
+; 17.12 Write a procedure called flatten that takes as its argument a list, possibly including sublists, but whose ultimate building blocks are words (not Booleans or procedures). It should return a sentence containing all the words of the list, in the order in which they appear in the original:
+
+(flatten '(((a b) c (d e)) (f g) ((((h))) (i j) k)))
+; (A B C D E F G H I J K)
+
+;solution:
+(define (flatten lst)
+  (cond ((word? lst) (list lst))
+        ((null? lst) '())
+        (else (append (flatten (car lst))
+                      (flatten (cdr lst))))))
+
+; **********************************************************
+
+; 17.13 Here is a procedure that counts the number of words anywhere within a structured list:
+
+(define (deep-count lst)
+  (cond ((null? lst) 0)
+        ((word? (car lst)) (+ 1 (deep-count (cdr lst))))
+        (else (+ (deep-count (car lst))
+                 (deep-count (cdr lst))))))
+
+; Although this procedure works, it’s more complicated than necessary. Simplify it.
+
+; solution:
+(define (deep-count-s lst)
+  (cond ((null? lst) 0)
+        ((word? lst) 1)
+        (else (+ (deep-count-s (car lst))
+                 (deep-count-s (cdr lst))))))
+
+; **********************************************************
+
+; 17.14 Write a procedure branch that takes as arguments a list of numbers and a nested list structure. It should be the list-of-lists equivalent of item , like this:
+
+(branch '(3) '((a b) (c d) (e f) (g h)))
+; (E F)
+
+(branch '(3 2) '((a b) (c d) (e f) (g h)))
+; F
+
+(branch '(2 3 1 2) '((a b) ((c d) (e f) ((g h) (i j)) k) (l m)))
+; H
+
+; In the last example above, the second element of the list is ((C D) (E F) ((G H) (I J)) K) The third element of that smaller list is ((G H) (I J)) ; the first element of that is (G H); and the second element of that is just H.
+
+; solution:
+(define (branch index-lst deep-lst)
+  (branch-helper (reverse (num-lst-minus1 index-lst)) deep-lst))
+
+(define (branch-helper index-lst deep-lst)
+  (if (null? index-lst)
+      deep-lst
+      (list-ref (branch-helper (cdr index-lst) deep-lst) (car index-lst))))
+
+(define (num-lst-minus1 num-lst)
+  (if (null? num-lst)
+      '()
+      (cons (- (car num-lst) 1)
+            (num-lst-minus1 (cdr num-lst)))))
+
+; **********************************************************
+
+; 17.15 Modify the pattern matcher to represent the known-values database as a list of two-element lists, as we suggested at the beginning of this chapter.
+
+; original:
+(FRONT YOUR MOTHER ! BACK SHOULD KNOW !)
+
+; list-version:
+((FRONT (YOUR MOTHER)) (BACK (SHOULD KNOW)))
+
+; solution:
+
+;;; Known values database abstract data type
+
+(define (lookup name known-values)
+  (cond ((empty? known-values) 'no-value)
+        ((equal? (first known-values) name)
+         (get-value (bf known-values)))
+        (else (lookup name (skip-value known-values)))))
+
+(define (get-value stuff)
+  (if (equal? (first stuff) '!)
+      '()
+      (se (first stuff) (get-value (bf stuff)))))
+
+(define (skip-value stuff)
+  (if (equal? (first stuff) '!)
+      (bf stuff)
+      (skip-value (bf stuff))))
+
+(define (add name value known-values)
+  (if (empty? name)
+      known-values
+      (append known-values (list (list name value)))))
+
+; **********************************************************
+
+; 17.16 Write a predicate valid-infix? that takes a list as argument and returns #t if and only if the list is a legitimate infix arithmetic expression (alternating operands and operators, with parentheses—that is, sublists—allowed for grouping).
+
+(valid-infix? '(4 + 3 * (5 - 2)))
+; #T
+
+(valid-infix? '(4 + 3 * (5 2)))
+; #F
+
+

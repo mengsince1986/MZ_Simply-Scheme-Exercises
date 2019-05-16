@@ -290,7 +290,7 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <a class="sourceLine" id="cb15-3" title="3"></a>
 <a class="sourceLine" id="cb15-4" title="4">(<span class="kw">member</span> &#39;h &#39;(a b c d e f g))</a>
 <a class="sourceLine" id="cb15-5" title="5"><span class="co">; #F</span></a></code></pre></div>
-<p>This is the main example in Scheme of the <em>semipredicate</em> idea that we mentioned earlier in passing. It doesn’t have a question mark in its name because it returns values other than #t and #f , but it works as a predicate because any non-#f value is considered true.</p>
+<p>This is the main example in Scheme of the <em>semipredicate</em> idea that we mentioned earlier in passing. It doesn’t have a question mark in its name because it returns values other than #t and #f , but it works as a predicate because any non-<code>#f</code> value is considered true.</p>
 <ul>
 <li><code>list-ref</code> – like <code>item</code> execpt it counts items from zero instead of from one and takes its arguments in the other order:</li>
 </ul>
@@ -398,7 +398,7 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <p>then think about whether you’d have a better-organized program if the base case were</p>
 <div class="sourceCode" id="cb27"><pre class="sourceCode scheme"><code class="sourceCode scheme"><a class="sourceLine" id="cb27-1" title="1">(word? structure)</a></code></pre></div>
 <ul>
-<li>Remember that in a deep-structure recursion you may need two base cases, one for reaching an elementRemember that in a deep-structure recursion you may need two base cases, one for reaching an element that isn’t a sublist, and the other for an empty list, with no elements at all. (Our deep-appearances procedure is an example.) Don’t forget the empty-list case. that isn’t a sublist, and the other for an empty list, with no elements at all. (Our deep-appearances procedure is an example.) Don’t forget the empty-list case.</li>
+<li>Remember that in a deep-structure recursion you may need two base cases, one for reaching an element that isn’t a sublist, and the other for an empty list, with no elements at all. (Our <code>deep-appearances</code> procedure is an example.) Don’t forget the empty-list case.</li>
 </ul>
 <hr />
 <p><strong>Exercises 17.1-17.3</strong></p>
