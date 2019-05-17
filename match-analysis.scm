@@ -1,4 +1,4 @@
-; ********************************************************************************************** accept patten and sentence
+; ******************************************************** accept patten and sentence
 
 ; <-----> match
 ; <-----> accept pattern and sentence arguments
@@ -8,7 +8,7 @@
 (define (match pattern sent)
   (match-using-known-values pattern sent '()))
 
-; ********************************************************************************************** general matching
+; ******************************************************** general matching
 
 ; <-----> match-using-known-values
 ; <-----> accept pattern, sentence and known-values as arguments
@@ -57,7 +57,7 @@
 (define (special? wd)
   (member? (first wd) '(* & ? !)))
 
-; ********************************************************************************************** special pattern matching
+; ********************************************************************************* special pattern matching
 
 ; <-----> match-special
 ; <-----> accept howmany, name, pattern-rest, sent, and known-values as arguments
