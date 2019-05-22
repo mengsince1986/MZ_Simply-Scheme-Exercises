@@ -462,6 +462,7 @@ then think about whether you’d have a better-organized program if the base cas
 ---
 
 **Exercises 17.1-17.3**
-
+[solutions](https://github.com/mengsince1986/Simply-Scheme-exercises/blob/master/SS%20Exercises/Exercises%2017.1-17.3.scm)
 
 **Exercises 17.4-17.16**
+[solutions](https://github.com/mengsince1986/Simply-Scheme-exercises/blob/master/SS%20Exercises/Exercises%2017.4-17.16.scm)
