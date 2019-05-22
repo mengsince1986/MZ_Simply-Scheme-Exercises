@@ -270,21 +270,18 @@
 
 (define (lookup name known-values)
   (cond ((empty? known-values) 'no-value)
-        ((equal? (first known-values) name)
+        ((equal? (car (car known-values)) name)
          (get-value (bf known-values)))
         (else (lookup name (skip-value known-values)))))
 
 (define (get-value stuff)
-  (if (equal? (first stuff) '!---!)
-      '()
-      (se (first stuff) (get-value (bf stuff)))))
+  (cdar stuff))
 
 (define (skip-value stuff)
-  (if (equal? (first stuff) '!---!)
-      (bf stuff)
-      (skip-value (bf stuff))))
+  (cdr stuff))
 
 (define (add name value known-values)
   (if (empty? name)
       known-values
-     (se known-values name value '!---!)))
+      (append known-values (list (list name value)))))
+

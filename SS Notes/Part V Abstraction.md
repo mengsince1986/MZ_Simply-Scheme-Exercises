@@ -383,10 +383,10 @@ A parameter that follows a dot and therefore represents a variable number of arg
 ```scheme
 (define (deep-appearances wd structure)     ; higher-order version
   (if (word? structure)
-  (if (equal? structure wd) 1 0)
-  (reduce +
-          (map (lambda (sublist) (deep-appearances wd sublist))
-               structure))))
+      (if (equal? structure wd) 1 0)
+      (reduce +
+              (map (lambda (sublist) (deep-appearances wd sublist))
+                    structure))))
 ```
 
 **How to define `deep-appearances` without higher-order procedures?**

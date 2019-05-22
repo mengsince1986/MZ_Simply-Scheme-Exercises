@@ -74,7 +74,7 @@ code span.va { color: #19177c; } /* Variable */
 code span.vs { color: #4070a0; } /* VerbatimString */
 code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
   </style>
-  <link rel="stylesheet" href="github-pandoc.css" />
+  <link rel="stylesheet" href="Documents/Repositories/Simply-Scheme-exercises/SS Notes/github-pandoc.css" />
 </head>
 <body>
 <header>
@@ -356,10 +356,10 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <p><strong>If the entire book is stored in a list structure. How to define a function to lookup how many times a word apears in the book?</strong></p>
 <div class="sourceCode" id="cb21"><pre class="sourceCode scheme"><code class="sourceCode scheme"><a class="sourceLine" id="cb21-1" title="1">(<span class="ex">define</span><span class="fu"> </span>(deep-appearances wd structure)     <span class="co">; higher-order version</span></a>
 <a class="sourceLine" id="cb21-2" title="2">  (<span class="kw">if</span> (word? structure)</a>
-<a class="sourceLine" id="cb21-3" title="3">  (<span class="kw">if</span> (<span class="kw">equal?</span> structure wd) <span class="dv">1</span> <span class="dv">0</span>)</a>
-<a class="sourceLine" id="cb21-4" title="4">  (reduce <span class="op">+</span></a>
-<a class="sourceLine" id="cb21-5" title="5">          (map (<span class="kw">lambda</span> (sublist) (deep-appearances wd sublist))</a>
-<a class="sourceLine" id="cb21-6" title="6">               structure))))</a></code></pre></div>
+<a class="sourceLine" id="cb21-3" title="3">      (<span class="kw">if</span> (<span class="kw">equal?</span> structure wd) <span class="dv">1</span> <span class="dv">0</span>)</a>
+<a class="sourceLine" id="cb21-4" title="4">      (reduce <span class="op">+</span></a>
+<a class="sourceLine" id="cb21-5" title="5">              (map (<span class="kw">lambda</span> (sublist) (deep-appearances wd sublist))</a>
+<a class="sourceLine" id="cb21-6" title="6">                    structure))))</a></code></pre></div>
 <p><strong>How to define <code>deep-appearances</code> without higher-order procedures?</strong></p>
 <p>We deal with the base case—words—just as before. But for lists we do what we often do in trying to simplify a list problem: We divide the list into its first element (its <code>car</code>) and all the rest of its elements (its <code>cdr</code>).</p>
 <div class="sourceCode" id="cb22"><pre class="sourceCode scheme"><code class="sourceCode scheme"><a class="sourceLine" id="cb22-1" title="1">(<span class="ex">define</span><span class="fu"> </span>(deep-appearances wd structure)    <span class="co">; compact-version</span></a>

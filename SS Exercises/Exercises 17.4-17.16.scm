@@ -218,19 +218,15 @@
 
 (define (lookup name known-values)
   (cond ((empty? known-values) 'no-value)
-        ((equal? (first known-values) name)
+        ((equal? (car (car known-values)) name)
          (get-value (bf known-values)))
         (else (lookup name (skip-value known-values)))))
 
 (define (get-value stuff)
-  (if (equal? (first stuff) '!)
-      '()
-      (se (first stuff) (get-value (bf stuff)))))
+  (cdar stuff))
 
 (define (skip-value stuff)
-  (if (equal? (first stuff) '!)
-      (bf stuff)
-      (skip-value (bf stuff))))
+  (cdr stuff))
 
 (define (add name value known-values)
   (if (empty? name)
@@ -246,5 +242,40 @@
 
 (valid-infix? '(4 + 3 * (5 2)))
 ; #F
+
+; solution:
+
+
+
+(define (valid-infix-single-lst? lst)
+  (if (and (number-list? (odd-elements lst))
+           (operator-lst? (even-elements lst)))
+      #t
+      #f))
+
+(define (number-list? lst)
+  (cond ((null? lst) #t)
+        ((or (number? (car lst))
+             (list? (car lst)))
+         (number-list? (cdr lst)))
+        (else #f)))
+
+(define (operator-lst? lst)
+  (cond ((null? lst) #t)
+        ((member (car lst) '(+ - * /))
+         (operator-lst? (cdr lst)))
+        (else #f)))
+
+(define (odd-elements lst)
+  (cond ((null? lst) '())
+        ((= (length lst) 1) (list (car lst)))
+        (else (cons (car lst) (odd-elements (cddr lst))))))
+
+(define (even-elements lst)
+  (if (or (null? lst)
+          (= (length lst) 1))
+      '()
+      (cons (cadr lst) (even-elements (cddr lst)))))
+
 
 
