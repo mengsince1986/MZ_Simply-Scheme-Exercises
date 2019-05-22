@@ -245,9 +245,24 @@
 
 ; solution:
 
+(define (valid-infix? lst)
+  (cond ((< (length lst) 3) #f)
+        ((valid-infix-lst? lst)
+         (valid-infix-helper (sub-lsts lst)))
+        (else #f)))
 
+(define (valid-infix-helper lst)
+  (cond ((null? lst) #t)
+        ((valid-infix? (car lst))
+         (valid-infix-helper (cdr lst)))
+        (else #f)))
 
-(define (valid-infix-single-lst? lst)
+(define (sub-lsts lst)
+  (cond ((null? lst) '())
+        ((list? (car lst)) (cons (car lst) (sub-lsts (cdr lst))))
+        (else (sub-lsts (cdr lst)))))
+
+(define (valid-infix-lst? lst)
   (if (and (number-list? (odd-elements lst))
            (operator-lst? (even-elements lst)))
       #t
@@ -276,6 +291,3 @@
           (= (length lst) 1))
       '()
       (cons (cadr lst) (even-elements (cddr lst)))))
-
-
-
