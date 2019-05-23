@@ -462,7 +462,127 @@ then think about whether you’d have a better-organized program if the base cas
 ---
 
 **Exercises 17.1-17.3**
+
 [solutions](https://github.com/mengsince1986/Simply-Scheme-exercises/blob/master/SS%20Exercises/Exercises%2017.1-17.3.scm)
 
 **Exercises 17.4-17.16**
+
 [solutions](https://github.com/mengsince1986/Simply-Scheme-exercises/blob/master/SS%20Exercises/Exercises%2017.4-17.16.scm)
+
+---
+
+## Chapter 18 Trees
+
+The kinds of structures we’ll consider are called ***trees*** because they resemble trees in nature:
+
+<img src="images/trees.png" width="400">
+
+We’re going to begin by considering a tree as an abstract data type, without thinking about how lists are used to represent trees. For example, we’ll construct trees using a procedure named `make-node` , as if that were a Scheme primitive.
+
+### Example: The World
+
+<img src="images/world-trees.png" width="800">
+
+**What is a node?**
+
+It will be more useful to think of a node as a structure that includes everything below that circle also: *the datum and the children*. So when we think of the node for Great Britain, we’re thinking not only of the name “Great Britain,” but also of everything in Great Britain. *From this perspective, the root node of a tree includes the entire tree.* We might as well say that the node is the tree.
+
+**How does the tree constructor work?**
+
+The constructor for a tree is actually the constructor for one node, its root node. Our constructor for trees is therefore called `make-node` . It takes two arguments: *the datum and a (possibly empty) list of children.*
+
+```scheme
+(define world-tree                                          ;; painful -to-type version
+  (make-node
+   'world
+   (list (make-node
+          'italy
+          (list (make-node 'venezia '())
+                (make-node 'riomaggiore '())
+                (make-node 'firenze '())
+                (make-node 'roma '())))
+         (make-node
+          '(united states)
+          (list (make-node 'california
+                           (list (make-node 'berkeley '())
+                                 (make-node '(san francisco) '())
+                                 (make-node 'gilroy '())))
+                (make-node 'massachusetts
+                           (list (make-node 'cambridge '())
+                                 (make-node 'amherst '())
+                                 (make-node 'sudbury '()))))))))
+```
+
+**How do the tree selectors work?**
+
+```scheme
+(datum world -tree)
+; WORLD
+
+(datum (car (children world -tree)))
+; ITALY
+
+(datum (car (children (cadr (children world -tree)))))
+; CALIFORNIA
+
+(datum (car (children (car (children
+                            (cadr (children world -tree)))))))
+; BERKELEY
+```
+
+`datum` of a tree node returns the datum of that node. `children` of a node returns a list of the children of the node. (A list of trees is called a *forest*.)
+
+**How to simplify `world-tree` with `leaf` and `cities`?**
+
+```scheme
+(define (leaf datum)
+  (make-node datum ’()))
+
+(define (cities name -list)
+  (map leaf name -list))
+```
+
+With these abbreviations the world tree is somewhat easier to define:
+
+```scheme
+(define world-tree
+  (make-node
+   'world
+   (list (make-node
+         'italy
+         (cities '(venezia riomaggiore firenze roma)))
+  (make-node
+   '(united states)
+   (list (make-node
+          'california
+          (cities '(berkeley (san francisco) gilroy)))
+         (make-node
+          'massachusetts
+          (cities '(cambridge amherst sudbury)))
+         (make-node 'ohio (cities '(kent)))))
+  (make-node 'zimbabwe (cities '(harare hwange)))
+  (make-node 'china
+             (cities '(beijing shanghai guangzhou suzhou)))
+  (make-node
+   '(great britain)
+   (list
+    (make-node 'england (cities '(liverpool)))
+    (make-node 'scotland
+               (cities '(edinburgh glasgow (gretna green))))
+    (make-node 'wales (cities '(abergavenny)))))
+  (make-node
+   'australia
+   (list
+    (make-node 'victoria (cities '(melbourne)))
+    (make-node '(new south wales) (cities '(sydney)))
+    (make-node 'queensland
+               (cities '(cairns (port douglas))))))
+  (make-node 'honduras (cities '(tegucigalpa))))))
+```
+
+---
+
+### How Big Is My Tree?
+
+
+

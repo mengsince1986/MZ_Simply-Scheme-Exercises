@@ -74,7 +74,7 @@ code span.va { color: #19177c; } /* Variable */
 code span.vs { color: #4070a0; } /* VerbatimString */
 code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
   </style>
-  <link rel="stylesheet" href="Documents/Repositories/Simply-Scheme-exercises/SS Notes/github-pandoc.css" />
+  <link rel="stylesheet" href="SS Notes/github-pandoc.css" />
 </head>
 <body>
 <header>
@@ -401,7 +401,95 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <li>Remember that in a deep-structure recursion you may need two base cases, one for reaching an element that isn’t a sublist, and the other for an empty list, with no elements at all. (Our <code>deep-appearances</code> procedure is an example.) Don’t forget the empty-list case.</li>
 </ul>
 <hr />
-<p><strong>Exercises 17.1-17.3</strong> <a href="https://github.com/mengsince1986/Simply-Scheme-exercises/blob/master/SS%20Exercises/Exercises%2017.1-17.3.scm">solutions</a></p>
-<p><strong>Exercises 17.4-17.16</strong> <a href="https://github.com/mengsince1986/Simply-Scheme-exercises/blob/master/SS%20Exercises/Exercises%2017.4-17.16.scm">solutions</a></p>
+<p><strong>Exercises 17.1-17.3</strong></p>
+<p><a href="https://github.com/mengsince1986/Simply-Scheme-exercises/blob/master/SS%20Exercises/Exercises%2017.1-17.3.scm">solutions</a></p>
+<p><strong>Exercises 17.4-17.16</strong></p>
+<p><a href="https://github.com/mengsince1986/Simply-Scheme-exercises/blob/master/SS%20Exercises/Exercises%2017.4-17.16.scm">solutions</a></p>
+<hr />
+<h2 id="chapter-18-trees">Chapter 18 Trees</h2>
+<p>The kinds of structures we’ll consider are called <strong><em>trees</em></strong> because they resemble trees in nature:</p>
+<p><img src="images/trees.png" width="400"></p>
+<p>We’re going to begin by considering a tree as an abstract data type, without thinking about how lists are used to represent trees. For example, we’ll construct trees using a procedure named <code>make-node</code> , as if that were a Scheme primitive.</p>
+<h3 id="example-the-world">Example: The World</h3>
+<p><img src="images/world-trees.png" width="800"></p>
+<p><strong>What is a node?</strong></p>
+<p>It will be more useful to think of a node as a structure that includes everything below that circle also: <em>the datum and the children</em>. So when we think of the node for Great Britain, we’re thinking not only of the name “Great Britain,” but also of everything in Great Britain. <em>From this perspective, the root node of a tree includes the entire tree.</em> We might as well say that the node is the tree.</p>
+<p><strong>How does the tree constructor work?</strong></p>
+<p>The constructor for a tree is actually the constructor for one node, its root node. Our constructor for trees is therefore called <code>make-node</code> . It takes two arguments: <em>the datum and a (possibly empty) list of children.</em></p>
+<div class="sourceCode" id="cb28"><pre class="sourceCode scheme"><code class="sourceCode scheme"><a class="sourceLine" id="cb28-1" title="1">(<span class="ex">define</span><span class="fu"> world-tree                                          </span><span class="co">;; painful -to-type version</span></a>
+<a class="sourceLine" id="cb28-2" title="2">  (make-node</a>
+<a class="sourceLine" id="cb28-3" title="3">   &#39;world</a>
+<a class="sourceLine" id="cb28-4" title="4">   (<span class="kw">list</span> (make-node</a>
+<a class="sourceLine" id="cb28-5" title="5">          &#39;italy</a>
+<a class="sourceLine" id="cb28-6" title="6">          (<span class="kw">list</span> (make-node &#39;venezia &#39;())</a>
+<a class="sourceLine" id="cb28-7" title="7">                (make-node &#39;riomaggiore &#39;())</a>
+<a class="sourceLine" id="cb28-8" title="8">                (make-node &#39;firenze &#39;())</a>
+<a class="sourceLine" id="cb28-9" title="9">                (make-node &#39;roma &#39;())))</a>
+<a class="sourceLine" id="cb28-10" title="10">         (make-node</a>
+<a class="sourceLine" id="cb28-11" title="11">          &#39;(united states)</a>
+<a class="sourceLine" id="cb28-12" title="12">          (<span class="kw">list</span> (make-node &#39;california</a>
+<a class="sourceLine" id="cb28-13" title="13">                           (<span class="kw">list</span> (make-node &#39;berkeley &#39;())</a>
+<a class="sourceLine" id="cb28-14" title="14">                                 (make-node &#39;(san francisco) &#39;())</a>
+<a class="sourceLine" id="cb28-15" title="15">                                 (make-node &#39;gilroy &#39;())))</a>
+<a class="sourceLine" id="cb28-16" title="16">                (make-node &#39;massachusetts</a>
+<a class="sourceLine" id="cb28-17" title="17">                           (<span class="kw">list</span> (make-node &#39;cambridge &#39;())</a>
+<a class="sourceLine" id="cb28-18" title="18">                                 (make-node &#39;amherst &#39;())</a>
+<a class="sourceLine" id="cb28-19" title="19">                                 (make-node &#39;sudbury &#39;()))))))))</a></code></pre></div>
+<p><strong>How do the tree selectors work?</strong></p>
+<div class="sourceCode" id="cb29"><pre class="sourceCode scheme"><code class="sourceCode scheme"><a class="sourceLine" id="cb29-1" title="1">(datum world -tree)</a>
+<a class="sourceLine" id="cb29-2" title="2"><span class="co">; WORLD</span></a>
+<a class="sourceLine" id="cb29-3" title="3"></a>
+<a class="sourceLine" id="cb29-4" title="4">(datum (<span class="kw">car</span> (children world -tree)))</a>
+<a class="sourceLine" id="cb29-5" title="5"><span class="co">; ITALY</span></a>
+<a class="sourceLine" id="cb29-6" title="6"></a>
+<a class="sourceLine" id="cb29-7" title="7">(datum (<span class="kw">car</span> (children (<span class="kw">cadr</span> (children world -tree)))))</a>
+<a class="sourceLine" id="cb29-8" title="8"><span class="co">; CALIFORNIA</span></a>
+<a class="sourceLine" id="cb29-9" title="9"></a>
+<a class="sourceLine" id="cb29-10" title="10">(datum (<span class="kw">car</span> (children (<span class="kw">car</span> (children</a>
+<a class="sourceLine" id="cb29-11" title="11">                            (<span class="kw">cadr</span> (children world -tree)))))))</a>
+<a class="sourceLine" id="cb29-12" title="12"><span class="co">; BERKELEY</span></a></code></pre></div>
+<p><code>datum</code> of a tree node returns the datum of that node. <code>children</code> of a node returns a list of the children of the node. (A list of trees is called a <em>forest</em>.)</p>
+<p><strong>How to simplify <code>world-tree</code> with <code>leaf</code> and <code>cities</code>?</strong></p>
+<div class="sourceCode" id="cb30"><pre class="sourceCode scheme"><code class="sourceCode scheme"><a class="sourceLine" id="cb30-1" title="1">(<span class="ex">define</span><span class="fu"> </span>(leaf datum)</a>
+<a class="sourceLine" id="cb30-2" title="2">  (make-node datum ’()))</a>
+<a class="sourceLine" id="cb30-3" title="3"></a>
+<a class="sourceLine" id="cb30-4" title="4">(<span class="ex">define</span><span class="fu"> </span>(cities name -list)</a>
+<a class="sourceLine" id="cb30-5" title="5">  (map leaf name -list))</a></code></pre></div>
+<p>With these abbreviations the world tree is somewhat easier to define:</p>
+<div class="sourceCode" id="cb31"><pre class="sourceCode scheme"><code class="sourceCode scheme"><a class="sourceLine" id="cb31-1" title="1">(<span class="ex">define</span><span class="fu"> world-tree</span></a>
+<a class="sourceLine" id="cb31-2" title="2">  (make-node</a>
+<a class="sourceLine" id="cb31-3" title="3">   &#39;world</a>
+<a class="sourceLine" id="cb31-4" title="4">   (<span class="kw">list</span> (make-node</a>
+<a class="sourceLine" id="cb31-5" title="5">         &#39;italy</a>
+<a class="sourceLine" id="cb31-6" title="6">         (cities &#39;(venezia riomaggiore firenze roma)))</a>
+<a class="sourceLine" id="cb31-7" title="7">  (make-node</a>
+<a class="sourceLine" id="cb31-8" title="8">   &#39;(united states)</a>
+<a class="sourceLine" id="cb31-9" title="9">   (<span class="kw">list</span> (make-node</a>
+<a class="sourceLine" id="cb31-10" title="10">          &#39;california</a>
+<a class="sourceLine" id="cb31-11" title="11">          (cities &#39;(berkeley (san francisco) gilroy)))</a>
+<a class="sourceLine" id="cb31-12" title="12">         (make-node</a>
+<a class="sourceLine" id="cb31-13" title="13">          &#39;massachusetts</a>
+<a class="sourceLine" id="cb31-14" title="14">          (cities &#39;(cambridge amherst sudbury)))</a>
+<a class="sourceLine" id="cb31-15" title="15">         (make-node &#39;ohio (cities &#39;(kent)))))</a>
+<a class="sourceLine" id="cb31-16" title="16">  (make-node &#39;zimbabwe (cities &#39;(harare hwange)))</a>
+<a class="sourceLine" id="cb31-17" title="17">  (make-node &#39;china</a>
+<a class="sourceLine" id="cb31-18" title="18">             (cities &#39;(beijing shanghai guangzhou suzhou)))</a>
+<a class="sourceLine" id="cb31-19" title="19">  (make-node</a>
+<a class="sourceLine" id="cb31-20" title="20">   &#39;(great britain)</a>
+<a class="sourceLine" id="cb31-21" title="21">   (<span class="kw">list</span></a>
+<a class="sourceLine" id="cb31-22" title="22">    (make-node &#39;england (cities &#39;(liverpool)))</a>
+<a class="sourceLine" id="cb31-23" title="23">    (make-node &#39;scotland</a>
+<a class="sourceLine" id="cb31-24" title="24">               (cities &#39;(edinburgh glasgow (gretna green))))</a>
+<a class="sourceLine" id="cb31-25" title="25">    (make-node &#39;wales (cities &#39;(abergavenny)))))</a>
+<a class="sourceLine" id="cb31-26" title="26">  (make-node</a>
+<a class="sourceLine" id="cb31-27" title="27">   &#39;australia</a>
+<a class="sourceLine" id="cb31-28" title="28">   (<span class="kw">list</span></a>
+<a class="sourceLine" id="cb31-29" title="29">    (make-node &#39;victoria (cities &#39;(melbourne)))</a>
+<a class="sourceLine" id="cb31-30" title="30">    (make-node &#39;(new south wales) (cities &#39;(sydney)))</a>
+<a class="sourceLine" id="cb31-31" title="31">    (make-node &#39;queensland</a>
+<a class="sourceLine" id="cb31-32" title="32">               (cities &#39;(cairns (port douglas))))))</a>
+<a class="sourceLine" id="cb31-33" title="33">  (make-node &#39;honduras (cities &#39;(tegucigalpa))))))</a></code></pre></div>
+<hr />
+<h3 id="how-big-is-my-tree">How Big Is My Tree?</h3>
 </body>
 </html>
