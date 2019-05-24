@@ -436,25 +436,25 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <a class="sourceLine" id="cb28-18" title="18">                                 (make-node &#39;amherst &#39;())</a>
 <a class="sourceLine" id="cb28-19" title="19">                                 (make-node &#39;sudbury &#39;()))))))))</a></code></pre></div>
 <p><strong>How do the tree selectors work?</strong></p>
-<div class="sourceCode" id="cb29"><pre class="sourceCode scheme"><code class="sourceCode scheme"><a class="sourceLine" id="cb29-1" title="1">(datum world -tree)</a>
+<div class="sourceCode" id="cb29"><pre class="sourceCode scheme"><code class="sourceCode scheme"><a class="sourceLine" id="cb29-1" title="1">(datum world-tree)</a>
 <a class="sourceLine" id="cb29-2" title="2"><span class="co">; WORLD</span></a>
 <a class="sourceLine" id="cb29-3" title="3"></a>
-<a class="sourceLine" id="cb29-4" title="4">(datum (<span class="kw">car</span> (children world -tree)))</a>
+<a class="sourceLine" id="cb29-4" title="4">(datum (<span class="kw">car</span> (children world-tree)))</a>
 <a class="sourceLine" id="cb29-5" title="5"><span class="co">; ITALY</span></a>
 <a class="sourceLine" id="cb29-6" title="6"></a>
-<a class="sourceLine" id="cb29-7" title="7">(datum (<span class="kw">car</span> (children (<span class="kw">cadr</span> (children world -tree)))))</a>
+<a class="sourceLine" id="cb29-7" title="7">(datum (<span class="kw">car</span> (children (<span class="kw">cadr</span> (children world-tree)))))</a>
 <a class="sourceLine" id="cb29-8" title="8"><span class="co">; CALIFORNIA</span></a>
 <a class="sourceLine" id="cb29-9" title="9"></a>
 <a class="sourceLine" id="cb29-10" title="10">(datum (<span class="kw">car</span> (children (<span class="kw">car</span> (children</a>
-<a class="sourceLine" id="cb29-11" title="11">                            (<span class="kw">cadr</span> (children world -tree)))))))</a>
+<a class="sourceLine" id="cb29-11" title="11">                            (<span class="kw">cadr</span> (children world-tree)))))))</a>
 <a class="sourceLine" id="cb29-12" title="12"><span class="co">; BERKELEY</span></a></code></pre></div>
 <p><code>datum</code> of a tree node returns the datum of that node. <code>children</code> of a node returns a list of the children of the node. (A list of trees is called a <em>forest</em>.)</p>
 <p><strong>How to simplify <code>world-tree</code> with <code>leaf</code> and <code>cities</code>?</strong></p>
 <div class="sourceCode" id="cb30"><pre class="sourceCode scheme"><code class="sourceCode scheme"><a class="sourceLine" id="cb30-1" title="1">(<span class="ex">define</span><span class="fu"> </span>(leaf datum)</a>
-<a class="sourceLine" id="cb30-2" title="2">  (make-node datum ’()))</a>
+<a class="sourceLine" id="cb30-2" title="2">  (make-node datum &#39;()))</a>
 <a class="sourceLine" id="cb30-3" title="3"></a>
-<a class="sourceLine" id="cb30-4" title="4">(<span class="ex">define</span><span class="fu"> </span>(cities name -list)</a>
-<a class="sourceLine" id="cb30-5" title="5">  (map leaf name -list))</a></code></pre></div>
+<a class="sourceLine" id="cb30-4" title="4">(<span class="ex">define</span><span class="fu"> </span>(cities name-list)</a>
+<a class="sourceLine" id="cb30-5" title="5">  (map leaf name-list))</a></code></pre></div>
 <p>With these abbreviations the world tree is somewhat easier to define:</p>
 <div class="sourceCode" id="cb31"><pre class="sourceCode scheme"><code class="sourceCode scheme"><a class="sourceLine" id="cb31-1" title="1">(<span class="ex">define</span><span class="fu"> world-tree</span></a>
 <a class="sourceLine" id="cb31-2" title="2">  (make-node</a>
@@ -491,5 +491,56 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <a class="sourceLine" id="cb31-33" title="33">  (make-node &#39;honduras (cities &#39;(tegucigalpa))))))</a></code></pre></div>
 <hr />
 <h3 id="how-big-is-my-tree">How Big Is My Tree?</h3>
+<p><strong>How to count cities in <code>world-tree</code> with <code>count-leaves</code>?</strong></p>
+<div class="sourceCode" id="cb32"><pre class="sourceCode scheme"><code class="sourceCode scheme"><a class="sourceLine" id="cb32-1" title="1">(<span class="ex">define</span><span class="fu"> </span>(count-leaves tree)</a>
+<a class="sourceLine" id="cb32-2" title="2">  (<span class="kw">if</span> (leaf? tree)</a>
+<a class="sourceLine" id="cb32-3" title="3">      <span class="dv">1</span></a>
+<a class="sourceLine" id="cb32-4" title="4">      (reduce <span class="op">+</span> (map count-leaves (children tree)))))</a>
+<a class="sourceLine" id="cb32-5" title="5"></a>
+<a class="sourceLine" id="cb32-6" title="6">(<span class="ex">define</span><span class="fu"> </span>(leaf? node)</a>
+<a class="sourceLine" id="cb32-7" title="7">  (<span class="kw">null?</span> (children node)))</a>
+<a class="sourceLine" id="cb32-8" title="8"></a>
+<a class="sourceLine" id="cb32-9" title="9">(count-leaves world -tree)</a>
+<a class="sourceLine" id="cb32-10" title="10"><span class="co">; 27</span></a></code></pre></div>
+<hr />
+<h3 id="mutual-recursion">Mutual Recursion</h3>
+<p><strong>How to write <code>count-leaves</code> by <em>mutual recursion</em>?</strong></p>
+<div class="sourceCode" id="cb33"><pre class="sourceCode scheme"><code class="sourceCode scheme"><a class="sourceLine" id="cb33-1" title="1">(<span class="ex">define</span><span class="fu"> </span>(count-leaves tree)</a>
+<a class="sourceLine" id="cb33-2" title="2">  (<span class="kw">if</span> (leaf? tree)</a>
+<a class="sourceLine" id="cb33-3" title="3">  <span class="dv">1</span></a>
+<a class="sourceLine" id="cb33-4" title="4">  (count-leaves-in-forest (children tree))))</a>
+<a class="sourceLine" id="cb33-5" title="5"></a>
+<a class="sourceLine" id="cb33-6" title="6">(<span class="ex">define</span><span class="fu"> </span>(count-leaves-in-forest forest)</a>
+<a class="sourceLine" id="cb33-7" title="7">  (<span class="kw">if</span> (<span class="kw">null?</span> forest)</a>
+<a class="sourceLine" id="cb33-8" title="8">  <span class="dv">0</span></a>
+<a class="sourceLine" id="cb33-9" title="9">  (<span class="op">+</span> (count-leaves (<span class="kw">car</span> forest))</a>
+<a class="sourceLine" id="cb33-10" title="10">     (count-leaves-in-forest (<span class="kw">cdr</span> forest)))))</a></code></pre></div>
+<p>Note that <code>count-leaves</code> calls <code>count-leaves-in-forest</code> , and <code>count-leaves-in-forest</code> calls <code>count-leaves</code> . This pattern is called <em>mutual recursion</em>.</p>
+<p><strong>How to understand <em>mutual recursion</em> in three different modes?</strong></p>
+<ul>
+<li>Mode 1</li>
+</ul>
+<p>Initialization procedure: <code>count-leaves</code></p>
+<p>helper procedure: <code>count-leaves-in-forest</code></p>
+<p>The helper procedure follows the usual sequential list pattern: Do something to the <code>car</code> of the list, and recursively handle the <code>cdr</code> of the list. Now, what do we have to do to the <code>car</code>? In the usual sequential recursion, the <code>car</code> of the list is something simple, such as a word. What’s special about trees is that here the <code>car</code> is itself a tree, just like the entire data structure we started with. Therefore, we must invoke a procedure whose domain is trees: <code>count-leaves</code>.</p>
+<p>This model is built on two ideas. One is the idea of <em>the domain of a function</em>; the reason we need two procedures is that we need one that takes a tree as its argument and one that takes a list of trees as its argument. The other idea is <em>the leap of faith</em>; we assume that the invocation of <code>count-leaves</code> within <code>count-leaves-in-forest</code> will correctly handle each child without tracing the exact sequence of events.</p>
+<ul>
+<li>Mode 2</li>
+</ul>
+<p>Because of the <em>two-dimensional</em> nature of trees, in order to visit every node we have to be able to move in two different directions. From a given node we have to be able to move <em>down</em> to its children, but from each child we must be able to move <em>across</em> to its next sibling.</p>
+<p><code>count-leaves-in-forest</code>: move from left to right through a list of children.</p>
+<p><code>count-leaves</code>: move down one level by invoking <code>children</code>.</p>
+<ul>
+<li>Mode 3</li>
+</ul>
+<p>The third model is also based on the two-dimensional nature of trees. Imagine for a moment that each node in the tree has at most one child. In that case, <code>count-leaves</code> could move from the root down to the single leaf with a structure very similar to the actual procedure, but carrying out a sequential recursion:</p>
+<div class="sourceCode" id="cb34"><pre class="sourceCode scheme"><code class="sourceCode scheme"><a class="sourceLine" id="cb34-1" title="1">(<span class="ex">define</span><span class="fu"> </span>(count-leaf tree)</a>
+<a class="sourceLine" id="cb34-2" title="2">  (<span class="kw">if</span> (leaf? tree)</a>
+<a class="sourceLine" id="cb34-3" title="3">  <span class="dv">1</span></a>
+<a class="sourceLine" id="cb34-4" title="4">  (count-leaf (child tree))))</a></code></pre></div>
+<p>The trouble with this is that at each downward step there isn’t a single “next” node. Instead of a single path from the root to the leaf, there are multiple paths from the root to many leaves. <em>To make our idea of downward motion through sequential recursion work in a real tree, at each level we must “clone” <code>count-leaves</code> as many times as there are children.</em> <code>Count-leaves-in-forest</code> is the factory that manufactures the clones. It hires one <code>count-leaves</code> little person for each child and accumulates their results.</p>
+<p><em>We use the name <strong>tree recursion</strong> for any situation in which a procedure invocation results in more than one recursive call, even if there isn’t an argument that’s a tree.</em> Any structured list-of-lists has a somewhat tree-like, two-dimensional character even though it doesn’t use the formal mechanisms we’re exploring in this chapter. The <code>cdr</code> recursion is a “horizontal” one, moving from one element to another within the same list; the <code>car</code> recursion is a “vertical” one, exploring a sublist of the given list.</p>
+<hr />
+<h3 id="searching-for-a-datum-in-the-tree">Searching for a Datum in the Tree</h3>
 </body>
 </html>

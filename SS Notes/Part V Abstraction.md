@@ -516,17 +516,17 @@ The constructor for a tree is actually the constructor for one node, its root no
 **How do the tree selectors work?**
 
 ```scheme
-(datum world -tree)
+(datum world-tree)
 ; WORLD
 
-(datum (car (children world -tree)))
+(datum (car (children world-tree)))
 ; ITALY
 
-(datum (car (children (cadr (children world -tree)))))
+(datum (car (children (cadr (children world-tree)))))
 ; CALIFORNIA
 
 (datum (car (children (car (children
-                            (cadr (children world -tree)))))))
+                            (cadr (children world-tree)))))))
 ; BERKELEY
 ```
 
@@ -536,10 +536,10 @@ The constructor for a tree is actually the constructor for one node, its root no
 
 ```scheme
 (define (leaf datum)
-  (make-node datum ’()))
+  (make-node datum '()))
 
-(define (cities name -list)
-  (map leaf name -list))
+(define (cities name-list)
+  (map leaf name-list))
 ```
 
 With these abbreviations the world tree is somewhat easier to define:
@@ -584,5 +584,79 @@ With these abbreviations the world tree is somewhat easier to define:
 
 ### How Big Is My Tree?
 
+**How to count cities in `world-tree` with `count-leaves`?**
+
+```scheme
+(define (count-leaves tree)
+  (if (leaf? tree)
+      1
+      (reduce + (map count-leaves (children tree)))))
+
+(define (leaf? node)
+  (null? (children node)))
+
+(count-leaves world -tree)
+; 27
+```
+
+---
+
+### Mutual Recursion
+
+**How to write `count-leaves` by *mutual recursion*?**
+
+```scheme
+(define (count-leaves tree)
+  (if (leaf? tree)
+  1
+  (count-leaves-in-forest (children tree))))
+
+(define (count-leaves-in-forest forest)
+  (if (null? forest)
+  0
+  (+ (count-leaves (car forest))
+     (count-leaves-in-forest (cdr forest)))))
+```
+
+Note that `count-leaves` calls `count-leaves-in-forest` , and `count-leaves-in-forest` calls `count-leaves` . This pattern is called *mutual recursion*.
+
+**How to understand *mutual recursion* in three different modes?**
+
+* Mode 1
+
+Initialization procedure: `count-leaves`
+
+helper procedure: `count-leaves-in-forest`
+
+The helper procedure follows the usual sequential list pattern: Do something to the `car` of the list, and recursively handle the `cdr` of the list. Now, what do we have to do to the `car`? In the usual sequential recursion, the `car` of the list is something simple, such as a word. What’s special about trees is that here the `car` is itself a tree, just like the entire data structure we started with. Therefore, we must invoke a procedure whose domain is trees: `count-leaves`.
+
+This model is built on two ideas. One is the idea of *the domain of a function*; the reason we need two procedures is that we need one that takes a tree as its argument and one that takes a list of trees as its argument. The other idea is *the leap of faith*; we assume that the invocation of `count-leaves` within `count-leaves-in-forest` will correctly handle each child without tracing the exact sequence of events.
+
+* Mode 2
+
+Because of the *two-dimensional* nature of trees, in order to visit every node we have to be able to move in two different directions. From a given node we have to be able to move *down* to its children, but from each child we must be able to move *across* to its next sibling.
+
+`count-leaves-in-forest`: move from left to right through a list of children.
+
+`count-leaves`: move down one level by invoking `children`.
+
+* Mode 3
+
+The third model is also based on the two-dimensional nature of trees. Imagine for a moment that each node in the tree has at most one child. In that case, `count-leaves` could move from the root down to the single leaf with a structure very similar to the actual procedure, but carrying out a sequential recursion:
+
+```scheme
+(define (count-leaf tree)
+  (if (leaf? tree)
+  1
+  (count-leaf (child tree))))
+```
+
+The trouble with this is that at each downward step there isn’t a single “next” node. Instead of a single path from the root to the leaf, there are multiple paths from the root to many leaves. *To make our idea of downward motion through sequential recursion work in a real tree, at each level we must “clone” `count-leaves` as many times as there are children.* `Count-leaves-in-forest` is the factory that manufactures the clones.  It hires one `count-leaves` little person for each child and accumulates their results.
+
+*We use the name **tree recursion** for any situation in which a procedure invocation results in more than one recursive call, even if there isn’t an argument that’s a tree.*  Any structured list-of-lists has a somewhat tree-like, two-dimensional character even though it doesn’t use the formal mechanisms we’re exploring in this chapter. The `cdr` recursion is a “horizontal” one, moving from one element to another within the same list; the `car` recursion is a “vertical” one, exploring a sublist of the given list.
+
+---
+
+### Searching for a Datum in the Tree
 
 
