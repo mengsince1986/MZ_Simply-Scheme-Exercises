@@ -288,7 +288,7 @@ This is the main example in Scheme of the *semipredicate* idea that we mentioned
 * `list-ref` -- like `item` execpt it counts items from zero instead of from one and takes its arguments in the other order:
 
 ```scheme
-(list-ref ’(happiness is a warm gun) 3)
+(list-ref '(happiness is a warm gun) 3)
 ; WARM
 ```
 
@@ -461,11 +461,11 @@ then think about whether you’d have a better-organized program if the base cas
 
 ---
 
-**Exercises 17.1-17.3**
+### Exercises 17.1-17.3
 
 [solutions](https://github.com/mengsince1986/Simply-Scheme-exercises/blob/master/SS%20Exercises/Exercises%2017.1-17.3.scm)
 
-**Exercises 17.4-17.16**
+### Exercises 17.4-17.16
 
 [solutions](https://github.com/mengsince1986/Simply-Scheme-exercises/blob/master/SS%20Exercises/Exercises%2017.4-17.16.scm)
 
@@ -658,5 +658,246 @@ The trouble with this is that at each downward step there isn’t a single “ne
 ---
 
 ### Searching for a Datum in the Tree
+
+Many tree problems don’t quite fit our higher-order functions. For example, let’s write a predicate `in-tree?` that takes the name of a place and a tree as arguments and tells whether or not that place is in the tree. It is possible to make it work with `filter` :
+
+```scheme
+(define (in-tree? place tree)
+  (or (equal? place (datum tree))
+      (not (null? (filter (lambda (subtree) (in-tree? place subtree))
+                          (children tree))))))
+```
+
+This awkward construction also performs unnecessary computation. If the place we’re looking for happens to be in the first child of a node, `filter` will nevertheless look in all the other children as well. We can do better by replacing the use of `filter` with a mutual recursion:
+
+```scheme
+(define (in-tree? place tree)
+  (or (equal? place (datum tree))
+      (in-forest? place (children tree))))
+
+(define (in-forest? place forest)
+  (if (null? forest)
+      #f
+      (or (in-tree? place (car forest))
+          (in-forest? place (cdr forest)))))
+
+(in-tree? 'abergavenny world-tree)
+; #T
+
+(in-tree? 'abbenay world-tree)
+; #F
+
+(in-tree? 'venezia (cadr (children world-tree)))
+; #F
+```
+
+A place is in a tree if one of two conditions holds: the place is the datum at the root of the tree, or the place is (recursively) in one of the child trees of this tree. That’s what `in-tree?` says. As for `in-forest?`, it says that a place is in one of a group of trees if the place is in the first tree, or if it’s in one of the remaining trees.
+
+---
+
+### Locating a Datum in the Tree
+
+We’d like to be able to locate a city and find out all of the larger regions that enclose the city. For example, we want to say
+
+```scheme
+(locate 'berkeley world-tree)
+; (WORLD (UNITED STATES) CALIFORNIA BERKELEY)
+```
+
+```scheme
+(define (locate city tree)
+  (if (equal? city (datum tree))
+      (list city)
+      (let ((subpath (locate-in-forest city (children tree))))
+        (if subpath
+            (cons (datum tree) subpath)
+            #f))))
+
+(define (locate-in-forest city forest)
+  (if (null? forest)
+      #f
+      (or (locate city (car forest))
+          (locate-in-forest city (cdr forest)))))
+```
+
+Compare the structure of `locate` with that of `in-tree?`. The helper procedures `in-forest?` and `locate-in-forest` are almost identical. The main procedures look different, because `locate` has a harder job, but both of them check for two possibilities: The city might be the datum of the argument node, or it might belong to one of the child trees.
+
+---
+
+### Representing Trees as Lists
+
+**How do `make-node` , `datum` , and `children` work?**
+
+```scheme
+(define (make-node datum children)
+  (cons datum children))
+
+(define (datum node)
+  (car node))
+
+(define (children node)
+  (cdr node))
+```
+
+In other words, **a tree is a list whose first element is the datum and whose remaining elements are subtrees.**
+
+```scheme
+world-tree
+
+(WORLD
+   (ITALY (VENEZIA) (RIOMAGGIORE) (FIRENZE) (ROMA))
+   ((UNITED STATES)
+    (CALIFORNIA (BERKELEY) ((SAN FRANCISCO)) (GILROY))
+    (MASSACHUSETTS (CAMBRIDGE) (AMHERST) (SUDBURY))
+    (OHIO (KENT)))
+   (ZIMBABWE (HARARE) (HWANGE))
+   (CHINA (BEIJING) (SHANGHAI) (GUANGSZHOU) (SUZHOW))
+   ((GREAT BRITAIN)
+    (ENGLAND (LIVERPOOL))
+    (SCOTLAND (EDINBURGH) (GLASGOW) ((GRETNA GREEN)))
+    (WALES (ABERGAVENNY)))
+   (AUSTRALIA
+    (VICTORIA (MELBOURNE))
+    ((NEW SOUTH WALES) (SYDNEY))
+    (QUEENSLAND (CAIRNS) ((PORT DOUGLAS))))
+   (HONDURAS (TEGUCIGALPA)))
+```
+
+---
+
+### Abstract Data Types
+
+The procedures `make-node` , `datum` , and `children` define an abstract data type for trees. Using this ADT, we were able to write several useful procedures to manipulate trees before pinning down exactly how a tree is represented as a Scheme list.
+
+**Why using ADT-specific selectors and constructors instead of `car` and `cdr` makes programs more readable?**
+
+Consider this example:
+
+```scheme
+(in-tree? 'venezia (caddr world-tree))
+```
+
+What does `caddr` mean in this context? Is the `caddr` of a tree a datum? A child? A forest? Of course you could work it out by careful reasoning, but the form in which we presented this example originally was much clearer:
+
+```scheme
+(in-tree? 'venezia (cadr (children world-tree)))
+```
+
+Even better would be
+
+```scheme
+(in-tree? ’venezia (list-ref (children world -tree) 1))
+```
+
+**What do *respecting* the data abstraction and *data abstraction violation* mean?**
+
+Using the appropriate selectors and constructors is called ***respecting*** the data abstraction. Failing to use the appropriate selectors and constructors is called a ***data abstraction violation***.
+
+Having defined the selctors and constructors for trees ourselves how do we represent the tree in a different way?
+
+```scheme
+(define (make-node datum children)
+  (list 'the 'node 'with 'datum datum 'and 'children children))
+
+(define (datum node) (list-ref node 4))
+
+(define (children node) (list-ref node 7))
+
+> (make-node 'italy (cities '(venezia riomaggiore firenze roma)))
+(THE NODE WITH DATUM ITALY AND CHILDREN
+     ((THE NODE WITH DATUM VENEZIA AND CHILDREN ())
+      (THE NODE WITH DATUM RIOMAGGIORE AND CHILDREN ())
+      (THE NODE WITH DATUM FIRENZE AND CHILDREN ())
+      (THE NODE WITH DATUM ROMA AND CHILDREN ())))
+```
+
+You might expect that this change in the representation would require changes to all the procedures we wrote earlier, such as `count-leaves`. But in fact, those procedures would continue to work perfectly because they don’t see the representation. (They respect the data abstraction.) As long as `datum` and `children` find the right information, it doesn’t matter how the trees are stored. *All that matters is that the constructors and selectors have to be compatible with each other.*
+
+---
+
+### An Advanced Example: Parsing Arithmetic Expressions
+
+**What is the goal for `parse` function?**
+
+Scheme uses *prefix notation*: `(+ 3 4)`.  By contrast, people who aren’t Scheme programmers generally represent arithmetic computations using an *infix notation*, in which the function symbol goes between two arguments: 3 + 4.
+
+Our goal in this section is to translate an infix arithmetic expression into a tree representing the computation. This translation process is called *parsing* the expression.  For example, we’ll turn the expression
+
+```
+4 + 3 × 7 − 5/(3 + 4) + 6
+```
+
+into the tree
+
+<img src="images/computation-tree.png" width="400">
+
+**How to define `parse` program?**
+
+```scheme
+(define (parse expr)
+  (parse-helper expr '() '()))  ; invoke parse-helper and set operators and operands as '()
+
+(define (parse-helper expr operators operands)
+  (cond ((null? expr)  ; when expr is empty
+         (if (null? operators)  ; if operators is empty
+             (car operands)     ; return 1st of operands
+             (handle-op '() operators operands)))  ; if operators is not empty invoke handle-op
+        ((number? (car expr))  ; when 1st of expr is number
+         (parse-helper (cdr expr)  ; invoke parse-helper. delete the 1st of expr
+                       operators  ; pass the original operator pending list
+                       (cons (make-node (car expr) '()) operands)))  ; make node with the 1st of expr and insert the new node the operands
+        ((list? (car expr))  ; when 1st of expr is a list
+         (parse-helper (cdr expr)  ; invoke parse-helper. delete the 1st of expr
+                       operators  ; pass the original operator pending list
+                       (cons (parse (car expr)) operands)))  ; pass the 1st of expr into operands list
+        (else (if (or (null? operators)  ; when the 1st of expr is operator. if operators list is empty
+                      (> (precedence (car expr))  ; or the current operator is greater than
+                         (precedence (car operators))))  ; the 1st of the operator list (last operator)
+                  (parse-helper (cdr expr)  ; invoke parse-helper. delte the 1st of expr
+                                (cons (car expr) operators)  ; add the current operator to the operators list
+                                operands)  ; pass original operands
+                  (handle-op expr operators operands))))) ; if the current operator is lower than last operator, invoke handle-op
+
+(define (handle-op expr operators operands)
+  (parse-helper expr  ; invoke parse-helper
+                (cdr operators)  ; delete the first element of operators
+                (cons (make-node (car operators)  ; get the first of operators and set it as datum
+                                 (list (cadr operands) (car operands)))  ; make the children with the 2nd and 1st element of operands
+                      (cddr operands)))) ; delete the 1st and 2nd element of operands and insert the new list into the operands
+
+(define (precedence oper)
+  (if (member? oper '(+ -)) 1 2))
+```
+
+After building the tree it would be easy to compute the value of the expression. Here is the program to do that:
+
+```scheme
+(define (compute tree)
+  (if (number? (datum tree))  ; if the datum of the tree is number
+      (datum tree)  ; return the datum number
+      ((function-named-by (datum tree))  ; if the datum of the tree is operator, invoke function-named-by with the operator to return the scheme operator
+         (compute (car (children tree)))  ; get the first element of children as the first operand
+         (compute (cadr (children tree)))))) ; get the rest of the children as another operand
+
+(define (function-named-by oper)
+  (cond ((equal? oper '+) +)
+        ((equal? oper '-) -)
+        ((equal? oper '*) *)
+        ((equal? oper '/) /)
+        (else (error "no such operator as" oper))))
+
+(compute (parse '(4 + 3 * 7 - 5 / (3 + 4) + 6)))
+; 30.285714285714
+```
+
+---
+
+### Pitfalls
+
+* A leaf node is a perfectly good actual argument to a tree procedure, even though the picture of a leaf node doesn’t look treeish because there aren’t any branches. A common mistake is to make the base case of the recursion be a node whose children are leaves, instead of a node that’s a leaf itself.
+
+* The value returned by children is not a tree, but a forest. It’s therefore not a suitable actual argument to a procedure that expects a tree.
+
+---
 
 
