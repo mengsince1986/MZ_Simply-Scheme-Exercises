@@ -124,3 +124,22 @@
         (else (cons (parse-scheme (car operands))
                     (parse-operands (cdr operands))))))
 
+; extra:
+
+(define (compute tree)
+  (if (< (length tree) 4)
+      (if (number? (datum tree))
+          (datum tree)
+          ((function-named-by (datum tree))
+           (compute (car (children tree)))
+           (compute (cadr (children tree)))))
+      ((function-named-by (datum tree))
+       (compute (car (children tree)))
+       (compute (cons (datum tree) (cddr tree))))))
+
+(define (function-named-by oper)
+  (cond ((equal? oper '+) +)
+        ((equal? oper '-) -)
+        ((equal? oper '*) *)
+        ((equal? oper '/) /)
+        (else (error "no such operator as" oper))))
