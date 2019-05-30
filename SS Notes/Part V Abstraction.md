@@ -900,4 +900,7 @@ After building the tree it would be easy to compute the value of the expression.
 
 ---
 
+### Exercises 18.1-18.6
+
+[Solutions](https://github.com/mengsince1986/Simply-Scheme-exercises/blob/master/SS%20Exercises/Exercises%2018.1-18.6.scm)
 
