@@ -904,3 +904,195 @@ After building the tree it would be easy to compute the value of the expression.
 
 [Solutions](https://github.com/mengsince1986/Simply-Scheme-exercises/blob/master/SS%20Exercises/Exercises%2018.1-18.6.scm)
 
+------------------------------------------------------------------------
+
+## Chapter 19 Implementing Higher-Order Functions
+
+This chapter is about writing *higher-order procedures* --- that is, procedures that implement higher-order functions. We are going to study the implementation of `every`, `keep`, and so on.
+
+The truly important point made in this chapter is that you aren't limited to a fixed set of higher-order functions. If you feel a need for a new one, you can implement it.
+
+------------------------------------------------------------------------
+
+### Generalizing Patterns
+
+**How to generalize a pattern to calculate areas for different kinds of shapes?**
+
+Suppose we want to find out the areas of several different kinds of shapes, given one linear dimension. A straightforward way would be to do it like this:
+
+```scheme
+(define pi 3.141592654)
+
+(define (square-area r) (* r r))
+
+(define (circle-area r) (* pi r r))
+
+(define (sphere-area r) (* 4 pi r r))
+
+(define (hexagon-area r) (* (sqrt 3) 1.5 r r))
+
+(square-area 6)
+; 36
+
+(circle-area 5)
+; 78.53981635
+```
+
+We want to generalize the pattern that these four procedures exhibit.  Each of these procedures has a particular constant factor built in to its definition. What we'd like instead is one single procedure that lets you choose a constant factor when you invoke it. This new procedure will take a second argument besides the linear dimension `r` (the radius or side): a `shape` argument whose value is the desired constant factor.
+
+```scheme
+(define (area shape r) (* shape r r))
+
+(define square 1)
+
+(define circle pi)
+
+(define sphere (* 4 pi))
+
+(define hexagon (* (sqrt 3) 1.5))
+
+(area sphere 7)
+; 615.752160184
+```
+
+We started with several procedures. Then we found that they had certain points of similarity and certain differences. In order to write a single procedure that generalizes the points of similarity, we had to use an additional argument for each point of difference. (In this example, there was only one point of difference.)
+
+This idea of using a procedure to generalize a pattern is part of the larger idea of abstraction that we've been discussing throughout the book. We notice an algorithm that we need to use repeatedly, and so we separate the algorithm from any particular data values and give it a name.
+
+------------------------------------------------------------------------
+
+### The `every` Pattern Revisited
+
+**What is `every` template like?**
+
+```scheme
+(define ( every-something sent)
+  (if (empty? sent)
+      '()
+      (se (_______ (first sent))
+          (every -something (bf sent)))))
+```
+
+**How to define `every`?**
+
+You've been writing `every`-like procedures by filling in the blank with a specific function. To generalize the pattern, we'll use the trick of adding an argument, as we discussed in the last section.
+
+```scheme
+(define (every fn sent)
+  (if (empty? sent)
+      '()
+      (se (fn (first sent))
+          (every fn (bf sent)))))
+```
+
+The version shown here does indeed work for words, because `first` and `butfirst` work for words. So probably "stuff" would be a better formal parameter than "sent." (The result from `every` is always a sentence, because `sentence` is used to construct the result.)
+
+------------------------------------------------------------------------
+
+### The Difference between `map` and `every`
+
+**How to define `map` procedure?**
+
+```scheme
+(define (map fn lst)
+  (if (null? lst)
+      '()
+      (cons (fn (car lst))
+            (map fn (cdr lst)))))
+```
+
+The structure here is identical to that of `every`; the only difference is that we use `cons`, `car`, and `cdr` instead of `se`, `first` , and `butfirst`.
+
+One implication of this is that you can't use `map` with a word, since it's an error to take the `car` of a word.
+
+**When is it advantageous to use `map` instead of `every`?**
+
+Suppose you're using `map` with a structured list, like this:
+
+```scheme
+(map (lambda (flavor) (se flavor '(is great)))
+     '(ginger (ultra chocolate) pumpkin (rum raisin)))
+; ((GINGER IS GREAT) (ULTRA CHOCOLATE IS GREAT)
+;  (PUMPKIN IS GREAT) (RUM RAISIN IS GREAT))
+
+(every (lambda (flavor) (se flavor '(is great)))
+       '(ginger (ultra chocolate) pumpkin (rum raisin)))
+; (GINGER IS GREAT ULTRA CHOCOLATE IS GREAT PUMPKIN IS GREAT
+;  RUM RAISIN IS GREAT)
+```
+
+**Why does `map` preserve the structure of the sublists while `every` doesn't?**
+
+`map` uses `cons` to combine the elements of the result, whereas `every` uses `sentence` :
+
+```scheme
+(cons '(pumpkin is great)
+      (cons '(rum raisin is great)
+            '()))
+; ((PUMPKIN IS GREAT) (RUM RAISIN IS GREAT))
+
+(se '(pumpkin is great)
+    (se '(rum raisin is great)
+        '()))
+; (PUMPKIN IS GREAT RUM RAISIN IS GREAT)
+```
+
+------------------------------------------------------------------------
+
+### `filter`
+
+**How to define `filter`?**
+
+```scheme
+(define (filter pred lst)
+  (cond ((null? lst) '())
+        ((pred (car lst))
+         (cons (car lst) (filter pred (cdr lst))))
+        (else (filter pred (cdr lst)))))
+```
+
+Like `map`, this uses `cons` as the constructor so that it will work properly on structured lists.
+
+(Aside from the difference between lists and sentences, this is just like the keep template on page 224.)
+
+------------------------------------------------------------------------
+
+### `accumulate` and `reduce`
+
+**How to define accumulate with only two arguments?**
+
+*The trick is that in our `reduce` and `accumulate` the base case is a one-element argument*, rather than an empty argument. When we're down to one element in the argument, we just return that element:
+
+```scheme
+(define (accumulate combiner stuff)  ;; first version
+  (if (empty? (bf stuff))
+      (first stuff)
+      (combiner (first stuff)
+                (accumulate combiner (bf stuff)))))
+```
+
+This version is a simplification of the one we actually provide. What happens if `stuff` is empty? This version blows up, since it tries to take the `butfirst` of stuff immediately. Our final version has a specific check for empty arguments:
+
+```scheme
+(define (accumulate combiner stuff)
+  (cond ((not (empty? stuff)) (real-accumulate combiner stuff))
+        ((member combiner (list + * word se append))
+         (combiner))
+        (else (error
+               "Can’t accumulate empty input with that combiner"))))
+
+(define (real-accumulate combiner stuff)
+  (if (empty? (bf stuff))
+      (first stuff)
+      (combiner (first stuff) (real-accumulate combiner (bf stuff)))))
+```
+
+`reduce` is the same, except that it uses `null?`, `car`, and `cdr`.
+
+As we mentioned in Chapter 8, many of Scheme's primitive procedures return their identity element when invoked with no arguments. We can take advantage of this; if `accumulate` is invoked with an empty second argument and one of the procedures `+`, `*`, `word`, `sentence`, `append` or `list`, we invoke the combiner with no arguments to produce the return value.
+
+On the other hand, if `accumulate`'s combiner argument is something like `(lambda (x y) (word x ’- y))` or `max`, then there's nothing `accumulate` can return, so we give an error message.
+
+------------------------------------------------------------------------
+
+### Robustness

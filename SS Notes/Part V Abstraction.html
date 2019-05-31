@@ -712,5 +712,127 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <hr />
 <h3 id="exercises-18.1-18.6">Exercises 18.1-18.6</h3>
 <p><a href="https://github.com/mengsince1986/Simply-Scheme-exercises/blob/master/SS%20Exercises/Exercises%2018.1-18.6.scm">Solutions</a></p>
+<hr />
+<h2 id="chapter-19-implementing-higher-order-functions">Chapter 19 Implementing Higher-Order Functions</h2>
+<p>This chapter is about writing <em>higher-order procedures</em> — that is, procedures that implement higher-order functions. We are going to study the implementation of <code>every</code>, <code>keep</code>, and so on.</p>
+<p>The truly important point made in this chapter is that you aren’t limited to a fixed set of higher-order functions. If you feel a need for a new one, you can implement it.</p>
+<hr />
+<h3 id="generalizing-patterns">Generalizing Patterns</h3>
+<p><strong>How to generalize a pattern to calculate areas for different kinds of shapes?</strong></p>
+<p>Suppose we want to find out the areas of several different kinds of shapes, given one linear dimension. A straightforward way would be to do it like this:</p>
+<div class="sourceCode" id="cb48"><pre class="sourceCode scheme"><code class="sourceCode scheme"><a class="sourceLine" id="cb48-1" title="1">(<span class="ex">define</span><span class="fu"> pi </span><span class="fl">3.141592654</span>)</a>
+<a class="sourceLine" id="cb48-2" title="2"></a>
+<a class="sourceLine" id="cb48-3" title="3">(<span class="ex">define</span><span class="fu"> </span>(square-area r) (* r r))</a>
+<a class="sourceLine" id="cb48-4" title="4"></a>
+<a class="sourceLine" id="cb48-5" title="5">(<span class="ex">define</span><span class="fu"> </span>(circle-area r) (* pi r r))</a>
+<a class="sourceLine" id="cb48-6" title="6"></a>
+<a class="sourceLine" id="cb48-7" title="7">(<span class="ex">define</span><span class="fu"> </span>(sphere-area r) (* <span class="dv">4</span> pi r r))</a>
+<a class="sourceLine" id="cb48-8" title="8"></a>
+<a class="sourceLine" id="cb48-9" title="9">(<span class="ex">define</span><span class="fu"> </span>(hexagon-area r) (* (<span class="kw">sqrt</span> <span class="dv">3</span>) <span class="fl">1.5</span> r r))</a>
+<a class="sourceLine" id="cb48-10" title="10"></a>
+<a class="sourceLine" id="cb48-11" title="11">(square-area <span class="dv">6</span>)</a>
+<a class="sourceLine" id="cb48-12" title="12"><span class="co">; 36</span></a>
+<a class="sourceLine" id="cb48-13" title="13"></a>
+<a class="sourceLine" id="cb48-14" title="14">(circle-area <span class="dv">5</span>)</a>
+<a class="sourceLine" id="cb48-15" title="15"><span class="co">; 78.53981635</span></a></code></pre></div>
+<p>We want to generalize the pattern that these four procedures exhibit. Each of these procedures has a particular constant factor built in to its definition. What we’d like instead is one single procedure that lets you choose a constant factor when you invoke it. This new procedure will take a second argument besides the linear dimension <code>r</code> (the radius or side): a <code>shape</code> argument whose value is the desired constant factor.</p>
+<div class="sourceCode" id="cb49"><pre class="sourceCode scheme"><code class="sourceCode scheme"><a class="sourceLine" id="cb49-1" title="1">(<span class="ex">define</span><span class="fu"> </span>(area shape r) (* shape r r))</a>
+<a class="sourceLine" id="cb49-2" title="2"></a>
+<a class="sourceLine" id="cb49-3" title="3">(<span class="ex">define</span><span class="fu"> square </span><span class="dv">1</span>)</a>
+<a class="sourceLine" id="cb49-4" title="4"></a>
+<a class="sourceLine" id="cb49-5" title="5">(<span class="ex">define</span><span class="fu"> circle </span>pi)</a>
+<a class="sourceLine" id="cb49-6" title="6"></a>
+<a class="sourceLine" id="cb49-7" title="7">(<span class="ex">define</span><span class="fu"> sphere </span>(* <span class="dv">4</span> pi))</a>
+<a class="sourceLine" id="cb49-8" title="8"></a>
+<a class="sourceLine" id="cb49-9" title="9">(<span class="ex">define</span><span class="fu"> hexagon </span>(* (<span class="kw">sqrt</span> <span class="dv">3</span>) <span class="fl">1.5</span>))</a>
+<a class="sourceLine" id="cb49-10" title="10"></a>
+<a class="sourceLine" id="cb49-11" title="11">(area sphere <span class="dv">7</span>)</a>
+<a class="sourceLine" id="cb49-12" title="12"><span class="co">; 615.752160184</span></a></code></pre></div>
+<p>We started with several procedures. Then we found that they had certain points of similarity and certain differences. In order to write a single procedure that generalizes the points of similarity, we had to use an additional argument for each point of difference. (In this example, there was only one point of difference.)</p>
+<p>This idea of using a procedure to generalize a pattern is part of the larger idea of abstraction that we’ve been discussing throughout the book. We notice an algorithm that we need to use repeatedly, and so we separate the algorithm from any particular data values and give it a name.</p>
+<hr />
+<h3 id="the-every-pattern-revisited">The <code>every</code> Pattern Revisited</h3>
+<p><strong>What is <code>every</code> template like?</strong></p>
+<div class="sourceCode" id="cb50"><pre class="sourceCode scheme"><code class="sourceCode scheme"><a class="sourceLine" id="cb50-1" title="1">(<span class="ex">define</span><span class="fu"> </span>( every-something sent)</a>
+<a class="sourceLine" id="cb50-2" title="2">  (<span class="kw">if</span> (empty? sent)</a>
+<a class="sourceLine" id="cb50-3" title="3">      &#39;()</a>
+<a class="sourceLine" id="cb50-4" title="4">      (se (_______ (first sent))</a>
+<a class="sourceLine" id="cb50-5" title="5">          (every -something (bf sent)))))</a></code></pre></div>
+<p><strong>How to define <code>every</code>?</strong></p>
+<p>You’ve been writing <code>every</code>-like procedures by filling in the blank with a specific function. To generalize the pattern, we’ll use the trick of adding an argument, as we discussed in the last section.</p>
+<div class="sourceCode" id="cb51"><pre class="sourceCode scheme"><code class="sourceCode scheme"><a class="sourceLine" id="cb51-1" title="1">(<span class="ex">define</span><span class="fu"> </span>(every fn sent)</a>
+<a class="sourceLine" id="cb51-2" title="2">  (<span class="kw">if</span> (empty? sent)</a>
+<a class="sourceLine" id="cb51-3" title="3">      &#39;()</a>
+<a class="sourceLine" id="cb51-4" title="4">      (se (fn (first sent))</a>
+<a class="sourceLine" id="cb51-5" title="5">          (every fn (bf sent)))))</a></code></pre></div>
+<p>The version shown here does indeed work for words, because <code>first</code> and <code>butfirst</code> work for words. So probably “stuff” would be a better formal parameter than “sent.” (The result from <code>every</code> is always a sentence, because <code>sentence</code> is used to construct the result.)</p>
+<hr />
+<h3 id="the-difference-between-map-and-every">The Difference between <code>map</code> and <code>every</code></h3>
+<p><strong>How to define <code>map</code> procedure?</strong></p>
+<div class="sourceCode" id="cb52"><pre class="sourceCode scheme"><code class="sourceCode scheme"><a class="sourceLine" id="cb52-1" title="1">(<span class="ex">define</span><span class="fu"> </span>(map fn lst)</a>
+<a class="sourceLine" id="cb52-2" title="2">  (<span class="kw">if</span> (<span class="kw">null?</span> lst)</a>
+<a class="sourceLine" id="cb52-3" title="3">      &#39;()</a>
+<a class="sourceLine" id="cb52-4" title="4">      (<span class="kw">cons</span> (fn (<span class="kw">car</span> lst))</a>
+<a class="sourceLine" id="cb52-5" title="5">            (map fn (<span class="kw">cdr</span> lst)))))</a></code></pre></div>
+<p>The structure here is identical to that of <code>every</code>; the only difference is that we use <code>cons</code>, <code>car</code>, and <code>cdr</code> instead of <code>se</code>, <code>first</code> , and <code>butfirst</code>.</p>
+<p>One implication of this is that you can’t use <code>map</code> with a word, since it’s an error to take the <code>car</code> of a word.</p>
+<p><strong>When is it advantageous to use <code>map</code> instead of <code>every</code>?</strong></p>
+<p>Suppose you’re using <code>map</code> with a structured list, like this:</p>
+<div class="sourceCode" id="cb53"><pre class="sourceCode scheme"><code class="sourceCode scheme"><a class="sourceLine" id="cb53-1" title="1">(map (<span class="kw">lambda</span> (flavor) (se flavor &#39;(is great)))</a>
+<a class="sourceLine" id="cb53-2" title="2">     &#39;(ginger (ultra chocolate) pumpkin (rum raisin)))</a>
+<a class="sourceLine" id="cb53-3" title="3"><span class="co">; ((GINGER IS GREAT) (ULTRA CHOCOLATE IS GREAT)</span></a>
+<a class="sourceLine" id="cb53-4" title="4"><span class="co">;  (PUMPKIN IS GREAT) (RUM RAISIN IS GREAT))</span></a>
+<a class="sourceLine" id="cb53-5" title="5"></a>
+<a class="sourceLine" id="cb53-6" title="6">(every (<span class="kw">lambda</span> (flavor) (se flavor &#39;(is great)))</a>
+<a class="sourceLine" id="cb53-7" title="7">       &#39;(ginger (ultra chocolate) pumpkin (rum raisin)))</a>
+<a class="sourceLine" id="cb53-8" title="8"><span class="co">; (GINGER IS GREAT ULTRA CHOCOLATE IS GREAT PUMPKIN IS GREAT</span></a>
+<a class="sourceLine" id="cb53-9" title="9"><span class="co">;  RUM RAISIN IS GREAT)</span></a></code></pre></div>
+<p><strong>Why does <code>map</code> preserve the structure of the sublists while <code>every</code> doesn’t?</strong></p>
+<p><code>map</code> uses <code>cons</code> to combine the elements of the result, whereas <code>every</code> uses <code>sentence</code> :</p>
+<div class="sourceCode" id="cb54"><pre class="sourceCode scheme"><code class="sourceCode scheme"><a class="sourceLine" id="cb54-1" title="1">(<span class="kw">cons</span> &#39;(pumpkin is great)</a>
+<a class="sourceLine" id="cb54-2" title="2">      (<span class="kw">cons</span> &#39;(rum raisin is great)</a>
+<a class="sourceLine" id="cb54-3" title="3">            &#39;()))</a>
+<a class="sourceLine" id="cb54-4" title="4"><span class="co">; ((PUMPKIN IS GREAT) (RUM RAISIN IS GREAT))</span></a>
+<a class="sourceLine" id="cb54-5" title="5"></a>
+<a class="sourceLine" id="cb54-6" title="6">(se &#39;(pumpkin is great)</a>
+<a class="sourceLine" id="cb54-7" title="7">    (se &#39;(rum raisin is great)</a>
+<a class="sourceLine" id="cb54-8" title="8">        &#39;()))</a>
+<a class="sourceLine" id="cb54-9" title="9"><span class="co">; (PUMPKIN IS GREAT RUM RAISIN IS GREAT)</span></a></code></pre></div>
+<hr />
+<h3 id="filter"><code>filter</code></h3>
+<p><strong>How to define <code>filter</code>?</strong></p>
+<div class="sourceCode" id="cb55"><pre class="sourceCode scheme"><code class="sourceCode scheme"><a class="sourceLine" id="cb55-1" title="1">(<span class="ex">define</span><span class="fu"> </span>(filter pred lst)</a>
+<a class="sourceLine" id="cb55-2" title="2">  (<span class="kw">cond</span> ((<span class="kw">null?</span> lst) &#39;())</a>
+<a class="sourceLine" id="cb55-3" title="3">        ((pred (<span class="kw">car</span> lst))</a>
+<a class="sourceLine" id="cb55-4" title="4">         (<span class="kw">cons</span> (<span class="kw">car</span> lst) (filter pred (<span class="kw">cdr</span> lst))))</a>
+<a class="sourceLine" id="cb55-5" title="5">        (<span class="kw">else</span> (filter pred (<span class="kw">cdr</span> lst)))))</a></code></pre></div>
+<p>Like <code>map</code>, this uses <code>cons</code> as the constructor so that it will work properly on structured lists.</p>
+<p>(Aside from the difference between lists and sentences, this is just like the keep template on page 224.)</p>
+<hr />
+<h3 id="accumulate-and-reduce"><code>accumulate</code> and <code>reduce</code></h3>
+<p><strong>How to define accumulate with only two arguments?</strong></p>
+<p><em>The trick is that in our <code>reduce</code> and <code>accumulate</code> the base case is a one-element argument</em>, rather than an empty argument. When we’re down to one element in the argument, we just return that element:</p>
+<div class="sourceCode" id="cb56"><pre class="sourceCode scheme"><code class="sourceCode scheme"><a class="sourceLine" id="cb56-1" title="1">(<span class="ex">define</span><span class="fu"> </span>(accumulate combiner stuff)  <span class="co">;; first version</span></a>
+<a class="sourceLine" id="cb56-2" title="2">  (<span class="kw">if</span> (empty? (bf stuff))</a>
+<a class="sourceLine" id="cb56-3" title="3">      (first stuff)</a>
+<a class="sourceLine" id="cb56-4" title="4">      (combiner (first stuff)</a>
+<a class="sourceLine" id="cb56-5" title="5">                (accumulate combiner (bf stuff)))))</a></code></pre></div>
+<p>This version is a simplification of the one we actually provide. What happens if <code>stuff</code> is empty? This version blows up, since it tries to take the <code>butfirst</code> of stuff immediately. Our final version has a specific check for empty arguments:</p>
+<div class="sourceCode" id="cb57"><pre class="sourceCode scheme"><code class="sourceCode scheme"><a class="sourceLine" id="cb57-1" title="1">(<span class="ex">define</span><span class="fu"> </span>(accumulate combiner stuff)</a>
+<a class="sourceLine" id="cb57-2" title="2">  (<span class="kw">cond</span> ((<span class="kw">not</span> (empty? stuff)) (real-accumulate combiner stuff))</a>
+<a class="sourceLine" id="cb57-3" title="3">        ((<span class="kw">member</span> combiner (<span class="kw">list</span> <span class="op">+</span> * word se <span class="kw">append</span>))</a>
+<a class="sourceLine" id="cb57-4" title="4">         (combiner))</a>
+<a class="sourceLine" id="cb57-5" title="5">        (<span class="kw">else</span> (error</a>
+<a class="sourceLine" id="cb57-6" title="6">               <span class="st">&quot;Can’t accumulate empty input with that combiner&quot;</span>))))</a>
+<a class="sourceLine" id="cb57-7" title="7"></a>
+<a class="sourceLine" id="cb57-8" title="8">(<span class="ex">define</span><span class="fu"> </span>(real-accumulate combiner stuff)</a>
+<a class="sourceLine" id="cb57-9" title="9">  (<span class="kw">if</span> (empty? (bf stuff))</a>
+<a class="sourceLine" id="cb57-10" title="10">      (first stuff)</a>
+<a class="sourceLine" id="cb57-11" title="11">      (combiner (first stuff) (real-accumulate combiner (bf stuff)))))</a></code></pre></div>
+<p><code>reduce</code> is the same, except that it uses <code>null?</code>, <code>car</code>, and <code>cdr</code>.</p>
+<p>As we mentioned in Chapter 8, many of Scheme’s primitive procedures return their identity element when invoked with no arguments. We can take advantage of this; if <code>accumulate</code> is invoked with an empty second argument and one of the procedures <code>+</code>, <code>*</code>, <code>word</code>, <code>sentence</code>, <code>append</code> or <code>list</code>, we invoke the combiner with no arguments to produce the return value.</p>
+<p>On the other hand, if <code>accumulate</code>’s combiner argument is something like <code>(lambda (x y) (word x ’- y))</code> or <code>max</code>, then there’s nothing <code>accumulate</code> can return, so we give an error message.</p>
+<hr />
+<h3 id="robustness">Robustness</h3>
 </body>
 </html>
