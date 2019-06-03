@@ -1096,3 +1096,104 @@ On the other hand, if `accumulate`'s combiner argument is something like `(lambd
 ------------------------------------------------------------------------
 
 ### Robustness
+
+**How to define `accumulate` in a non-robust version?**
+
+```scheme
+(define (accumulate combiner stuff)   ;; non-robust version
+  (if (not (empty? stuff))
+      (real-accumulate combiner stuff)
+      (combiner)))
+```
+
+**What is the reasoning in favor of non-robust programming?**
+
+In either version, the user who tries to evaluate an expression like
+
+```scheme
+(accumulate max '())
+```
+
+is going to get an error message. In the longer version we’ve spent both our own programming effort and a little of the computer’s time on every invocation just to give a *different* error message from the one that Scheme would have given anyway. What’s the point?
+
+**What is the reasoning in favor of the robust programming?**
+
+Here is the reasoning in favor of the longer version: In practice, the empty-argument situation isn’t going to arise because someone uses a quoted empty sentence; instead the second argument to accumulate will be some expression whose value happens to be empty under certain conditions. The user will then have to debug the program that caused those conditions. Debugging is hard; we should make it easier for the user, if we can, by giving an error message that points clearly to the problem.
+
+**What is a robust program?**
+
+A program that behaves politely when given incorrect input is called *robust*. It’s not always a matter of better or worse error messages.
+
+**Robust program vs non-robust program?**
+
+It’s possible to pay either too little or too much attention to program robustness. If you’re a professional programmer, your employer will expect your programs to survive errors that are likely to happen. On the other hand, your programs will be hard to read and debug if the error checking swamps the real work! As a student, unless you are specifically asked to “bulletproof” your program, don’t answer exam questions by writing procedures like this one:
+
+```scheme
+(define (even? num)  ;; silly example
+  (cond ((not (number? num)) (error "Not a number."))
+        ((not (integer? num)) (error "Not an integer."))
+        ((< num 0) (error "Argument must be positive."))
+        (else (= (remainder num 2) 0))))
+```
+
+---
+
+### Higher-Order Functions for Structured Lists
+
+Any time you notice yourself writing what feels like the same procedure over again, but with different details, consider inventing a higher-order function.
+
+For example, here’s a procedure we defined in Chapter 17.
+
+```scheme
+(define (deep-pigl structure)
+  (cond ((word? structure) (pigl structure))
+        ((null? structure) '())
+        (else (cons (deep-pigl (car structure))
+                    (deep-pigl (cdr structure))))))
+```
+
+This procedure converts every word in a structured list to Pig Latin. Suppose we have a structure full of numbers and we want to compute all of their squares. We could write a specific procedure `deep-square` , but instead, we’ll write a higher-order procedure:
+
+```scheme
+(define (deep-map f structure)
+  (cond ((word? structure) (f structure))
+        ((null? structure) '())
+        (else (cons (deep-map f (car structure))
+                    (deep-map f (cdr structure))))))
+```
+
+---
+
+### The Zero-trip Do Loop
+
+**What is the `do` control mechanism in Fortran?**
+
+Fortran includes a control mechanism called `do`, a sort of higher-order procedure that carries out a computation repeatedly, as `every` does. But instead of carrying out the computation once for each element of a given collection of data (like the sentence argument to `every`), `do` performs a computation once for each integer in a range specified by its endpoints. “For every number between 4 and 16, do such-and-such.”
+
+**What is "zero-trip `do` loop" proposal?**
+
+What if you specify endpoints such that the starting value is greater than the ending value? In the first implementation of Fortran, nobody thought very hard about this question, and they happened to implement `do` in such a way that if you specified a backward range, the computation was done once, for the given starting value, before Fortran noticed that it was past the ending value.
+
+Twenty years later, a bunch of computer scientists argued that this behavior was wrong—that a `do` loop with its starting value greater than its ending value should not carry out its computation at all. This proposal for a “*zero-trip do loop*” was strongly opposed by Fortran old-timers, not because of any principle but because of all the thousands of Fortran programs that had been written to rely on the one-trip behavior.
+
+**What is the point of "zero-trip `do` loop" story?**
+
+The point of this story is that the Fortran users had to debate the issue so heatedly because they are stuck with only the control mechanisms that are built into the language.  Fortran doesn’t have the idea of function as data, so Fortran programmers can’t write their own higher-order procedures. But you, using the techniques of this chapter, can create precisely the control mechanism that you need for whatever problem you happen to be working on.
+
+---
+
+### Pitfalls
+
+* The most crucial point in inventing a higher-order function is to make sure that the pattern you have in mind really does generalize. For example, if you want to write a higher-order function for structured data, what is the base case? Will you use the tree abstract data type, or will you use car / cdr recursion?
+
+* When you generalize a pattern by adding a new argument (typically a procedure), be sure you add it to the recursive invocation(s) as well as to the formal parameter list!
+
+---
+
+### Exercises 19.1
+
+[Solution]()
+
+### Exercises 19.2-19.13
+
+[Solution]()

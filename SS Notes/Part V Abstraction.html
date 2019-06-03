@@ -834,5 +834,60 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <p>On the other hand, if <code>accumulate</code>’s combiner argument is something like <code>(lambda (x y) (word x ’- y))</code> or <code>max</code>, then there’s nothing <code>accumulate</code> can return, so we give an error message.</p>
 <hr />
 <h3 id="robustness">Robustness</h3>
+<p><strong>How to define <code>accumulate</code> in a non-robust version?</strong></p>
+<div class="sourceCode" id="cb58"><pre class="sourceCode scheme"><code class="sourceCode scheme"><a class="sourceLine" id="cb58-1" title="1">(<span class="ex">define</span><span class="fu"> </span>(accumulate combiner stuff)   <span class="co">;; non-robust version</span></a>
+<a class="sourceLine" id="cb58-2" title="2">  (<span class="kw">if</span> (<span class="kw">not</span> (empty? stuff))</a>
+<a class="sourceLine" id="cb58-3" title="3">      (real-accumulate combiner stuff)</a>
+<a class="sourceLine" id="cb58-4" title="4">      (combiner)))</a></code></pre></div>
+<p><strong>What is the reasoning in favor of non-robust programming?</strong></p>
+<p>In either version, the user who tries to evaluate an expression like</p>
+<div class="sourceCode" id="cb59"><pre class="sourceCode scheme"><code class="sourceCode scheme"><a class="sourceLine" id="cb59-1" title="1">(accumulate <span class="kw">max</span> &#39;())</a></code></pre></div>
+<p>is going to get an error message. In the longer version we’ve spent both our own programming effort and a little of the computer’s time on every invocation just to give a <em>different</em> error message from the one that Scheme would have given anyway. What’s the point?</p>
+<p><strong>What is the reasoning in favor of the robust programming?</strong></p>
+<p>Here is the reasoning in favor of the longer version: In practice, the empty-argument situation isn’t going to arise because someone uses a quoted empty sentence; instead the second argument to accumulate will be some expression whose value happens to be empty under certain conditions. The user will then have to debug the program that caused those conditions. Debugging is hard; we should make it easier for the user, if we can, by giving an error message that points clearly to the problem.</p>
+<p><strong>What is a robust program?</strong></p>
+<p>A program that behaves politely when given incorrect input is called <em>robust</em>. It’s not always a matter of better or worse error messages.</p>
+<p><strong>Robust program vs non-robust program?</strong></p>
+<p>It’s possible to pay either too little or too much attention to program robustness. If you’re a professional programmer, your employer will expect your programs to survive errors that are likely to happen. On the other hand, your programs will be hard to read and debug if the error checking swamps the real work! As a student, unless you are specifically asked to “bulletproof” your program, don’t answer exam questions by writing procedures like this one:</p>
+<div class="sourceCode" id="cb60"><pre class="sourceCode scheme"><code class="sourceCode scheme"><a class="sourceLine" id="cb60-1" title="1">(<span class="ex">define</span><span class="fu"> </span>(<span class="kw">even?</span> num)  <span class="co">;; silly example</span></a>
+<a class="sourceLine" id="cb60-2" title="2">  (<span class="kw">cond</span> ((<span class="kw">not</span> (<span class="kw">number?</span> num)) (error <span class="st">&quot;Not a number.&quot;</span>))</a>
+<a class="sourceLine" id="cb60-3" title="3">        ((<span class="kw">not</span> (<span class="kw">integer?</span> num)) (error <span class="st">&quot;Not an integer.&quot;</span>))</a>
+<a class="sourceLine" id="cb60-4" title="4">        ((<span class="op">&lt;</span> num <span class="dv">0</span>) (error <span class="st">&quot;Argument must be positive.&quot;</span>))</a>
+<a class="sourceLine" id="cb60-5" title="5">        (<span class="kw">else</span> (<span class="op">=</span> (<span class="kw">remainder</span> num <span class="dv">2</span>) <span class="dv">0</span>))))</a></code></pre></div>
+<hr />
+<h3 id="higher-order-functions-for-structured-lists">Higher-Order Functions for Structured Lists</h3>
+<p>Any time you notice yourself writing what feels like the same procedure over again, but with different details, consider inventing a higher-order function.</p>
+<p>For example, here’s a procedure we defined in Chapter 17.</p>
+<div class="sourceCode" id="cb61"><pre class="sourceCode scheme"><code class="sourceCode scheme"><a class="sourceLine" id="cb61-1" title="1">(<span class="ex">define</span><span class="fu"> </span>(deep-pigl structure)</a>
+<a class="sourceLine" id="cb61-2" title="2">  (<span class="kw">cond</span> ((word? structure) (pigl structure))</a>
+<a class="sourceLine" id="cb61-3" title="3">        ((<span class="kw">null?</span> structure) &#39;())</a>
+<a class="sourceLine" id="cb61-4" title="4">        (<span class="kw">else</span> (<span class="kw">cons</span> (deep-pigl (<span class="kw">car</span> structure))</a>
+<a class="sourceLine" id="cb61-5" title="5">                    (deep-pigl (<span class="kw">cdr</span> structure))))))</a></code></pre></div>
+<p>This procedure converts every word in a structured list to Pig Latin. Suppose we have a structure full of numbers and we want to compute all of their squares. We could write a specific procedure <code>deep-square</code> , but instead, we’ll write a higher-order procedure:</p>
+<div class="sourceCode" id="cb62"><pre class="sourceCode scheme"><code class="sourceCode scheme"><a class="sourceLine" id="cb62-1" title="1">(<span class="ex">define</span><span class="fu"> </span>(deep-map f structure)</a>
+<a class="sourceLine" id="cb62-2" title="2">  (<span class="kw">cond</span> ((word? structure) (f structure))</a>
+<a class="sourceLine" id="cb62-3" title="3">        ((<span class="kw">null?</span> structure) &#39;())</a>
+<a class="sourceLine" id="cb62-4" title="4">        (<span class="kw">else</span> (<span class="kw">cons</span> (deep-map f (<span class="kw">car</span> structure))</a>
+<a class="sourceLine" id="cb62-5" title="5">                    (deep-map f (<span class="kw">cdr</span> structure))))))</a></code></pre></div>
+<hr />
+<h3 id="the-zero-trip-do-loop">The Zero-trip Do Loop</h3>
+<p><strong>What is the <code>do</code> control mechanism in Fortran?</strong></p>
+<p>Fortran includes a control mechanism called <code>do</code>, a sort of higher-order procedure that carries out a computation repeatedly, as <code>every</code> does. But instead of carrying out the computation once for each element of a given collection of data (like the sentence argument to <code>every</code>), <code>do</code> performs a computation once for each integer in a range specified by its endpoints. “For every number between 4 and 16, do such-and-such.”</p>
+<p><strong>What is “zero-trip <code>do</code> loop” proposal?</strong></p>
+<p>What if you specify endpoints such that the starting value is greater than the ending value? In the first implementation of Fortran, nobody thought very hard about this question, and they happened to implement <code>do</code> in such a way that if you specified a backward range, the computation was done once, for the given starting value, before Fortran noticed that it was past the ending value.</p>
+<p>Twenty years later, a bunch of computer scientists argued that this behavior was wrong—that a <code>do</code> loop with its starting value greater than its ending value should not carry out its computation at all. This proposal for a “<em>zero-trip do loop</em>” was strongly opposed by Fortran old-timers, not because of any principle but because of all the thousands of Fortran programs that had been written to rely on the one-trip behavior.</p>
+<p><strong>What is the point of “zero-trip <code>do</code> loop” story?</strong></p>
+<p>The point of this story is that the Fortran users had to debate the issue so heatedly because they are stuck with only the control mechanisms that are built into the language. Fortran doesn’t have the idea of function as data, so Fortran programmers can’t write their own higher-order procedures. But you, using the techniques of this chapter, can create precisely the control mechanism that you need for whatever problem you happen to be working on.</p>
+<hr />
+<h3 id="pitfalls-2">Pitfalls</h3>
+<ul>
+<li><p>The most crucial point in inventing a higher-order function is to make sure that the pattern you have in mind really does generalize. For example, if you want to write a higher-order function for structured data, what is the base case? Will you use the tree abstract data type, or will you use car / cdr recursion?</p></li>
+<li><p>When you generalize a pattern by adding a new argument (typically a procedure), be sure you add it to the recursive invocation(s) as well as to the formal parameter list!</p></li>
+</ul>
+<hr />
+<h3 id="exercises-19.1">Exercises 19.1</h3>
+<p><a href="">Solution</a></p>
+<h3 id="exercises-19.2-19.13">Exercises 19.2-19.13</h3>
+<p><a href="">Solution</a></p>
 </body>
 </html>
