@@ -1,5 +1,22 @@
 ; Exercises 19.2-19.13
 
+; -------------------- tree constructor/selectors/predicates
+(define (make-node datum children)
+  (cons datum children))
+
+(define (leaf datum)
+  (make-node datum '()))
+
+(define (leaf? node)
+  (null? (children node)))
+
+(define (datum node)
+  (car node))
+
+(define (children node)
+  (cdr node))
+; --------------------
+
 ; 19.2 Write keep. Don’t forget that keep has to return a sentence if its second argument is a sentence, and a word if its second argument is a word.
 
 ; (Hint: it might be useful to write a combine procedure that uses either word or sentence depending on the types of its arguments.)
@@ -204,23 +221,6 @@
 
 ; 19.10 Write tree-map, analogous to our deep-map, but for trees, using the datum and children selectors.
 
-; -------------------- tree constructor/selectors/predicates
-(define (make-node datum children)
-  (cons datum children))
-
-(define (leaf datum)
-  (make-node datum '()))
-
-(define (leaf? node)
-  (null? (children node)))
-
-(define (datum node)
-  (car node))
-
-(define (children node)
-  (cdr node))
-; --------------------
-
 ; solution:
 
 (define (tree-map fn tree)
@@ -237,12 +237,78 @@
 
 ; **********************************************************
 
+; 19.11 Write repeated. (This is a hard exercise!)
 
+; --------------------
+; The procedure repeated takes two arguments, a procedure and a number, and returns a new procedure. The returned procedure is one that invokes the original procedure repeatedly.
+; --------------------
 
+; solution:
 
+(define (repeated fn n)
+ (if (<= n 1)
+     (lambda arg (apply fn arg))
+     (lambda arg (apply fn (repeated-helper fn arg (- n 1))))))
 
+(define (repeated-helper fn arg n)
+  (if (= n 1)
+      (list (apply fn arg))
+      (list (apply fn (repeated-helper fn arg (- n 1))))))
 
+; -------------------- thinking process
 
+(define (repeated-twice-single-arg fn)
+  (lambda (arg) (fn (fn arg))))
 
+(define (repeated-twice-single-arg-v2 fn)
+  (lambda (arg) (apply fn (list (apply fn (list arg))))))
 
+(define (repeated-twice-infinite-arg fn)
+ (lambda arg (apply fn (list (apply fn arg)))))
 
+; --------------------
+
+; **********************************************************
+
+; 19.12 Write tree-reduce. You may assume that the combiner argument can be invoked with no arguments.
+
+(tree-reduce
+ +
+ (make-node 3 (list (make-node 4 '())
+                    (make-node 7 '())
+                    (make-node 2 (list (make-node 3 '())
+                                       (make-node 8 '()))))))
+; 27
+
+; solution:
+
+(define (tree-reduce combiner tree)
+  (if (leaf? tree)
+      (datum tree)
+      (combiner (datum tree) (forest-reduce combiner (children tree)))))
+
+(define (forest-reduce combiner forest)
+  (if (null? (cdr forest))
+      (tree-reduce combiner (car forest))
+      (combiner (tree-reduce combiner (car forest))
+                (forest-reduce combiner (cdr forest)))))
+
+; **********************************************************
+
+; 19.13 Write deep-reduce , similar to tree-reduce, but for structured lists:
+
+(deep-reduce word '(r ((a (m b) (l)) (e (r)))))
+; RAMBLER
+
+; solution:
+
+(define (deep-reduce combiner structure)
+  (if (not (empty? structure))
+      (real-deep-reduce combiner structure)
+      (combiner)))
+
+(define (real-deep-reduce combiner structure)
+  (cond ((word? structure) structure)
+        ((null? (cdr structure)) (real-deep-reduce combiner (car structure)))
+        (else (combiner (real-deep-reduce combiner (car structure))
+                        (real-deep-reduce combiner (cdr structure))))))
