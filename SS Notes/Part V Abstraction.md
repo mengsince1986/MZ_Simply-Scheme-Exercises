@@ -1192,8 +1192,8 @@ The point of this story is that the Fortran users had to debate the issue so hea
 
 ### Exercises 19.1
 
-[Solution]()
+[Solution](https://github.com/mengsince1986/Simply-Scheme-exercises/blob/master/SS%20Exercises/Exercise%2019.1.scm)
 
 ### Exercises 19.2-19.13
 
-[Solution]()
+[Solution](https://github.com/mengsince1986/Simply-Scheme-exercises/blob/master/SS%20Exercises/Exercises%2019.2-19.13.scm)
