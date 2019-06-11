@@ -49,4 +49,171 @@ After introducing Scheme’s mechanisms for sequential programming, we’ll use 
 
 ### Printing
 
+**How to print the lyrics of "99 Bottles of Beer on the Wall" with scheme?**
 
+We’ll write a program to print a verse, rather than return it in a list:
+
+```scheme
+(define (bottles n)
+  (if (= n 0)
+      'burp
+      (begin (verse n)
+             (bottles (- n 1)))))
+
+(define (verse n)
+(show (cons n '(bottles of beer on the wall)))
+(show (cons n '(bottles of beer)))
+(show '(if one of those bottles should happen to fall))
+(show (cons (- n 1) '(bottles of beer on the wall)))
+(show '()))
+
+(bottles 3)
+; (3 BOTTLES OF BEER ON THE WALL)
+; (3 BOTTLES OF BEER)
+; (IF ONE OF THOSE BOTTLES SHOULD HAPPEN TO FALL)
+; (2 BOTTLES OF BEER ON THE WALL)
+; ()
+; (2 BOTTLES OF BEER ON THE WALL)
+; (2 BOTTLES OF BEER)
+; (IF ONE OF THOSE BOTTLES SHOULD HAPPEN TO FALL)
+; (1 BOTTLES OF BEER ON THE WALL)
+; ()
+; (1 BOTTLES OF BEER ON THE WALL)
+; (1 BOTTLES OF BEER)
+; (IF ONE OF THOSE BOTTLES SHOULD HAPPEN TO FALL)
+; (0 BOTTLES OF BEER ON THE WALL)
+; ()
+; BURP
+```
+
+Why was "burp" printed at the end? Just because we’re printing things explicitly doesn’t mean that the read-eval-print loop stops functioning. We typed the expression `(bottles 3)` . In the course of evaluating that expression, Scheme printed several lines for us. But the value of the expression was the word burp, because that’s what bottles returned.
+
+---
+
+### Side Effects and Sequencing
+
+**How does procedure `show` work?**
+
+The procedures we’ve used compute and return a value, and do nothing else. `show` is different. Although every Scheme procedure returns a value, *the Scheme language standard doesn’t specify what value the printing procedures should return*. Instead, we are interested in their side effects. *we invoke show because we want it to do something, namely, print its argument on the screen.*
+
+Suppose `show` returns `#f` in your version of Scheme. Then you might see
+
+```scheme
+(show 7)
+; 7
+; #F
+```
+
+But since the return value is unspecified, we try to write programs in such a way that *we never use `show`’s return value as the return value from our procedures.*
+
+**What is "side effect"?**
+
+What exactly do we mean by “side effect”? The kinds of procedures that we’ve used before this chapter can compute values, invoke helper procedures, provide arguments to the helper procedures, and return a value. There may be a lot of activity going on within the procedure, but the procedure affects the world outside of itself only by returning a value that some other procedure might use. `show` affects the world outside of itself by putting something on the screen. After show has finished its work, someone who looks at the screen can tell that show was used.
+
+The term *side effect* is based on the idea that a procedure may have a useful return value as its main purpose and may also have an effect “on the side.” It’s a misnomer to talk about the side effect of `show`, since the effect is its main purpose.
+
+**What is the difference between values and effects?**
+
+Here’s an example to illustrate the difference between values and effects:
+
+```scheme
+(define (effect x)
+  (show x)
+  'done)
+
+(define (value x)
+  x)
+
+(effect '(oh! darling))
+; (OH! DARLING)
+; DONE
+
+(value '(oh! darling))
+; (OH! DARLING)
+
+(bf (effect '(oh! darling)))
+; (OH! DARLING)
+; ONE
+
+(bf (value '(oh! darling)))
+; (DARLING)
+
+(define (lots-of-effect x)
+  (effect x)
+  (effect x)
+  (effect x))
+
+(define (lots-of-value x)
+  (value x)
+  (value x)
+  (value x))
+
+(lots-of-effect '(oh! darling))
+; (OH! DARLING)
+; (OH! DARLING)
+; (OH! DARLING)
+; DONE
+
+(lots-of-value ’(oh! darling))
+; (OH! DARLING)
+```
+
+This example also demonstrates the second new idea, *sequencing*: Each of `effect`, `lots-of-effect`, and `lots-of-value` contains more than one expression in its body. When you invoke such a procedure, *Scheme evaluates all the expressions in the body, in order, and returns the value of the last one.* This also works in the body of a `let`, which is really the body of a procedure, and in each clause of a `cond`.
+
+```scheme
+(cond ((< 4 0)
+       (show '(how interesting))
+       (show '(4 is less than zero?))
+       #f)
+      ((> 4 0)
+       (show '(more reasonable))
+       (show '(4 really is more than zero))
+       'value)
+      (else
+       (show '(you mean 4=0?))
+       #f))
+
+; (MORE REASONABLE)
+; (4 REALLY IS MORE THAN ZERO)
+; VALUE
+```
+
+> In Chapter 4, we said that the body of a procedure was always one single expression. We lied. *But as long as you don’t use any procedures with side effects, it doesn’t do you any good to evaluate more than one expression in a body.*
+
+When we invoked `lots-of-value`, Scheme invoked `value` three times; it discarded the values returned by the first two invocations, and returned the value from the third invocation. Similarly, when we invoked `lots-of-effect`, Scheme invoked `effect` three times and returned the value from the third invocation. But each invocation of `effect` caused its argument to be printed by invoking `show`.
+
+---
+
+### The `begin` Special Form
+
+**Why is that multiple expressions can't be used in an `if` construction?**
+
+The `lots-of-effect` procedure accomplished sequencing by having more than one expression in its body. This works fine if the sequence of events that you want to perform is the entire body of a procedure. But in `bottles` we wanted to include a sequence as one of the alternatives in an `if` construction. We couldn’t just say
+
+```scheme
+(define (bottles n)
+  (if (= n 0)
+      '()
+      (verse n)
+      (bottles (- n 1))))
+```
+
+because `if` must have exactly three arguments. Otherwise, how would `if` know whether we meant `(verse n)` to be the second expression in the true case, or the first expression in the false case?
+
+**How does `begin` work?**
+
+Instead, to turn the sequence of expressions into a single expression, we use the special form `begin`. *It takes any number of arguments, evaluates them from left to right, and returns the value of the last one.*
+
+```scheme
+(define bottles n)
+(if (= n 0)
+’burp
+(begin (verse n)
+(bottles (- n 1)))))
+```
+
+(One way to think about sequences in procedure bodies is that every procedure body has an invisible `begin` surrounding it.)
+
+---
+
+### This isn't Functional Programming
