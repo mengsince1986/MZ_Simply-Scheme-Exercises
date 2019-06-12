@@ -217,3 +217,317 @@ Instead, to turn the sequence of expressions into a single expression, we use th
 ---
 
 ### This isn't Functional Programming
+
+**What is the difference between a function and procedure?**
+
+Sequencing and side effects are radical departures from the idea of functional programming. In fact, we’d like to reserve the name *function* for something that computes and returns one value, with no side effects.
+
+“*Procedure*” is the general term for the thing that lambda returns—an embodiment of an algorithm. If the algorithm is the kind that computes and returns a single value without side effects, then we say that the procedure implements a function.
+
+> Sometimes people sloppily say that the procedure is a function. In fact, you may hear people be really sloppy and call a non-functional procedure a function!
+
+**Is there sequencing in functional programming?**
+
+There is a certain kind of sequencing even in functional programming. If you say
+
+```scheme
+(* (+ 3 4) (- 92 15))
+```
+
+it’s clear that the addition has to happen before the multiplication, because the result of the addition provides one of the arguments to the multiplication.
+
+What’s new in the sequential programming style is the emphasis on *sequence*, and the fact that the expressions in the sequence are independent instead of contributing values to each other. In this multiplication problem, for example, we don’t care whether the addition happens before or after the subtraction. If the addition and subtraction were in a sequence, we’d be using them for independent purposes:
+
+```scheme
+(begin
+ (show (+ 3 4))
+ (show (- 92 15)))
+```
+
+This is what we mean by being independent. *Neither expression helps in computing the other. And the order matters because we can see the order in which the results are printed.*
+
+---
+
+### Not Moving to the Next Line
+
+**How to make a program print several things on the same line?**
+
+```scheme
+(begin (show-addition 3 4)
+       (show-addition 6 8)
+       'done)
+
+; 3+4=7
+; 6+8=14
+; DONE
+```
+
+We use `display`, which doesn’t move to the next line after printing its argument:
+
+```scheme
+(define (show-addition x y)
+  (display x)
+  (display '+)
+  (display y)
+  (display '=)
+  (show (+ x y)))
+```
+
+(The last one is a show because we do want to start a new line after it.)
+
+**How to print a blank line?**
+
+You use `newline`:
+
+```scheme
+(define (verse n)
+  (show (cons n '(bottles of beer on the wall)))
+  (show (cons n '(bottles of beer)))
+  (show '(if one of those bottles should happen to fall))
+  (show (cons (- n 1) '(bottles of beer on the wall)))
+  (newline))                                                       ; replaces (show '())
+```
+
+In fact, `show` isn’t an official Scheme primitive; we wrote it in terms of `display` and `newline` .
+
+---
+
+### Strings
+
+**What are strings?**
+
+*Strings* are words enclosed in double-quote marks so that Scheme will permit the use of punctuation or other unusual characters. Strings also preserve the case of letters, so they can be used to beautify our song even more.
+
+**How to beautify "99 Bottles of Beer on the Wall" with strings?**
+
+Since any character can be in a string, including spaces, the easiest thing to do in this case is to treat all the letters, spaces, and punctuation characters of each line of the song as one long word.
+
+```scheme
+(define (verse n)
+  (display n)
+  (show " bottles of beer on the wall,")
+  (display n)
+  (show " bottles of beer.")
+  (show "If one of those bottles should happen to fall,")
+  (display (- n 1))
+  (show " bottles of beer on the wall.")
+  (newline))
+
+(verse 6)
+; 6 bottles of beer on the wall,
+; 6 bottles of beer.
+; If one of those bottles should happen to fall,
+; 5 bottles of beer on the wall.
+; #F                                             ; or whatever is returned by (newline)
+```
+
+It’s strange to think of “bottles of beer on the wall,” as a single word. But *the rule is that anything inside double quotes counts as a single word. It doesn’t have to be an English word.*
+
+---
+
+### A Higher-Order Procedure for Sequencing
+
+**How to print each element of a list?**
+
+```scheme
+(define (show-list lst)
+  (if (null? lst)
+      'done
+      (begin (show (car lst))
+             (show-list (cdr lst)))))
+
+(show-list '((dig a pony) (doctor robert) (for you blue)))
+; (DIG A PONY)
+; (DOCTOR ROBERT)
+; (FOR YOU BLUE)
+; DONE
+```
+
+**How to abstract `show-list` into a higher order procedure? (We can’t call it a “higher-order function” because this one is for computations with side effects.)**
+
+The procedure `for-each` is part of standard Scheme:
+
+```scheme
+(for-each show '((mean mr mustard) (no reply) (tell me why)))
+; (MEAN MR MUSTARD)
+; (NO REPLY)
+; (TELL ME WHY)
+```
+
+The value returned by `for-each` is unspecified.
+
+**Why is that we use `for-each` instead of `map` to print each element of a list?**
+
+There are two reasons. One is just an efficiency issue: `map` constructs a list containing the values returned by each of its sub-computations; in this example, it would be a list of three instances of the unspecified value returned by `show`. But we aren’t going to use that list for anything, so there’s no point in constructing it.
+
+The second reason is more serious. *In functional programming, the order of evaluation of subexpressions is unspecified.* For example, when we evaluate the expression
+
+```scheme
+(- (+ 4 5) (* 6 7))
+```
+
+we don’t know whether the addition or the multiplication happens first. Similarly, the order in which `map` computes the results for each element is unspecified. That’s okay as long as the ultimately returned list of results is in the right order. But when we are using side effects, we do care about the order of evaluation. In this case, we want to make sure that the elements of the argument list are printed from left to right. `for-each` guarantees this ordering.
+
+---
+
+### Tic-Tac-Toe Revisited
+
+We’re working up toward playing a game of tic-tac-toe against the computer. But as a first step, let’s have the computer play against itself.
+
+What we already have is `ttt`, a strategy function: one that takes a board position as argument (and also a letter x or o ) and returns the chosen next move.
+
+**How to define `stupid-ttt` as an alternative strategy?**
+
+```scheme
+(define (stupid-ttt position letter)
+  (location '_ position))
+
+(define (location letter word)
+  (if (equal? letter (first word))
+      1
+      (+ 1 (location letter (bf word)))))
+```
+
+**How to write a program `play-ttt` that takes two strategies as arguments and plays a game between them?**
+
+```scheme
+(define (play-ttt x-strat o-strat)
+  (play-ttt-helper x-strat o-strat '_________ 'x))
+
+(define (play-ttt-helper x-strat o-strat position whose -turn)
+  (cond ((already-won? position (opponent whose -turn))
+         (list (opponent whose -turn) 'wins!))
+        ((tie-game? position) '(tie game))
+        (else (let ((square (if (equal? whose -turn 'x)
+                                (x-strat position 'x)
+                                (o-strat position 'o))))
+                (play-ttt-helper x-strat
+                                 o-strat
+                                 (add-move square whose -turn position)
+                                 (opponent whose-turn))))))
+
+(define (already-won? position who)
+  (member? (word who who who) (find-triples position)))
+
+(define (tie-game? position)
+  (not (member? '_ position)))
+```
+
+**How to define `add-move`?**
+
+The procedure `add-move` takes a square and an old position as arguments and returns the new position.
+
+```scheme
+(define (add-move square letter position)
+  (if (= square 1)
+      (word letter (bf position))
+      (word (first position)
+            (add-move (- square 1) letter (bf position)))))
+
+(play-ttt ttt stupid-ttt)
+; (X WINS!)
+
+(play-ttt stupid-ttt ttt)
+; (O WINS!)
+```
+
+---
+
+### Accepting User Input
+
+**How to define a strategy procedure `ask-user` that asks the user where to move?**
+
+```scheme
+(define (ask-user position letter)
+  (print-position position)
+  (display letter)
+  (display "’s move: ")
+  (read))
+
+(define (print-position position)    ;; first version
+  (show position))
+
+(play-ttt ttt ask-user)
+; ____X____
+; O’S MOVE: 1
+; O___XX___
+; O’S MOVE: 4
+; O__OXXX__
+; O’S MOVE: 3
+; OXOOXXX__
+; O’S MOVE: 8
+; (TIE GAME)
+```
+
+What the user typed is just the single digits shown in boldface at the ends of the lines.
+
+**How does procedure `read` work?**
+
+`read` waits for you to type a Scheme expression, and returns that expression. Don’t be confused: `read` does not evaluate what you type. It returns exactly the same expression that you type:
+
+```scheme
+(define (echo)
+  (display "What? ")
+  (let ((expr (read)))
+    (if (equal? expr 'stop)
+        'okay
+        (begin
+         (show expr)
+         (echo)))))
+
+(echo)
+; What? hello
+; HELLO
+; What? (+ 2 3)
+; (+ 2 3)
+; What? (first (glass onion))
+; (FIRST (GLASS ONION))
+; What? stop
+; OKAY
+```
+
+---
+
+### Aesthetic Board Display
+
+```scheme
+(define (print-position position)
+  (print-row (subword position 1 3))
+  (show "-+-+-")
+  (print-row (subword position 4 6))
+  (show "-+-+-")
+  (print-row (subword position 7 9))
+  (newline))
+
+(define (print-row row)
+  (maybe-display (first row))
+  (display "|")
+  (maybe-display (first (bf row)))
+  (display "|")
+  (maybe-display (last row))
+  (newline))
+
+(define (maybe-display letter)
+  (if (not (equal? letter ’ ))
+      (display letter)
+      (display " ")))
+
+(define (subword wd start end)      ; higher-order version
+  ((repeated bf (- start 1))
+   ((repeated bl (- (count wd) end))
+    wd)))
+
+(define (subword wd start end)
+  (cond ((> start 1) (subword (bf wd) (- start 1) (- end 1)))
+        ((< end (count wd)) (subword (bl wd) start end))
+        (else wd)))
+```
+
+```scheme
+(print-position '_x_oo__xx)
+;  |X|
+; -+-+-
+; O|O|
+; -+-+-
+;  |X|X
+```

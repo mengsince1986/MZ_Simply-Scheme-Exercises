@@ -233,5 +233,223 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <p>(One way to think about sequences in procedure bodies is that every procedure body has an invisible <code>begin</code> surrounding it.)</p>
 <hr />
 <h3 id="this-isnt-functional-programming">This isn’t Functional Programming</h3>
+<p><strong>What is the difference between a function and procedure?</strong></p>
+<p>Sequencing and side effects are radical departures from the idea of functional programming. In fact, we’d like to reserve the name <em>function</em> for something that computes and returns one value, with no side effects.</p>
+<p>“<em>Procedure</em>” is the general term for the thing that lambda returns—an embodiment of an algorithm. If the algorithm is the kind that computes and returns a single value without side effects, then we say that the procedure implements a function.</p>
+<blockquote>
+<p>Sometimes people sloppily say that the procedure is a function. In fact, you may hear people be really sloppy and call a non-functional procedure a function!</p>
+</blockquote>
+<p><strong>Is there sequencing in functional programming?</strong></p>
+<p>There is a certain kind of sequencing even in functional programming. If you say</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode scheme"><code class="sourceCode scheme"><a class="sourceLine" id="cb8-1" title="1">(* (<span class="op">+</span> <span class="dv">3</span> <span class="dv">4</span>) (<span class="op">-</span> <span class="dv">92</span> <span class="dv">15</span>))</a></code></pre></div>
+<p>it’s clear that the addition has to happen before the multiplication, because the result of the addition provides one of the arguments to the multiplication.</p>
+<p>What’s new in the sequential programming style is the emphasis on <em>sequence</em>, and the fact that the expressions in the sequence are independent instead of contributing values to each other. In this multiplication problem, for example, we don’t care whether the addition happens before or after the subtraction. If the addition and subtraction were in a sequence, we’d be using them for independent purposes:</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode scheme"><code class="sourceCode scheme"><a class="sourceLine" id="cb9-1" title="1">(<span class="kw">begin</span></a>
+<a class="sourceLine" id="cb9-2" title="2"> (show (<span class="op">+</span> <span class="dv">3</span> <span class="dv">4</span>))</a>
+<a class="sourceLine" id="cb9-3" title="3"> (show (<span class="op">-</span> <span class="dv">92</span> <span class="dv">15</span>)))</a></code></pre></div>
+<p>This is what we mean by being independent. <em>Neither expression helps in computing the other. And the order matters because we can see the order in which the results are printed.</em></p>
+<hr />
+<h3 id="not-moving-to-the-next-line">Not Moving to the Next Line</h3>
+<p><strong>How to make a program print several things on the same line?</strong></p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode scheme"><code class="sourceCode scheme"><a class="sourceLine" id="cb10-1" title="1">(<span class="kw">begin</span> (show-addition <span class="dv">3</span> <span class="dv">4</span>)</a>
+<a class="sourceLine" id="cb10-2" title="2">       (show-addition <span class="dv">6</span> <span class="dv">8</span>)</a>
+<a class="sourceLine" id="cb10-3" title="3">       &#39;done)</a>
+<a class="sourceLine" id="cb10-4" title="4"></a>
+<a class="sourceLine" id="cb10-5" title="5"><span class="co">; 3+4=7</span></a>
+<a class="sourceLine" id="cb10-6" title="6"><span class="co">; 6+8=14</span></a>
+<a class="sourceLine" id="cb10-7" title="7"><span class="co">; DONE</span></a></code></pre></div>
+<p>We use <code>display</code>, which doesn’t move to the next line after printing its argument:</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode scheme"><code class="sourceCode scheme"><a class="sourceLine" id="cb11-1" title="1">(<span class="ex">define</span><span class="fu"> </span>(show-addition x y)</a>
+<a class="sourceLine" id="cb11-2" title="2">  (<span class="kw">display</span> x)</a>
+<a class="sourceLine" id="cb11-3" title="3">  (<span class="kw">display</span> &#39;+)</a>
+<a class="sourceLine" id="cb11-4" title="4">  (<span class="kw">display</span> y)</a>
+<a class="sourceLine" id="cb11-5" title="5">  (<span class="kw">display</span> &#39;=)</a>
+<a class="sourceLine" id="cb11-6" title="6">  (show (<span class="op">+</span> x y)))</a></code></pre></div>
+<p>(The last one is a show because we do want to start a new line after it.)</p>
+<p><strong>How to print a blank line?</strong></p>
+<p>You use <code>newline</code>:</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode scheme"><code class="sourceCode scheme"><a class="sourceLine" id="cb12-1" title="1">(<span class="ex">define</span><span class="fu"> </span>(verse n)</a>
+<a class="sourceLine" id="cb12-2" title="2">  (show (<span class="kw">cons</span> n &#39;(bottles of beer on the wall)))</a>
+<a class="sourceLine" id="cb12-3" title="3">  (show (<span class="kw">cons</span> n &#39;(bottles of beer)))</a>
+<a class="sourceLine" id="cb12-4" title="4">  (show &#39;(<span class="kw">if</span> one of those bottles should happen to fall))</a>
+<a class="sourceLine" id="cb12-5" title="5">  (show (<span class="kw">cons</span> (<span class="op">-</span> n <span class="dv">1</span>) &#39;(bottles of beer on the wall)))</a>
+<a class="sourceLine" id="cb12-6" title="6">  (<span class="kw">newline</span>))                                                       <span class="co">; replaces (show &#39;())</span></a></code></pre></div>
+<p>In fact, <code>show</code> isn’t an official Scheme primitive; we wrote it in terms of <code>display</code> and <code>newline</code> .</p>
+<hr />
+<h3 id="strings">Strings</h3>
+<p><strong>What are strings?</strong></p>
+<p><em>Strings</em> are words enclosed in double-quote marks so that Scheme will permit the use of punctuation or other unusual characters. Strings also preserve the case of letters, so they can be used to beautify our song even more.</p>
+<p><strong>How to beautify “99 Bottles of Beer on the Wall” with strings?</strong></p>
+<p>Since any character can be in a string, including spaces, the easiest thing to do in this case is to treat all the letters, spaces, and punctuation characters of each line of the song as one long word.</p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode scheme"><code class="sourceCode scheme"><a class="sourceLine" id="cb13-1" title="1">(<span class="ex">define</span><span class="fu"> </span>(verse n)</a>
+<a class="sourceLine" id="cb13-2" title="2">  (<span class="kw">display</span> n)</a>
+<a class="sourceLine" id="cb13-3" title="3">  (show <span class="st">&quot; bottles of beer on the wall,&quot;</span>)</a>
+<a class="sourceLine" id="cb13-4" title="4">  (<span class="kw">display</span> n)</a>
+<a class="sourceLine" id="cb13-5" title="5">  (show <span class="st">&quot; bottles of beer.&quot;</span>)</a>
+<a class="sourceLine" id="cb13-6" title="6">  (show <span class="st">&quot;If one of those bottles should happen to fall,&quot;</span>)</a>
+<a class="sourceLine" id="cb13-7" title="7">  (<span class="kw">display</span> (<span class="op">-</span> n <span class="dv">1</span>))</a>
+<a class="sourceLine" id="cb13-8" title="8">  (show <span class="st">&quot; bottles of beer on the wall.&quot;</span>)</a>
+<a class="sourceLine" id="cb13-9" title="9">  (<span class="kw">newline</span>))</a>
+<a class="sourceLine" id="cb13-10" title="10"></a>
+<a class="sourceLine" id="cb13-11" title="11">(verse <span class="dv">6</span>)</a>
+<a class="sourceLine" id="cb13-12" title="12"><span class="co">; 6 bottles of beer on the wall,</span></a>
+<a class="sourceLine" id="cb13-13" title="13"><span class="co">; 6 bottles of beer.</span></a>
+<a class="sourceLine" id="cb13-14" title="14"><span class="co">; If one of those bottles should happen to fall,</span></a>
+<a class="sourceLine" id="cb13-15" title="15"><span class="co">; 5 bottles of beer on the wall.</span></a>
+<a class="sourceLine" id="cb13-16" title="16"><span class="co">; #F                                             ; or whatever is returned by (newline)</span></a></code></pre></div>
+<p>It’s strange to think of “bottles of beer on the wall,” as a single word. But <em>the rule is that anything inside double quotes counts as a single word. It doesn’t have to be an English word.</em></p>
+<hr />
+<h3 id="a-higher-order-procedure-for-sequencing">A Higher-Order Procedure for Sequencing</h3>
+<p><strong>How to print each element of a list?</strong></p>
+<div class="sourceCode" id="cb14"><pre class="sourceCode scheme"><code class="sourceCode scheme"><a class="sourceLine" id="cb14-1" title="1">(<span class="ex">define</span><span class="fu"> </span>(show-list lst)</a>
+<a class="sourceLine" id="cb14-2" title="2">  (<span class="kw">if</span> (<span class="kw">null?</span> lst)</a>
+<a class="sourceLine" id="cb14-3" title="3">      &#39;done</a>
+<a class="sourceLine" id="cb14-4" title="4">      (<span class="kw">begin</span> (show (<span class="kw">car</span> lst))</a>
+<a class="sourceLine" id="cb14-5" title="5">             (show-list (<span class="kw">cdr</span> lst)))))</a>
+<a class="sourceLine" id="cb14-6" title="6"></a>
+<a class="sourceLine" id="cb14-7" title="7">(show-list &#39;((dig a pony) (doctor robert) (for you blue)))</a>
+<a class="sourceLine" id="cb14-8" title="8"><span class="co">; (DIG A PONY)</span></a>
+<a class="sourceLine" id="cb14-9" title="9"><span class="co">; (DOCTOR ROBERT)</span></a>
+<a class="sourceLine" id="cb14-10" title="10"><span class="co">; (FOR YOU BLUE)</span></a>
+<a class="sourceLine" id="cb14-11" title="11"><span class="co">; DONE</span></a></code></pre></div>
+<p><strong>How to abstract <code>show-list</code> into a higher order procedure? (We can’t call it a “higher-order function” because this one is for computations with side effects.)</strong></p>
+<p>The procedure <code>for-each</code> is part of standard Scheme:</p>
+<div class="sourceCode" id="cb15"><pre class="sourceCode scheme"><code class="sourceCode scheme"><a class="sourceLine" id="cb15-1" title="1">(<span class="kw">for-each</span> show &#39;((mean mr mustard) (no reply) (tell me why)))</a>
+<a class="sourceLine" id="cb15-2" title="2"><span class="co">; (MEAN MR MUSTARD)</span></a>
+<a class="sourceLine" id="cb15-3" title="3"><span class="co">; (NO REPLY)</span></a>
+<a class="sourceLine" id="cb15-4" title="4"><span class="co">; (TELL ME WHY)</span></a></code></pre></div>
+<p>The value returned by <code>for-each</code> is unspecified.</p>
+<p><strong>Why is that we use <code>for-each</code> instead of <code>map</code> to print each element of a list?</strong></p>
+<p>There are two reasons. One is just an efficiency issue: <code>map</code> constructs a list containing the values returned by each of its sub-computations; in this example, it would be a list of three instances of the unspecified value returned by <code>show</code>. But we aren’t going to use that list for anything, so there’s no point in constructing it.</p>
+<p>The second reason is more serious. <em>In functional programming, the order of evaluation of subexpressions is unspecified.</em> For example, when we evaluate the expression</p>
+<div class="sourceCode" id="cb16"><pre class="sourceCode scheme"><code class="sourceCode scheme"><a class="sourceLine" id="cb16-1" title="1">(<span class="op">-</span> (<span class="op">+</span> <span class="dv">4</span> <span class="dv">5</span>) (* <span class="dv">6</span> <span class="dv">7</span>))</a></code></pre></div>
+<p>we don’t know whether the addition or the multiplication happens first. Similarly, the order in which <code>map</code> computes the results for each element is unspecified. That’s okay as long as the ultimately returned list of results is in the right order. But when we are using side effects, we do care about the order of evaluation. In this case, we want to make sure that the elements of the argument list are printed from left to right. <code>for-each</code> guarantees this ordering.</p>
+<hr />
+<h3 id="tic-tac-toe-revisited">Tic-Tac-Toe Revisited</h3>
+<p>We’re working up toward playing a game of tic-tac-toe against the computer. But as a first step, let’s have the computer play against itself.</p>
+<p>What we already have is <code>ttt</code>, a strategy function: one that takes a board position as argument (and also a letter x or o ) and returns the chosen next move.</p>
+<p><strong>How to define <code>stupid-ttt</code> as an alternative strategy?</strong></p>
+<div class="sourceCode" id="cb17"><pre class="sourceCode scheme"><code class="sourceCode scheme"><a class="sourceLine" id="cb17-1" title="1">(<span class="ex">define</span><span class="fu"> </span>(stupid-ttt position letter)</a>
+<a class="sourceLine" id="cb17-2" title="2">  (location &#39;_ position))</a>
+<a class="sourceLine" id="cb17-3" title="3"></a>
+<a class="sourceLine" id="cb17-4" title="4">(<span class="ex">define</span><span class="fu"> </span>(location letter word)</a>
+<a class="sourceLine" id="cb17-5" title="5">  (<span class="kw">if</span> (<span class="kw">equal?</span> letter (first word))</a>
+<a class="sourceLine" id="cb17-6" title="6">      <span class="dv">1</span></a>
+<a class="sourceLine" id="cb17-7" title="7">      (<span class="op">+</span> <span class="dv">1</span> (location letter (bf word)))))</a></code></pre></div>
+<p><strong>How to write a program <code>play-ttt</code> that takes two strategies as arguments and plays a game between them?</strong></p>
+<div class="sourceCode" id="cb18"><pre class="sourceCode scheme"><code class="sourceCode scheme"><a class="sourceLine" id="cb18-1" title="1">(<span class="ex">define</span><span class="fu"> </span>(play-ttt x-strat o-strat)</a>
+<a class="sourceLine" id="cb18-2" title="2">  (play-ttt-helper x-strat o-strat &#39;_________ &#39;x))</a>
+<a class="sourceLine" id="cb18-3" title="3"></a>
+<a class="sourceLine" id="cb18-4" title="4">(<span class="ex">define</span><span class="fu"> </span>(play-ttt-helper x-strat o-strat position whose -turn)</a>
+<a class="sourceLine" id="cb18-5" title="5">  (<span class="kw">cond</span> ((already-won? position (opponent whose -turn))</a>
+<a class="sourceLine" id="cb18-6" title="6">         (<span class="kw">list</span> (opponent whose -turn) &#39;wins!))</a>
+<a class="sourceLine" id="cb18-7" title="7">        ((tie-game? position) &#39;(tie game))</a>
+<a class="sourceLine" id="cb18-8" title="8">        (<span class="kw">else</span> (<span class="kw">let</span> ((square (<span class="kw">if</span> (<span class="kw">equal?</span> whose -turn &#39;x)</a>
+<a class="sourceLine" id="cb18-9" title="9">                                (x-strat position &#39;x)</a>
+<a class="sourceLine" id="cb18-10" title="10">                                (o-strat position &#39;o))))</a>
+<a class="sourceLine" id="cb18-11" title="11">                (play-ttt-helper x-strat</a>
+<a class="sourceLine" id="cb18-12" title="12">                                 o-strat</a>
+<a class="sourceLine" id="cb18-13" title="13">                                 (add-move square whose -turn position)</a>
+<a class="sourceLine" id="cb18-14" title="14">                                 (opponent whose-turn))))))</a>
+<a class="sourceLine" id="cb18-15" title="15"></a>
+<a class="sourceLine" id="cb18-16" title="16">(<span class="ex">define</span><span class="fu"> </span>(already-won? position who)</a>
+<a class="sourceLine" id="cb18-17" title="17">  (member? (word who who who) (find-triples position)))</a>
+<a class="sourceLine" id="cb18-18" title="18"></a>
+<a class="sourceLine" id="cb18-19" title="19">(<span class="ex">define</span><span class="fu"> </span>(tie-game? position)</a>
+<a class="sourceLine" id="cb18-20" title="20">  (<span class="kw">not</span> (member? &#39;_ position)))</a></code></pre></div>
+<p><strong>How to define <code>add-move</code>?</strong></p>
+<p>The procedure <code>add-move</code> takes a square and an old position as arguments and returns the new position.</p>
+<div class="sourceCode" id="cb19"><pre class="sourceCode scheme"><code class="sourceCode scheme"><a class="sourceLine" id="cb19-1" title="1">(<span class="ex">define</span><span class="fu"> </span>(add-move square letter position)</a>
+<a class="sourceLine" id="cb19-2" title="2">  (<span class="kw">if</span> (<span class="op">=</span> square <span class="dv">1</span>)</a>
+<a class="sourceLine" id="cb19-3" title="3">      (word letter (bf position))</a>
+<a class="sourceLine" id="cb19-4" title="4">      (word (first position)</a>
+<a class="sourceLine" id="cb19-5" title="5">            (add-move (<span class="op">-</span> square <span class="dv">1</span>) letter (bf position)))))</a>
+<a class="sourceLine" id="cb19-6" title="6"></a>
+<a class="sourceLine" id="cb19-7" title="7">(play-ttt ttt stupid-ttt)</a>
+<a class="sourceLine" id="cb19-8" title="8"><span class="co">; (X WINS!)</span></a>
+<a class="sourceLine" id="cb19-9" title="9"></a>
+<a class="sourceLine" id="cb19-10" title="10">(play-ttt stupid-ttt ttt)</a>
+<a class="sourceLine" id="cb19-11" title="11"><span class="co">; (O WINS!)</span></a></code></pre></div>
+<hr />
+<h3 id="accepting-user-input">Accepting User Input</h3>
+<p><strong>How to define a strategy procedure <code>ask-user</code> that asks the user where to move?</strong></p>
+<div class="sourceCode" id="cb20"><pre class="sourceCode scheme"><code class="sourceCode scheme"><a class="sourceLine" id="cb20-1" title="1">(<span class="ex">define</span><span class="fu"> </span>(ask-user position letter)</a>
+<a class="sourceLine" id="cb20-2" title="2">  (print-position position)</a>
+<a class="sourceLine" id="cb20-3" title="3">  (<span class="kw">display</span> letter)</a>
+<a class="sourceLine" id="cb20-4" title="4">  (<span class="kw">display</span> <span class="st">&quot;’s move: &quot;</span>)</a>
+<a class="sourceLine" id="cb20-5" title="5">  (<span class="kw">read</span>))</a>
+<a class="sourceLine" id="cb20-6" title="6"></a>
+<a class="sourceLine" id="cb20-7" title="7">(<span class="ex">define</span><span class="fu"> </span>(print-position position)    <span class="co">;; first version</span></a>
+<a class="sourceLine" id="cb20-8" title="8">  (show position))</a>
+<a class="sourceLine" id="cb20-9" title="9"></a>
+<a class="sourceLine" id="cb20-10" title="10">(play-ttt ttt ask-user)</a>
+<a class="sourceLine" id="cb20-11" title="11"><span class="co">; ____X____</span></a>
+<a class="sourceLine" id="cb20-12" title="12"><span class="co">; O’S MOVE: 1</span></a>
+<a class="sourceLine" id="cb20-13" title="13"><span class="co">; O___XX___</span></a>
+<a class="sourceLine" id="cb20-14" title="14"><span class="co">; O’S MOVE: 4</span></a>
+<a class="sourceLine" id="cb20-15" title="15"><span class="co">; O__OXXX__</span></a>
+<a class="sourceLine" id="cb20-16" title="16"><span class="co">; O’S MOVE: 3</span></a>
+<a class="sourceLine" id="cb20-17" title="17"><span class="co">; OXOOXXX__</span></a>
+<a class="sourceLine" id="cb20-18" title="18"><span class="co">; O’S MOVE: 8</span></a>
+<a class="sourceLine" id="cb20-19" title="19"><span class="co">; (TIE GAME)</span></a></code></pre></div>
+<p>What the user typed is just the single digits shown in boldface at the ends of the lines.</p>
+<p><strong>How does procedure <code>read</code> work?</strong></p>
+<p><code>read</code> waits for you to type a Scheme expression, and returns that expression. Don’t be confused: <code>read</code> does not evaluate what you type. It returns exactly the same expression that you type:</p>
+<div class="sourceCode" id="cb21"><pre class="sourceCode scheme"><code class="sourceCode scheme"><a class="sourceLine" id="cb21-1" title="1">(<span class="ex">define</span><span class="fu"> </span>(echo)</a>
+<a class="sourceLine" id="cb21-2" title="2">  (<span class="kw">display</span> <span class="st">&quot;What? &quot;</span>)</a>
+<a class="sourceLine" id="cb21-3" title="3">  (<span class="kw">let</span> ((expr (<span class="kw">read</span>)))</a>
+<a class="sourceLine" id="cb21-4" title="4">    (<span class="kw">if</span> (<span class="kw">equal?</span> expr &#39;stop)</a>
+<a class="sourceLine" id="cb21-5" title="5">        &#39;okay</a>
+<a class="sourceLine" id="cb21-6" title="6">        (<span class="kw">begin</span></a>
+<a class="sourceLine" id="cb21-7" title="7">         (show expr)</a>
+<a class="sourceLine" id="cb21-8" title="8">         (echo)))))</a>
+<a class="sourceLine" id="cb21-9" title="9"></a>
+<a class="sourceLine" id="cb21-10" title="10">(echo)</a>
+<a class="sourceLine" id="cb21-11" title="11"><span class="co">; What? hello</span></a>
+<a class="sourceLine" id="cb21-12" title="12"><span class="co">; HELLO</span></a>
+<a class="sourceLine" id="cb21-13" title="13"><span class="co">; What? (+ 2 3)</span></a>
+<a class="sourceLine" id="cb21-14" title="14"><span class="co">; (+ 2 3)</span></a>
+<a class="sourceLine" id="cb21-15" title="15"><span class="co">; What? (first (glass onion))</span></a>
+<a class="sourceLine" id="cb21-16" title="16"><span class="co">; (FIRST (GLASS ONION))</span></a>
+<a class="sourceLine" id="cb21-17" title="17"><span class="co">; What? stop</span></a>
+<a class="sourceLine" id="cb21-18" title="18"><span class="co">; OKAY</span></a></code></pre></div>
+<hr />
+<h3 id="aesthetic-board-display">Aesthetic Board Display</h3>
+<div class="sourceCode" id="cb22"><pre class="sourceCode scheme"><code class="sourceCode scheme"><a class="sourceLine" id="cb22-1" title="1">(<span class="ex">define</span><span class="fu"> </span>(print-position position)</a>
+<a class="sourceLine" id="cb22-2" title="2">  (print-row (subword position <span class="dv">1</span> <span class="dv">3</span>))</a>
+<a class="sourceLine" id="cb22-3" title="3">  (show <span class="st">&quot;-+-+-&quot;</span>)</a>
+<a class="sourceLine" id="cb22-4" title="4">  (print-row (subword position <span class="dv">4</span> <span class="dv">6</span>))</a>
+<a class="sourceLine" id="cb22-5" title="5">  (show <span class="st">&quot;-+-+-&quot;</span>)</a>
+<a class="sourceLine" id="cb22-6" title="6">  (print-row (subword position <span class="dv">7</span> <span class="dv">9</span>))</a>
+<a class="sourceLine" id="cb22-7" title="7">  (<span class="kw">newline</span>))</a>
+<a class="sourceLine" id="cb22-8" title="8"></a>
+<a class="sourceLine" id="cb22-9" title="9">(<span class="ex">define</span><span class="fu"> </span>(print-row row)</a>
+<a class="sourceLine" id="cb22-10" title="10">  (maybe-display (first row))</a>
+<a class="sourceLine" id="cb22-11" title="11">  (<span class="kw">display</span> <span class="st">&quot;|&quot;</span>)</a>
+<a class="sourceLine" id="cb22-12" title="12">  (maybe-display (first (bf row)))</a>
+<a class="sourceLine" id="cb22-13" title="13">  (<span class="kw">display</span> <span class="st">&quot;|&quot;</span>)</a>
+<a class="sourceLine" id="cb22-14" title="14">  (maybe-display (last row))</a>
+<a class="sourceLine" id="cb22-15" title="15">  (<span class="kw">newline</span>))</a>
+<a class="sourceLine" id="cb22-16" title="16"></a>
+<a class="sourceLine" id="cb22-17" title="17">(<span class="ex">define</span><span class="fu"> </span>(maybe-display letter)</a>
+<a class="sourceLine" id="cb22-18" title="18">  (<span class="kw">if</span> (<span class="kw">not</span> (<span class="kw">equal?</span> letter ’ ))</a>
+<a class="sourceLine" id="cb22-19" title="19">      (<span class="kw">display</span> letter)</a>
+<a class="sourceLine" id="cb22-20" title="20">      (<span class="kw">display</span> <span class="st">&quot; &quot;</span>)))</a>
+<a class="sourceLine" id="cb22-21" title="21"></a>
+<a class="sourceLine" id="cb22-22" title="22">(<span class="ex">define</span><span class="fu"> </span>(subword wd start end)      <span class="co">; higher-order version</span></a>
+<a class="sourceLine" id="cb22-23" title="23">  ((repeated bf (<span class="op">-</span> start <span class="dv">1</span>))</a>
+<a class="sourceLine" id="cb22-24" title="24">   ((repeated bl (<span class="op">-</span> (count wd) end))</a>
+<a class="sourceLine" id="cb22-25" title="25">    wd)))</a>
+<a class="sourceLine" id="cb22-26" title="26"></a>
+<a class="sourceLine" id="cb22-27" title="27">(<span class="ex">define</span><span class="fu"> </span>(subword wd start end)</a>
+<a class="sourceLine" id="cb22-28" title="28">  (<span class="kw">cond</span> ((<span class="op">&gt;</span> start <span class="dv">1</span>) (subword (bf wd) (<span class="op">-</span> start <span class="dv">1</span>) (<span class="op">-</span> end <span class="dv">1</span>)))</a>
+<a class="sourceLine" id="cb22-29" title="29">        ((<span class="op">&lt;</span> end (count wd)) (subword (bl wd) start end))</a>
+<a class="sourceLine" id="cb22-30" title="30">        (<span class="kw">else</span> wd)))</a></code></pre></div>
+<div class="sourceCode" id="cb23"><pre class="sourceCode scheme"><code class="sourceCode scheme"><a class="sourceLine" id="cb23-1" title="1">(print-position &#39;_x_oo__xx)</a>
+<a class="sourceLine" id="cb23-2" title="2"><span class="co">;  |X|</span></a>
+<a class="sourceLine" id="cb23-3" title="3"><span class="co">; -+-+-</span></a>
+<a class="sourceLine" id="cb23-4" title="4"><span class="co">; O|O|</span></a>
+<a class="sourceLine" id="cb23-5" title="5"><span class="co">; -+-+-</span></a>
+<a class="sourceLine" id="cb23-6" title="6"><span class="co">;  |X|X</span></a></code></pre></div>
 </body>
 </html>
