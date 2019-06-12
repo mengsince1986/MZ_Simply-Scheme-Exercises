@@ -125,7 +125,7 @@
 
 (define (best-free-square triples)
   (first-choice (accumulate word triples)
-                ’(5 1 3 7 9 2 4 6 8)))
+                '(5 1 3 7 9 2 4 6 8)))
 
 ; ***************************** ttt-choose
 (define (ttt-choose triples me)

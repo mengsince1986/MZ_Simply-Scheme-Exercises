@@ -7,7 +7,7 @@
 
 (define (find-triples position)
   (every (lambda (comb) (substitute-triple comb position))
-         ’(123 456 789 147 258 369 159 357)))
+         '(123 456 789 147 258 369 159 357)))
 
 (define (substitute-triple combination position)
   (accumulate word
@@ -15,7 +15,7 @@
                        (substitute-letter square position))
                      combination) ))
 (define (substitute-letter square position)
-  (if (equal? ’_ (item square position))
+  (if (equal? '_ (item square position))
       square
       (item square position) ))
 
@@ -36,7 +36,7 @@
        (= (appearances (opponent me) triple) 0)))
 
 (define (opponent letter)
-  (if (equal? letter ’x) ’o ’x))
+  (if (equal? letter 'x) 'o 'x))
 
 (define (choose-win winning-triples)
   (if (empty? winning-triples)
@@ -69,7 +69,7 @@
 
 (define (sort-digits number-word)
   (every (lambda (digit) (extract-digit digit number-word))
-         ’(1 2 3 4 5 6 7 8 9) ))
+         '(1 2 3 4 5 6 7 8 9) ))
 
 (define (extract-digit desired-digit wd)
   (keep (lambda (wd-digit) (equal? wd-digit desired-digit)) wd))
@@ -94,7 +94,7 @@
 
 (define (best-free-square triples)
   (first-choice (accumulate word triples)
-                ’(5 1 3 7 9 2 4 6 8)))
+                '(5 1 3 7 9 2 4 6 8)))
 
 (define (first-choice possibilities preferences)
   (first (keep (lambda (square) (member? square possibilities))
