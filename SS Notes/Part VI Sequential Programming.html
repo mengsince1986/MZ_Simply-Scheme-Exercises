@@ -340,11 +340,11 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <div class="sourceCode" id="cb18"><pre class="sourceCode scheme"><code class="sourceCode scheme"><a class="sourceLine" id="cb18-1" title="1">(<span class="ex">define</span><span class="fu"> </span>(play-ttt x-strat o-strat)</a>
 <a class="sourceLine" id="cb18-2" title="2">  (play-ttt-helper x-strat o-strat &#39;_________ &#39;x))</a>
 <a class="sourceLine" id="cb18-3" title="3"></a>
-<a class="sourceLine" id="cb18-4" title="4">(<span class="ex">define</span><span class="fu"> </span>(play-ttt-helper x-strat o-strat position whose -turn)</a>
-<a class="sourceLine" id="cb18-5" title="5">  (<span class="kw">cond</span> ((already-won? position (opponent whose -turn))</a>
-<a class="sourceLine" id="cb18-6" title="6">         (<span class="kw">list</span> (opponent whose -turn) &#39;wins!))</a>
+<a class="sourceLine" id="cb18-4" title="4">(<span class="ex">define</span><span class="fu"> </span>(play-ttt-helper x-strat o-strat position whose-turn)</a>
+<a class="sourceLine" id="cb18-5" title="5">  (<span class="kw">cond</span> ((already-won? position (opponent whose-turn))</a>
+<a class="sourceLine" id="cb18-6" title="6">         (<span class="kw">list</span> (opponent whose-turn) &#39;wins!))</a>
 <a class="sourceLine" id="cb18-7" title="7">        ((tie-game? position) &#39;(tie game))</a>
-<a class="sourceLine" id="cb18-8" title="8">        (<span class="kw">else</span> (<span class="kw">let</span> ((square (<span class="kw">if</span> (<span class="kw">equal?</span> whose -turn &#39;x)</a>
+<a class="sourceLine" id="cb18-8" title="8">        (<span class="kw">else</span> (<span class="kw">let</span> ((square (<span class="kw">if</span> (<span class="kw">equal?</span> whose-turn &#39;x)</a>
 <a class="sourceLine" id="cb18-9" title="9">                                (x-strat position &#39;x)</a>
 <a class="sourceLine" id="cb18-10" title="10">                                (o-strat position &#39;o))))</a>
 <a class="sourceLine" id="cb18-11" title="11">                (play-ttt-helper x-strat</a>
@@ -451,5 +451,192 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <a class="sourceLine" id="cb23-4" title="4"><span class="co">; O|O|</span></a>
 <a class="sourceLine" id="cb23-5" title="5"><span class="co">; -+-+-</span></a>
 <a class="sourceLine" id="cb23-6" title="6"><span class="co">;  |X|X</span></a></code></pre></div>
+<hr />
+<h3 id="reading-and-writing-normal-text">Reading and Writing Normal Text</h3>
+<p><strong>When do we use <code>read</code>?</strong></p>
+<p>The <code>read</code> procedure works fine as long as what you type looks like a Lisp program. That is, it <em>reads one expression at a time.</em></p>
+<p><strong>How does <code>read-line</code> in simply.scm work?</strong></p>
+<p>We’ve provided a procedure <code>read-line</code> that reads one line of input and returns a sentence. The words in that sentence will contain any punctuation characters that appear on the line, including parentheses, which are not interpreted as sublist delimiters by <code>read-line</code>. <code>read-line</code> also preserves the case of letters.</p>
+<p><strong>How to define <code>music-critic</code> to read more than one word with <code>read-line</code>?</strong></p>
+<div class="sourceCode" id="cb24"><pre class="sourceCode scheme"><code class="sourceCode scheme"><a class="sourceLine" id="cb24-1" title="1">(<span class="ex">define</span><span class="fu"> </span>(music-critic)</a>
+<a class="sourceLine" id="cb24-2" title="2">  (read-line)</a>
+<a class="sourceLine" id="cb24-3" title="3">  (show <span class="st">&quot;What’s your favorite Beatles song?&quot;</span>)</a>
+<a class="sourceLine" id="cb24-4" title="4">  (<span class="kw">let</span> ((song (read-line)))</a>
+<a class="sourceLine" id="cb24-5" title="5">    (show (se <span class="st">&quot;I like&quot;</span> song <span class="st">&quot;too.&quot;</span>))))</a>
+<a class="sourceLine" id="cb24-6" title="6"></a>
+<a class="sourceLine" id="cb24-7" title="7">(music-critic)</a>
+<a class="sourceLine" id="cb24-8" title="8"><span class="co">; What’s your favorite Beatles song?</span></a>
+<a class="sourceLine" id="cb24-9" title="9"><span class="co">; She Loves You</span></a>
+<a class="sourceLine" id="cb24-10" title="10"><span class="co">; (I like She Loves You too.)</span></a></code></pre></div>
+<p><strong>Why do we call <code>read-line</code> and ignores its result at the beginning of <code>music-critic</code>?</strong></p>
+<p>It has to do with the interaction between <code>read-line</code> and <code>read</code>. <em><code>read</code> treats what you type as a sequence of Scheme expressions; each invocation of <code>read</code> reads one of them.</em> <code>read</code> pays no attention to formatting details, such as several consecutive spaces or line breaks. If, for example, you type several expressions on the same line, it will take several invocations of <code>read</code> to read them all.</p>
+<p>By contrast, <em><code>read-line</code> treats what you type as a sequence of lines, reading one line per invocation, so it does pay attention to line breaks.</em></p>
+<p>Either of these ways to read input is sensible in itself, but if you mix the two, by invoking <code>read</code> sometimes and <code>read-line</code> sometimes in the same program, the results can be confusing. Suppose you type a line containing an expression and your program invokes <code>read</code> to read it. Since there might have been another expression on the line, <code>read</code> doesn’t advance to the next line until you ask for the next expression. So if you now invoke <code>read-line</code>, thinking that it will read another line from the keyboard, it will instead return an empty list, because what it sees is an empty line—what’s left after <code>read</code> uses up the expression you typed.</p>
+<p>You may be thinking, “But <code>music-critic</code> doesn’t call <code>read</code>!” That’s true, but Scheme itself used <code>read</code> to read the expression that you used to invoke <code>music-critic</code>. So the first invocation of <code>read-line</code> is needed to skip over the spurious empty line.</p>
+<p>Our solution works only if <code>music-critic</code> is invoked directly at a Scheme prompt. If <code>music-critic</code> were a subprocedure of some larger program that has already called <code>read-line</code> before calling <code>music-critic</code>, the extra <code>read-line</code> in <code>music-critic</code> would really read and ignore a useful line of text.</p>
+<p><strong>How to use <code>read-line</code>?</strong></p>
+<p>If you write a procedure using read-line that will sometimes be called directly and sometimes be used as a subprocedure, you can’t include an extra read-line call in it. Instead, when you call your procedure directly from the Scheme prompt, you must say</p>
+<div class="sourceCode" id="cb25"><pre class="sourceCode scheme"><code class="sourceCode scheme"><a class="sourceLine" id="cb25-1" title="1">(<span class="kw">begin</span> (read-line) (my-procedure))</a></code></pre></div>
+<p>Another technical detail about <code>read-line</code> is that since it preserves the capitalization of words, its result may include strings, which will be shown in quotation marks if you return the value rather than <code>show</code>ing it:</p>
+<div class="sourceCode" id="cb26"><pre class="sourceCode scheme"><code class="sourceCode scheme"><a class="sourceLine" id="cb26-1" title="1">(<span class="ex">define</span><span class="fu"> </span>(music-critic-return)</a>
+<a class="sourceLine" id="cb26-2" title="2">  (read-line)</a>
+<a class="sourceLine" id="cb26-3" title="3">  (show <span class="st">&quot;What’s your favorite Beatles song?&quot;</span>)</a>
+<a class="sourceLine" id="cb26-4" title="4">  (<span class="kw">let</span> ((song (read-line)))</a>
+<a class="sourceLine" id="cb26-5" title="5">    (se <span class="st">&quot;I like&quot;</span> song <span class="st">&quot;too.&quot;</span>)))</a>
+<a class="sourceLine" id="cb26-6" title="6"></a>
+<a class="sourceLine" id="cb26-7" title="7">(music-critic-return)</a>
+<a class="sourceLine" id="cb26-8" title="8"><span class="co">; What’s your favorite Beatles song?</span></a>
+<a class="sourceLine" id="cb26-9" title="9"><span class="co">; She Loves You</span></a>
+<a class="sourceLine" id="cb26-10" title="10"><span class="co">; (&quot;I like&quot; &quot;She&quot; &quot;Loves&quot; &quot;You&quot; &quot;too.&quot;)</span></a></code></pre></div>
+<p><strong>How does <code>show-line</code> work?</strong></p>
+<p>We have also provided <code>show-line</code>, which takes a sentence as argument. It prints the sentence without surrounding parentheses, followed by a newline. (Actually, it takes any list as argument; it prints all the parentheses except for the outer ones.)</p>
+<div class="sourceCode" id="cb27"><pre class="sourceCode scheme"><code class="sourceCode scheme"><a class="sourceLine" id="cb27-1" title="1">(<span class="ex">define</span><span class="fu"> </span>(music-critic)</a>
+<a class="sourceLine" id="cb27-2" title="2">  (read-line)</a>
+<a class="sourceLine" id="cb27-3" title="3">  (show <span class="st">&quot;What’s your favorite Beatles song?&quot;</span>)</a>
+<a class="sourceLine" id="cb27-4" title="4">  (<span class="kw">let</span> ((song (read-line)))</a>
+<a class="sourceLine" id="cb27-5" title="5">    (show-line (se <span class="st">&quot;I like&quot;</span> song <span class="st">&quot;too.&quot;</span>))))</a>
+<a class="sourceLine" id="cb27-6" title="6"></a>
+<a class="sourceLine" id="cb27-7" title="7">(music-critic)</a>
+<a class="sourceLine" id="cb27-8" title="8"><span class="co">; What’s your favorite Beatles song?</span></a>
+<a class="sourceLine" id="cb27-9" title="9"><span class="co">; She Loves You</span></a>
+<a class="sourceLine" id="cb27-10" title="10"><span class="co">; I like She Loves You too.</span></a></code></pre></div>
+<p>The difference between <code>show</code> and <code>show-line</code> isn’t crucial. It’s just a matter of a pair of parentheses. The point is that <code>read-line</code> and <code>show-line</code> go together. <code>read-line</code> reads a bunch of disconnected words and combines them into a sentence. <code>show-line</code> takes a sentence and prints it as if it were a bunch of disconnected words.</p>
+<hr />
+<h3 id="formatted-text">Formatted Text</h3>
+<p><strong>What are the two common applications of sequential printing?</strong></p>
+<ul>
+<li>Explicit printing instructions for the sake of conversational programs</li>
+<li>Display tabular information, such as columns of numbers</li>
+</ul>
+<p><strong>How to create numeric tables with <code>align</code> function?</strong></p>
+<p>The <code>align</code> function can be used to convert a number to a printable word with a fixed number of positions before and after the decimal point:</p>
+<div class="sourceCode" id="cb28"><pre class="sourceCode scheme"><code class="sourceCode scheme"><a class="sourceLine" id="cb28-1" title="1">(<span class="ex">define</span><span class="fu"> </span>(square-root-table nums)</a>
+<a class="sourceLine" id="cb28-2" title="2">  (<span class="kw">if</span> (<span class="kw">null?</span> nums)</a>
+<a class="sourceLine" id="cb28-3" title="3">      &#39;done</a>
+<a class="sourceLine" id="cb28-4" title="4">      (<span class="kw">begin</span> (<span class="kw">display</span> (align (<span class="kw">car</span> nums) <span class="dv">7</span> <span class="dv">1</span>))</a>
+<a class="sourceLine" id="cb28-5" title="5">             (show (align (<span class="kw">sqrt</span> (<span class="kw">car</span> nums)) <span class="dv">10</span> <span class="dv">5</span>))</a>
+<a class="sourceLine" id="cb28-6" title="6">             (square-root-table (<span class="kw">cdr</span> nums)))))</a>
+<a class="sourceLine" id="cb28-7" title="7"></a>
+<a class="sourceLine" id="cb28-8" title="8">(square-root-table &#39;(<span class="dv">7</span> <span class="dv">8</span> <span class="dv">9</span> <span class="dv">10</span> <span class="dv">20</span> <span class="dv">98</span> <span class="dv">99</span> <span class="dv">100</span> <span class="dv">101</span> <span class="dv">1234</span> <span class="dv">56789</span>))</a>
+<a class="sourceLine" id="cb28-9" title="9"><span class="co">;     7.0     2.64575</span></a>
+<a class="sourceLine" id="cb28-10" title="10"><span class="co">;     8.0     2.82843</span></a>
+<a class="sourceLine" id="cb28-11" title="11"><span class="co">;     9.0     3.00000</span></a>
+<a class="sourceLine" id="cb28-12" title="12"><span class="co">;    10.0     3.16228</span></a>
+<a class="sourceLine" id="cb28-13" title="13"><span class="co">;    20.0     4.47214</span></a>
+<a class="sourceLine" id="cb28-14" title="14"><span class="co">;    98.0     9.89949</span></a>
+<a class="sourceLine" id="cb28-15" title="15"><span class="co">;    99.0     9.94987</span></a>
+<a class="sourceLine" id="cb28-16" title="16"><span class="co">;   100.0    10.00000</span></a>
+<a class="sourceLine" id="cb28-17" title="17"><span class="co">;   101.0    10.04988</span></a>
+<a class="sourceLine" id="cb28-18" title="18"><span class="co">;  1234.0    35.12834</span></a>
+<a class="sourceLine" id="cb28-19" title="19"><span class="co">; 56789.0   238.30443</span></a>
+<a class="sourceLine" id="cb28-20" title="20"><span class="co">; DONE</span></a></code></pre></div>
+<p><strong>How does <code>align</code> work?</strong></p>
+<p><code>align</code> takes three arguments. The first is the value to be displayed. The second is the width of the column in which it will be displayed; the returned value will be a word with that many characters in it. The third argument is the number of digits that should be displayed to the right of the decimal point. (If this number is zero, then no decimal point will be displayed.) The width must be great enough to include all the digits, as well as the decimal point and minus sign, if any.</p>
+<p>As the program example above indicates, <code>align</code> does not print anything. It’s a function that returns a value suitable for printing with <code>display</code> or <code>show</code> .</p>
+<p><strong>What if the number is too big to fit in the available space?</strong></p>
+<div class="sourceCode" id="cb29"><pre class="sourceCode scheme"><code class="sourceCode scheme"><a class="sourceLine" id="cb29-1" title="1">(align <span class="dv">12345679</span> <span class="dv">4</span> <span class="dv">0</span>)</a>
+<a class="sourceLine" id="cb29-2" title="2"><span class="co">; &quot;123+&quot;</span></a></code></pre></div>
+<p><code>align</code> returns a word containing the first few digits, as many as fit, ending with a plus sign to indicate that part of the value is missing.</p>
+<p><strong>How to create a non-numeric text table with <code>align</code> function?</strong></p>
+<p><code>align</code> can also be used to include non-numeric text in columns. If the first argument is not a number, then only two arguments are needed; the second is the column width.</p>
+<p>In this case <code>align</code> returns a word with extra spaces at the right, if necessary, so that the argument word will appear at the left in its column:</p>
+<div class="sourceCode" id="cb30"><pre class="sourceCode scheme"><code class="sourceCode scheme"><a class="sourceLine" id="cb30-1" title="1">(<span class="ex">define</span><span class="fu"> </span>(name-table names)</a>
+<a class="sourceLine" id="cb30-2" title="2">  (<span class="kw">if</span> (<span class="kw">null?</span> names)</a>
+<a class="sourceLine" id="cb30-3" title="3">      &#39;done</a>
+<a class="sourceLine" id="cb30-4" title="4">      (<span class="kw">begin</span> (<span class="kw">display</span> (align (<span class="kw">cadar</span> names) <span class="dv">11</span>))</a>
+<a class="sourceLine" id="cb30-5" title="5">             (show (<span class="kw">caar</span> names))</a>
+<a class="sourceLine" id="cb30-6" title="6">             (name-table (<span class="kw">cdr</span> names)))))</a>
+<a class="sourceLine" id="cb30-7" title="7"></a>
+<a class="sourceLine" id="cb30-8" title="8">(name-table &#39;((john lennon) (paul mccartney)</a>
+<a class="sourceLine" id="cb30-9" title="9">              (george harrison) (ringo starr)))</a>
+<a class="sourceLine" id="cb30-10" title="10"><span class="co">; LENNON     JOHN</span></a>
+<a class="sourceLine" id="cb30-11" title="11"><span class="co">; MCCARTNEY  PAUL</span></a>
+<a class="sourceLine" id="cb30-12" title="12"><span class="co">; HARRISON   GEORGE</span></a>
+<a class="sourceLine" id="cb30-13" title="13"><span class="co">; STARR      RINGO</span></a>
+<a class="sourceLine" id="cb30-14" title="14"><span class="co">; DONE</span></a></code></pre></div>
+<p>As with numbers, if a non-numeric word won’t fit in the allowed space, <code>align</code> returns a partial word ending with a plus sign.</p>
+<p>This <code>align</code> function is not part of standard Scheme. Most programming languages, including some versions of Scheme, offer much more elaborate formatting capabilities with many alternate ways to represent both numbers and general text.</p>
+<hr />
+<h3 id="sequential-programming-and-order-of-evaluation">Sequential Programming and Order of Evaluation</h3>
+<p><strong>What is the obvious concern about order of events in sequential programming?</strong></p>
+<p>The obvious concern about order of events is that sequences of <code>show</code> expressions must come in the order in which we want them to appear, and <code>read</code> expressions must fit into the sequence properly so that the user is asked for the right information at the right time.</p>
+<p><strong>What is the less obvious concern about order of events in sequential programming?</strong></p>
+<p>There is another, less obvious issue about order of events. When <em>the evaluation of expressions can have side effects in addition to returning values</em>, the order of evaluation of argument subexpressions becomes important.</p>
+<div class="sourceCode" id="cb31"><pre class="sourceCode scheme"><code class="sourceCode scheme"><a class="sourceLine" id="cb31-1" title="1">(<span class="ex">define</span><span class="fu"> </span>(show-and-return x)</a>
+<a class="sourceLine" id="cb31-2" title="2">(show x)</a>
+<a class="sourceLine" id="cb31-3" title="3">x)</a>
+<a class="sourceLine" id="cb31-4" title="4"></a>
+<a class="sourceLine" id="cb31-5" title="5">(<span class="kw">list</span> (show-and-return (<span class="op">+</span> <span class="dv">3</span> <span class="dv">4</span>)) (show-and-return (<span class="op">-</span> <span class="dv">10</span> <span class="dv">2</span>)))</a>
+<a class="sourceLine" id="cb31-6" title="6"><span class="co">; 8</span></a>
+<a class="sourceLine" id="cb31-7" title="7"><span class="co">; 7</span></a>
+<a class="sourceLine" id="cb31-8" title="8"><span class="co">; (7 8)</span></a></code></pre></div>
+<p>(We’ve shown the case of right-to-left computation; your Scheme might be different.)</p>
+<p>Suppose you want to make sure that the seven prints first, regardless of which order your Scheme uses. You could do this:</p>
+<div class="sourceCode" id="cb32"><pre class="sourceCode scheme"><code class="sourceCode scheme"><a class="sourceLine" id="cb32-1" title="1">(<span class="kw">let</span> ((left (show-and-return (<span class="op">+</span> <span class="dv">3</span> <span class="dv">4</span>))))</a>
+<a class="sourceLine" id="cb32-2" title="2">  (<span class="kw">list</span> left (show-and-return (<span class="op">-</span> <span class="dv">10</span> <span class="dv">2</span>))))</a>
+<a class="sourceLine" id="cb32-3" title="3"><span class="co">; 7</span></a>
+<a class="sourceLine" id="cb32-4" title="4"><span class="co">; 8</span></a>
+<a class="sourceLine" id="cb32-5" title="5"><span class="co">; (7 8)</span></a></code></pre></div>
+<p>The expression in the body of a <code>let</code> can’t be evaluated until the <code>let</code> variables (such as <code>left</code>) have had their values computed.</p>
+<p><strong>How can the order of events be a concern when we use <code>read</code>?</strong></p>
+<p>Suppose we want to write a procedure to ask a person for his or her full name, returning a two-element list containing the first and last name. A natural mistake to make would be to write this procedure:</p>
+<div class="sourceCode" id="cb33"><pre class="sourceCode scheme"><code class="sourceCode scheme"><a class="sourceLine" id="cb33-1" title="1">(<span class="ex">define</span><span class="fu"> </span>(ask-for-name)                                         <span class="co">;; wrong</span></a>
+<a class="sourceLine" id="cb33-2" title="2">  (show <span class="st">&quot;Please type your first name, then your last name:&quot;</span>)</a>
+<a class="sourceLine" id="cb33-3" title="3">  (<span class="kw">list</span> (<span class="kw">read</span>) (<span class="kw">read</span>)))</a>
+<a class="sourceLine" id="cb33-4" title="4"></a>
+<a class="sourceLine" id="cb33-5" title="5">(ask-for-name)</a>
+<a class="sourceLine" id="cb33-6" title="6"><span class="co">; Please type your first name, then your last name:</span></a>
+<a class="sourceLine" id="cb33-7" title="7"><span class="co">; John</span></a>
+<a class="sourceLine" id="cb33-8" title="8"><span class="co">; Lennon</span></a>
+<a class="sourceLine" id="cb33-9" title="9"><span class="co">; (LENNON JOHN)</span></a></code></pre></div>
+<p>What went wrong? We happen to be using a version of Scheme that evaluates argument subexpressions from right to left. Therefore, the word <code>John</code> was read by the rightmost call to <code>read</code> , which provided the second argument to <code>list</code>.</p>
+<p>The best solution is to use <code>let</code>:</p>
+<div class="sourceCode" id="cb34"><pre class="sourceCode scheme"><code class="sourceCode scheme"><a class="sourceLine" id="cb34-1" title="1">(<span class="ex">define</span><span class="fu"> </span>(ask-for-name)</a>
+<a class="sourceLine" id="cb34-2" title="2">  (show <span class="st">&quot;Please type your first name, then your last name:&quot;</span>)</a>
+<a class="sourceLine" id="cb34-3" title="3">  (<span class="kw">let</span> ((first-name (<span class="kw">read</span>)))</a>
+<a class="sourceLine" id="cb34-4" title="4">    (<span class="kw">list</span> first -name (<span class="kw">read</span>))))</a></code></pre></div>
+<p>Even this example looks artificially simple, because of the two invocations of <code>read</code> that are visibly right next to each other in the erroneous version. But look at <code>play-ttt-helper</code>. The word <code>read</code> doesn’t appear in its body at all. But when we invoke it using <code>ask-user</code> as the strategy procedure for <code>x</code>, the expression</p>
+<div class="sourceCode" id="cb35"><pre class="sourceCode scheme"><code class="sourceCode scheme"><a class="sourceLine" id="cb35-1" title="1">(x-strat position &#39;x)</a></code></pre></div>
+<p>hides an invocation of <code>read</code>. The structure of <code>play-ttt-helper</code> includes a <code>let</code> that controls the timing of that read. (As it turns out, in this particular case we could have gotten away with writing the program without <code>let</code>. The hidden invocation of <code>read</code> is the only subexpression with a side effect, so there aren’t two effects that might get out of order. But we had to think carefully about the program to be sure of that.)</p>
+<hr />
+<h3 id="pitfalls">Pitfalls</h3>
+<ul>
+<li>It’s easy to get confused about what is printed explicitly by your program and what is printed by Scheme’s read-eval-print loop. Until now, all printing was of the second kind. Here’s an example that doesn’t do anything very interesting but will help make the point clear:</li>
+</ul>
+<div class="sourceCode" id="cb36"><pre class="sourceCode scheme"><code class="sourceCode scheme"><a class="sourceLine" id="cb36-1" title="1">(<span class="ex">define</span><span class="fu"> </span>(name)</a>
+<a class="sourceLine" id="cb36-2" title="2">  (<span class="kw">display</span> <span class="st">&quot;MATT &quot;</span>)</a>
+<a class="sourceLine" id="cb36-3" title="3">  &#39;wright)</a>
+<a class="sourceLine" id="cb36-4" title="4"></a>
+<a class="sourceLine" id="cb36-5" title="5">(name)</a>
+<a class="sourceLine" id="cb36-6" title="6"><span class="co">; MATT WRIGHT</span></a></code></pre></div>
+<p>At first glance it looks as if putting the word “Matt” inside a call to <code>display</code> is unnecessary. After all, the word <code>wright</code> is printed even without using <code>display</code>. But watch this:</p>
+<div class="sourceCode" id="cb37"><pre class="sourceCode scheme"><code class="sourceCode scheme"><a class="sourceLine" id="cb37-1" title="1">(bf (name))</a>
+<a class="sourceLine" id="cb37-2" title="2"><span class="co">; MATT RIGHT</span></a></code></pre></div>
+<p>Every time you invoke <code>name</code>, whether or not as the entire expression used at a Scheme prompt, the word <code>MATT</code> is printed. But the word <code>wright</code> is returned, and may or may not be printed depending on the context in which <code>name</code> is invoked.</p>
+<ul>
+<li><p>A sequence of expressions returns the value of the <em>last</em> expression. If that isn’t what you want, you must remember the value you want to return using <code>let</code>:</p></li>
+<li><p>Don’t forget that the first call to <code>read-line</code>, or any call to <code>read-line</code> after a call to <code>read</code> , will probably read the empty line that <code>read</code> left behind.</p></li>
+<li><p>Sometimes you want to use what the user typed more than once in your program. But don’t forget that <code>read</code> has an effect as well as a return value. Don’t try to read the same expression twice:</p></li>
+</ul>
+<div class="sourceCode" id="cb38"><pre class="sourceCode scheme"><code class="sourceCode scheme"><a class="sourceLine" id="cb38-1" title="1">(<span class="ex">define</span><span class="fu"> </span>(ask-question question)           <span class="co">;; wrong</span></a>
+<a class="sourceLine" id="cb38-2" title="2">  (show question)</a>
+<a class="sourceLine" id="cb38-3" title="3">  (<span class="kw">cond</span> ((<span class="kw">equal?</span> (<span class="kw">read</span>) &#39;yes) <span class="dv">#t</span>)</a>
+<a class="sourceLine" id="cb38-4" title="4">        ((<span class="kw">equal?</span> (<span class="kw">read</span>) &#39;no) <span class="dv">#f</span>)</a>
+<a class="sourceLine" id="cb38-5" title="5">        (<span class="kw">else</span> (show <span class="st">&quot;Please answer yes or no.&quot;</span>)</a>
+<a class="sourceLine" id="cb38-6" title="6">              (ask-question question))))</a></code></pre></div>
+<p>If the answer is <code>yes</code>, this procedure will work fine. But if not, the second invocation of <code>read</code> will read a second expression, not test the same expression again as intended. To avoid this problem, invoke <code>read</code> only once for each expression you want to read, and use <code>let</code> to remember the result:</p>
+<div class="sourceCode" id="cb39"><pre class="sourceCode scheme"><code class="sourceCode scheme"><a class="sourceLine" id="cb39-1" title="1">(<span class="ex">define</span><span class="fu"> </span>(ask-question question)</a>
+<a class="sourceLine" id="cb39-2" title="2">  (show question)</a>
+<a class="sourceLine" id="cb39-3" title="3">  (<span class="kw">let</span> ((answer (<span class="kw">read</span>)))</a>
+<a class="sourceLine" id="cb39-4" title="4">    (<span class="kw">cond</span> ((<span class="kw">equal?</span> answer &#39;yes) <span class="dv">#t</span>)</a>
+<a class="sourceLine" id="cb39-5" title="5">          ((<span class="kw">equal?</span> answer &#39;no) <span class="dv">#f</span>)</a>
+<a class="sourceLine" id="cb39-6" title="6">          (<span class="kw">else</span> (show <span class="st">&quot;Please answer yes or no.&quot;</span>)</a>
+<a class="sourceLine" id="cb39-7" title="7">                (ask-question question)))))</a></code></pre></div>
+<hr />
+<h3 id="exercises-20.1-20.3">Exercises 20.1-20.3</h3>
+<p><a href="">solutions</a></p>
+<h3 id="exercises-20.4-20.9">Exercises 20.4-20.9</h3>
+<p><a href="">solutions</a></p>
+<hr />
 </body>
 </html>
