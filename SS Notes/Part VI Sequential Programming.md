@@ -818,10 +818,10 @@ If the answer is `yes`, this procedure will work fine. But if not, the second in
 
 ### Exercises 20.1-20.3
 
-[solutions]()
+[solutions](https://github.com/mengsince1986/Simply-Scheme-exercises/blob/master/SS%20Exercises/Exercises%2020.1-20.3.scm)
 
 ### Exercises 20.4-20.9
 
-[solutions]()
+[solutions](https://github.com/mengsince1986/Simply-Scheme-exercises/blob/master/SS%20Exercises/Exercises%2020.4-20.9.scm)
 
 ---
