@@ -349,7 +349,7 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <a class="sourceLine" id="cb18-10" title="10">                                (o-strat position &#39;o))))</a>
 <a class="sourceLine" id="cb18-11" title="11">                (play-ttt-helper x-strat</a>
 <a class="sourceLine" id="cb18-12" title="12">                                 o-strat</a>
-<a class="sourceLine" id="cb18-13" title="13">                                 (add-move square whose -turn position)</a>
+<a class="sourceLine" id="cb18-13" title="13">                                 (add-move square whose-turn position)</a>
 <a class="sourceLine" id="cb18-14" title="14">                                 (opponent whose-turn))))))</a>
 <a class="sourceLine" id="cb18-15" title="15"></a>
 <a class="sourceLine" id="cb18-16" title="16">(<span class="ex">define</span><span class="fu"> </span>(already-won? position who)</a>
@@ -432,7 +432,7 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <a class="sourceLine" id="cb22-15" title="15">  (<span class="kw">newline</span>))</a>
 <a class="sourceLine" id="cb22-16" title="16"></a>
 <a class="sourceLine" id="cb22-17" title="17">(<span class="ex">define</span><span class="fu"> </span>(maybe-display letter)</a>
-<a class="sourceLine" id="cb22-18" title="18">  (<span class="kw">if</span> (<span class="kw">not</span> (<span class="kw">equal?</span> letter ’ ))</a>
+<a class="sourceLine" id="cb22-18" title="18">  (<span class="kw">if</span> (<span class="kw">not</span> (<span class="kw">equal?</span> letter &#39;_))</a>
 <a class="sourceLine" id="cb22-19" title="19">      (<span class="kw">display</span> letter)</a>
 <a class="sourceLine" id="cb22-20" title="20">      (<span class="kw">display</span> <span class="st">&quot; &quot;</span>)))</a>
 <a class="sourceLine" id="cb22-21" title="21"></a>

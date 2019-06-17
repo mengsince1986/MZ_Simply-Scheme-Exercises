@@ -403,7 +403,7 @@ What we already have is `ttt`, a strategy function: one that takes a board posit
                                 (o-strat position 'o))))
                 (play-ttt-helper x-strat
                                  o-strat
-                                 (add-move square whose -turn position)
+                                 (add-move square whose-turn position)
                                  (opponent whose-turn))))))
 
 (define (already-won? position who)
@@ -508,7 +508,7 @@ What the user typed is just the single digits shown in boldface at the ends of t
   (newline))
 
 (define (maybe-display letter)
-  (if (not (equal? letter ’ ))
+  (if (not (equal? letter '_))
       (display letter)
       (display " ")))
 
