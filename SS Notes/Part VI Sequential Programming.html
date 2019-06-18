@@ -638,5 +638,95 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <h3 id="exercises-20.4-20.9">Exercises 20.4-20.9</h3>
 <p><a href="https://github.com/mengsince1986/Simply-Scheme-exercises/blob/master/SS%20Exercises/Exercises%2020.4-20.9.scm">solutions</a></p>
 <hr />
+<h2 id="chapter-21-example-the-functions-program">Chapter 21 Example: The Functions Program</h2>
+<p><strong>Topic:</strong> the <code>functions</code> program</p>
+<hr />
+<h2 id="the-main-loop">The Main Loop</h2>
+<p><strong>What does <code>functions</code> do?</strong></p>
+<p>The <code>functions</code> program is an infinite loop similar to Scheme’s read-eval-print loop. It reads in a function name and some arguments, prints the result of applying that function to those arguments, and then does the whole thing over again.</p>
+<p><strong>What are the complexities of <code>functions</code> program?</strong></p>
+<p>The <code>functions</code> program keeps asking you for arguments until it has enough. This means that the <code>read</code> portion of the loop has to read a function name, figure out how many arguments that procedure takes, and then ask for the right number of arguments. On the other hand, each argument is an implicitly quoted datum rather than an expression to be evaluated; the <code>functions</code> evaluator avoids the recursive complexity of arbitrary subexpressions within expressions. (That’s why we wrote it: to focus attention on one function invocation at a time, rather than on the composition of functions.)</p>
+<p><strong>How to define the main loop for <code>functions</code> program?</strong></p>
+<div class="sourceCode" id="cb40"><pre class="sourceCode scheme"><code class="sourceCode scheme"><a class="sourceLine" id="cb40-1" title="1">(<span class="ex">define</span><span class="fu"> </span>(functions-loop)</a>
+<a class="sourceLine" id="cb40-2" title="2">  (<span class="kw">let</span> ((fn-name (get-fn)))</a>
+<a class="sourceLine" id="cb40-3" title="3">    (<span class="kw">if</span> (<span class="kw">equal?</span> fn-name ’exit)</a>
+<a class="sourceLine" id="cb40-4" title="4">        <span class="st">&quot;Thanks for using FUNCTIONS!&quot;</span></a>
+<a class="sourceLine" id="cb40-5" title="5">        (<span class="kw">let</span> ((args (get-args (arg-count fn-name))))</a>
+<a class="sourceLine" id="cb40-6" title="6">          (<span class="kw">if</span> (<span class="kw">not</span> (in-domain? args fn-name))</a>
+<a class="sourceLine" id="cb40-7" title="7">              (show <span class="st">&quot;Argument(s) not in domain.&quot;</span>)</a>
+<a class="sourceLine" id="cb40-8" title="8">              (show-answer (apply (scheme-procedure fn-name) args)))</a>
+<a class="sourceLine" id="cb40-9" title="9">          (functions-loop)))))</a></code></pre></div>
+<p><strong>How do the helper procedures <code>arg-count</code>, <code>in-domain?</code> and <code>scheme-procedure</code> work?</strong></p>
+<p><code>arg-count</code> takes the name of a procedure as its argument and returns the number of arguments that the given procedure takes.</p>
+<p><code>in-domain?</code> takes a list and the name of a procedure as arguments; it returns <code>#t</code> if the elements of the list are valid arguments to the given procedure.</p>
+<p><code>scheme-procedure</code> takes a name as its argument and returns the Scheme procedure with the given name.</p>
+<p><strong>How do the helper procedures that do the input and ouput work (first version)?</strong></p>
+<p>The actual versions are more complicated because of error checking; we’ll show them to you later.</p>
+<div class="sourceCode" id="cb41"><pre class="sourceCode scheme"><code class="sourceCode scheme"><a class="sourceLine" id="cb41-1" title="1">(<span class="ex">define</span><span class="fu"> </span>(get-fn)                    <span class="co">;; first version</span></a>
+<a class="sourceLine" id="cb41-2" title="2">  (<span class="kw">display</span> <span class="st">&quot;Function: &quot;</span>)</a>
+<a class="sourceLine" id="cb41-3" title="3">  (<span class="kw">read</span>))</a>
+<a class="sourceLine" id="cb41-4" title="4"></a>
+<a class="sourceLine" id="cb41-5" title="5">(<span class="ex">define</span><span class="fu"> </span>(get-args n)</a>
+<a class="sourceLine" id="cb41-6" title="6">  (<span class="kw">if</span> (<span class="op">=</span> n <span class="dv">0</span>)</a>
+<a class="sourceLine" id="cb41-7" title="7">      &#39;()</a>
+<a class="sourceLine" id="cb41-8" title="8">      (<span class="kw">let</span> ((first (get-arg)))</a>
+<a class="sourceLine" id="cb41-9" title="9">        (<span class="kw">cons</span> first (get-args (<span class="op">-</span> n <span class="dv">1</span>))))))</a>
+<a class="sourceLine" id="cb41-10" title="10"></a>
+<a class="sourceLine" id="cb41-11" title="11">(<span class="ex">define</span><span class="fu"> </span>(get-arg)                   <span class="co">;; first version</span></a>
+<a class="sourceLine" id="cb41-12" title="12">  (<span class="kw">display</span> <span class="st">&quot;Argument: &quot;</span>)</a>
+<a class="sourceLine" id="cb41-13" title="13">  (<span class="kw">read</span>))</a>
+<a class="sourceLine" id="cb41-14" title="14"></a>
+<a class="sourceLine" id="cb41-15" title="15">(<span class="ex">define</span><span class="fu"> </span>(show-answer answer)</a>
+<a class="sourceLine" id="cb41-16" title="16">  (<span class="kw">newline</span>)</a>
+<a class="sourceLine" id="cb41-17" title="17">  (<span class="kw">display</span> <span class="st">&quot;The result is: &quot;</span>)</a>
+<a class="sourceLine" id="cb41-18" title="18">  (<span class="kw">if</span> (<span class="kw">not</span> answer)</a>
+<a class="sourceLine" id="cb41-19" title="19">      (show <span class="st">&quot;#F&quot;</span>)</a>
+<a class="sourceLine" id="cb41-20" title="20">      (show answer))</a>
+<a class="sourceLine" id="cb41-21" title="21">  (<span class="kw">newline</span>))</a></code></pre></div>
+<p>(That weird <code>if</code> expression in <code>show-answer</code> is needed because in some old versions of Scheme the empty list means the same as <code>#f</code>. We wanted to avoid raising this issue in Chapter 2, so we just made sure that false values always printed as <code>#F</code>.)</p>
+<hr />
+<h3 id="the-difference-between-a-procedure-and-its-name">The Difference between a Procedure and Its Name</h3>
+<p><strong>Why is that we didn’t just say <code>(show-answer (apply fn-name args))</code> in the definition of <code>functions-loop</code>?</strong></p>
+<p>Remember that the value of the variable <code>fn-name</code> comes from <code>get-fn</code>, which invokes <code>read</code>. Suppose you said</p>
+<div class="sourceCode" id="cb42"><pre class="sourceCode scheme"><code class="sourceCode scheme"><a class="sourceLine" id="cb42-1" title="1">(<span class="ex">define</span><span class="fu"> x </span>(<span class="kw">read</span>))</a></code></pre></div>
+<p>and then typed</p>
+<div class="sourceCode" id="cb43"><pre class="sourceCode scheme"><code class="sourceCode scheme"><a class="sourceLine" id="cb43-1" title="1">(<span class="op">+</span> <span class="dv">2</span> <span class="dv">3</span>)</a></code></pre></div>
+<p>The value of <code>x</code> would be the three element list <code>(+ 2 3)</code>, not the number five.</p>
+<p>Similarly, if you type “butfirst,” then read will return the word <em>butfirst</em>, not the procedure of that name. So we need a way to turn the name of a function into the procedure itself.</p>
+<hr />
+<h3 id="the-association-list-of-functions">The Association List of Functions</h3>
+<p>In <code>functions</code> program, given a word what do we need to know about it?</p>
+<p>Given a word, such as <em>butfirst</em> , we need to know three things:</p>
+<ul>
+<li>The Scheme procedure with that name (in this case, the butfirst procedure).</li>
+<li>The number of arguments required by the given procedure (one).</li>
+<li>The types of arguments required by the given procedure (one word or sentence, which must not be empty).</li>
+</ul>
+<p>We need to know the number of arguments the procedure requires because the program prompts the user individually for each argument; it has to know how many to ask for. Also, it needs to know the domain of each function so it can complain if the arguments you give it are not in the domain.</p>
+<blockquote>
+<p>Scheme would complain all by itself, of course, but would then stop running the <code>functions</code> program. We want to catch the error before Scheme does, so that after seeing the error message you’re still in <code>functions</code>. As we mentioned in Chapter 19, a program meant for beginners, such as the readers of Chapter 2, should be especially robust.</p>
+</blockquote>
+<p><strong>How to create an association list that contains all of the functions the <code>functions</code> program knows about?</strong></p>
+<p>Each entry in the association list is a list of four elements:</p>
+<div class="sourceCode" id="cb44"><pre class="sourceCode scheme"><code class="sourceCode scheme"><a class="sourceLine" id="cb44-1" title="1">(<span class="ex">define</span><span class="fu"> *the-functions*                                         </span><span class="co">;; partial listing</span></a>
+<a class="sourceLine" id="cb44-2" title="2">  (<span class="kw">list</span> (<span class="kw">list</span> &#39;* * <span class="dv">2</span> (<span class="kw">lambda</span> (x y) (<span class="kw">and</span> (<span class="kw">number?</span> x) (<span class="kw">number?</span> y))))</a>
+<a class="sourceLine" id="cb44-3" title="3">        (<span class="kw">list</span> &#39;+ <span class="op">+</span> <span class="dv">2</span> (<span class="kw">lambda</span> (x y) (<span class="kw">and</span> (<span class="kw">number?</span> x) (<span class="kw">number?</span> y))))</a>
+<a class="sourceLine" id="cb44-4" title="4">        (<span class="kw">list</span> &#39;and (<span class="kw">lambda</span> (x y) (<span class="kw">and</span> x y)) <span class="dv">2</span></a>
+<a class="sourceLine" id="cb44-5" title="5">              (<span class="kw">lambda</span> (x y) (<span class="kw">and</span> (<span class="kw">boolean?</span> x) (<span class="kw">boolean?</span> y))))</a>
+<a class="sourceLine" id="cb44-6" title="6">        (<span class="kw">list</span> &#39;equal? <span class="kw">equal?</span> <span class="dv">2</span> (<span class="kw">lambda</span> (x y) <span class="dv">#t</span>))</a>
+<a class="sourceLine" id="cb44-7" title="7">        (<span class="kw">list</span> &#39;even? <span class="kw">even?</span> <span class="dv">1</span> <span class="kw">integer?</span>)</a>
+<a class="sourceLine" id="cb44-8" title="8">        (<span class="kw">list</span> &#39;word word <span class="dv">2</span> (<span class="kw">lambda</span> (x y) (<span class="kw">and</span> (word? x) (word? y))))))</a></code></pre></div>
+<p><strong>It’s a convention in Scheme programming that names of global variables used throughout a program are surrounded by *asterisks* to distinguish them from parameters of procedures.</strong></p>
+<p><strong>How to define the selector procedures for looking up information in the a-list above?</strong></p>
+<div class="sourceCode" id="cb45"><pre class="sourceCode scheme"><code class="sourceCode scheme"><a class="sourceLine" id="cb45-1" title="1">(<span class="ex">define</span><span class="fu"> </span>(scheme-procedure fn-name)</a>
+<a class="sourceLine" id="cb45-2" title="2">  (<span class="kw">cadr</span> (<span class="kw">assoc</span> fn-name *the-functions*)))</a>
+<a class="sourceLine" id="cb45-3" title="3"></a>
+<a class="sourceLine" id="cb45-4" title="4">(<span class="ex">define</span><span class="fu"> </span>(arg-count fn-name)</a>
+<a class="sourceLine" id="cb45-5" title="5">  (<span class="kw">caddr</span> (<span class="kw">assoc</span> fn-name *the-functions*)))</a>
+<a class="sourceLine" id="cb45-6" title="6"></a>
+<a class="sourceLine" id="cb45-7" title="7">(<span class="ex">define</span><span class="fu"> </span>(type-predicate fn-name)</a>
+<a class="sourceLine" id="cb45-8" title="8">  (<span class="kw">cadddr</span> (<span class="kw">assoc</span> fn-name *the-functions*)))</a></code></pre></div>
+<hr />
+<h3 id="domain-checking">Domain Checking</h3>
 </body>
 </html>

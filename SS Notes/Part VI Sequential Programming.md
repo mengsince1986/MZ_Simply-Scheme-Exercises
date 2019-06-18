@@ -6,11 +6,11 @@ The three big ideas in this part are *effect*, *sequence*, and *state*.
 
 **What is *effect*?**
 
-In this part of the book we’re going to talk about giving commands to the computer as well as asking it questions. That is, we’ll invoke procedures that tell Scheme to do something. Instead of merely computing a value, such a procedure has an *effect*, an action that changes something.
+In this part of the book we're going to talk about giving commands to the computer as well as asking it questions. That is, we'll invoke procedures that tell Scheme to do something. Instead of merely computing a value, such a procedure has an *effect*, an action that changes something.
 
 **What is *sequence*?**
 
-Once we’re thinking about actions, it’s very natural to consider a *sequence* of actions.  First cooking dinner, then eating, and then washing the dishes is one sequence.
+Once we're thinking about actions, it's very natural to consider a *sequence* of actions.  First cooking dinner, then eating, and then washing the dishes is one sequence.
 
 **What is *sequential programming*?**
 
@@ -23,13 +23,13 @@ to go-to-work
   catch-the-bus
 ```
 
-This *sequential programming* style is simple and natural, and it does a good job of modeling computations in which the problem concerns a sequence of events. If you’re writing an airline reservation system, a sequential program with `reserve-seat` and `issue-ticket` commands makes sense. But if you want to know the acronym of a phrase, that’s not inherently sequential, and a question-asking approach is best.
+This *sequential programming* style is simple and natural, and it does a good job of modeling computations in which the problem concerns a sequence of events. If you're writing an airline reservation system, a sequential program with `reserve-seat` and `issue-ticket` commands makes sense. But if you want to know the acronym of a phrase, that's not inherently sequential, and a question-asking approach is best.
 
 **What is *state*?**
 
-Some actions that Scheme can take affect the “outside” world, such as printing something on the computer screen. But Scheme can also carry out internal actions, invisible outside the computer, but changing the environment in which Scheme itself carries out computations. Defining a new variable with `define` is an example; before the definition, Scheme wouldn’t understand what that name means, but once the definition has been made, the name can be used in evaluating later expressions.
+Some actions that Scheme can take affect the “outside” world, such as printing something on the computer screen. But Scheme can also carry out internal actions, invisible outside the computer, but changing the environment in which Scheme itself carries out computations. Defining a new variable with `define` is an example; before the definition, Scheme wouldn't understand what that name means, but once the definition has been made, the name can be used in evaluating later expressions.
 
-Scheme’s knowledge about the leftover effects of past computations is called its *state*. The third big idea in this part of the book is that *we can write programs that maintain state information and use it to determine their results.*
+Scheme's knowledge about the leftover effects of past computations is called its *state*. The third big idea in this part of the book is that *we can write programs that maintain state information and use it to determine their results.*
 
 **How does the notion of *sequence* and *state* contradict functional programming?**
 
@@ -825,3 +825,145 @@ If the answer is `yes`, this procedure will work fine. But if not, the second in
 [solutions](https://github.com/mengsince1986/Simply-Scheme-exercises/blob/master/SS%20Exercises/Exercises%2020.4-20.9.scm)
 
 ---
+
+## Chapter 21 Example: The Functions Program
+
+**Topic:** the `functions` program
+
+---
+
+## The Main Loop
+
+**What does `functions` do?**
+
+The `functions` program is an infinite loop similar to Scheme’s read-eval-print loop. It reads in a function name and some arguments, prints the result of applying that function to those arguments, and then does the whole thing over again.
+
+**What are the complexities of `functions` program?**
+
+The `functions` program keeps asking you for arguments until it has enough. This means that the `read` portion of the loop has to read a function name, figure out how many arguments that procedure takes, and then ask for the right number of arguments. On the other hand, each argument is an implicitly quoted datum rather than an expression to be evaluated; the `functions` evaluator avoids the recursive complexity of arbitrary subexpressions within expressions.  (That’s why we wrote it: to focus attention on one function invocation at a time, rather than on the composition of functions.)
+
+
+**How to define the main loop for `functions` program?**
+
+```scheme
+(define (functions-loop)
+  (let ((fn-name (get-fn)))
+    (if (equal? fn-name ’exit)
+        "Thanks for using FUNCTIONS!"
+        (let ((args (get-args (arg-count fn-name))))
+          (if (not (in-domain? args fn-name))
+              (show "Argument(s) not in domain.")
+              (show-answer (apply (scheme-procedure fn-name) args)))
+          (functions-loop)))))
+```
+
+**How do the helper procedures `arg-count`, `in-domain?` and `scheme-procedure` work?**
+
+`arg-count` takes the name of a procedure as its argument and returns the number of arguments that the given procedure takes.
+
+`in-domain?` takes a list and the name of a procedure as arguments; it returns `#t` if the elements of the list are valid arguments to the given procedure.
+
+`scheme-procedure` takes a name as its argument and returns the Scheme procedure with the given name.
+
+**How do the helper procedures that do the input and ouput work (first version)?**
+
+The actual versions are more complicated because of error checking; we’ll show them to you later.
+
+```scheme
+(define (get-fn)                    ;; first version
+  (display "Function: ")
+  (read))
+
+(define (get-args n)
+  (if (= n 0)
+      '()
+      (let ((first (get-arg)))
+        (cons first (get-args (- n 1))))))
+
+(define (get-arg)                   ;; first version
+  (display "Argument: ")
+  (read))
+
+(define (show-answer answer)
+  (newline)
+  (display "The result is: ")
+  (if (not answer)
+      (show "#F")
+      (show answer))
+  (newline))
+```
+
+(That weird `if` expression in `show-answer` is needed because in some old versions of Scheme the empty list means the same as `#f`. We wanted to avoid raising this issue in Chapter 2, so we just made sure that false values always printed as `#F`.)
+
+---
+
+### The Difference between a Procedure and Its Name
+
+**Why is that we didn't just say `(show-answer (apply fn-name args))` in the definition of `functions-loop`?**
+
+Remember that the value of the variable `fn-name` comes from `get-fn`, which invokes `read`. Suppose you said
+
+```scheme
+(define x (read))
+```
+and then typed
+
+```scheme
+(+ 2 3)
+```
+
+The value of `x` would be the three element list `(+ 2 3)`, not the number five.
+
+Similarly, if you type “butfirst,” then read will return the word *butfirst*, not the procedure of that name. So we need a way to turn the name of a function into the procedure itself.
+
+---
+
+### The Association List of Functions
+
+In `functions` program, given a word what do we need to know about it?
+
+Given a word, such as *butfirst* , we need to know three things:
+
+* The Scheme procedure with that name (in this case, the butfirst procedure).
+* The number of arguments required by the given procedure (one).
+* The types of arguments required by the given procedure (one word or sentence, which must not be empty).
+
+We need to know the number of arguments the procedure requires because the program prompts the user individually for each argument; it has to know how many to ask for. Also, it needs to know the domain of each function so it can complain if the arguments you give it are not in the domain.
+
+> Scheme would complain all by itself, of course, but would then stop running the `functions` program. We want to catch the error before Scheme does, so that after seeing the error message you’re still in `functions`. As we mentioned in Chapter 19, a program meant for beginners, such as the readers of Chapter 2, should be especially robust.
+
+**How to create an association list that contains all of the functions the `functions` program knows about?**
+
+Each entry in the association list is a list of four elements:
+
+```scheme
+(define *the-functions*                                         ;; partial listing
+  (list (list '* * 2 (lambda (x y) (and (number? x) (number? y))))
+        (list '+ + 2 (lambda (x y) (and (number? x) (number? y))))
+        (list 'and (lambda (x y) (and x y)) 2
+              (lambda (x y) (and (boolean? x) (boolean? y))))
+        (list 'equal? equal? 2 (lambda (x y) #t))
+        (list 'even? even? 1 integer?)
+        (list 'word word 2 (lambda (x y) (and (word? x) (word? y))))))
+```
+
+**It’s a convention in Scheme programming that names of global variables used throughout a program are surrounded by \*asterisks\* to distinguish them from parameters of procedures.**
+
+**How to define the selector procedures for looking up information in the a-list above?**
+
+```scheme
+(define (scheme-procedure fn-name)
+  (cadr (assoc fn-name *the-functions*)))
+
+(define (arg-count fn-name)
+  (caddr (assoc fn-name *the-functions*)))
+
+(define (type-predicate fn-name)
+  (cadddr (assoc fn-name *the-functions*)))
+```
+
+---
+
+### Domain Checking
+
+
