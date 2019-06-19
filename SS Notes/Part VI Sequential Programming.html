@@ -191,7 +191,7 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <a class="sourceLine" id="cb4-35" title="35"><span class="co">; (OH! DARLING)</span></a>
 <a class="sourceLine" id="cb4-36" title="36"><span class="co">; DONE</span></a>
 <a class="sourceLine" id="cb4-37" title="37"></a>
-<a class="sourceLine" id="cb4-38" title="38">(lots-of-value ’(oh! darling))</a>
+<a class="sourceLine" id="cb4-38" title="38">(lots-of-value &#39;(oh! darling))</a>
 <a class="sourceLine" id="cb4-39" title="39"><span class="co">; (OH! DARLING)</span></a></code></pre></div>
 <p>This example also demonstrates the second new idea, <em>sequencing</em>: Each of <code>effect</code>, <code>lots-of-effect</code>, and <code>lots-of-value</code> contains more than one expression in its body. When you invoke such a procedure, <em>Scheme evaluates all the expressions in the body, in order, and returns the value of the last one.</em> This also works in the body of a <code>let</code>, which is really the body of a procedure, and in each clause of a <code>cond</code>.</p>
 <div class="sourceCode" id="cb5"><pre class="sourceCode scheme"><code class="sourceCode scheme"><a class="sourceLine" id="cb5-1" title="1">(<span class="kw">cond</span> ((<span class="op">&lt;</span> <span class="dv">4</span> <span class="dv">0</span>)</a>
@@ -227,7 +227,7 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <p>Instead, to turn the sequence of expressions into a single expression, we use the special form <code>begin</code>. <em>It takes any number of arguments, evaluates them from left to right, and returns the value of the last one.</em></p>
 <div class="sourceCode" id="cb7"><pre class="sourceCode scheme"><code class="sourceCode scheme"><a class="sourceLine" id="cb7-1" title="1">(<span class="ex">define</span><span class="fu"> bottles </span>n)</a>
 <a class="sourceLine" id="cb7-2" title="2">(<span class="kw">if</span> (<span class="op">=</span> n <span class="dv">0</span>)</a>
-<a class="sourceLine" id="cb7-3" title="3">’burp</a>
+<a class="sourceLine" id="cb7-3" title="3">&#39;burp</a>
 <a class="sourceLine" id="cb7-4" title="4">(<span class="kw">begin</span> (verse n)</a>
 <a class="sourceLine" id="cb7-5" title="5">(bottles (<span class="op">-</span> n <span class="dv">1</span>)))))</a></code></pre></div>
 <p>(One way to think about sequences in procedure bodies is that every procedure body has an invisible <code>begin</code> surrounding it.)</p>
@@ -728,5 +728,138 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <a class="sourceLine" id="cb45-8" title="8">  (<span class="kw">cadddr</span> (<span class="kw">assoc</span> fn-name *the-functions*)))</a></code></pre></div>
 <hr />
 <h3 id="domain-checking">Domain Checking</h3>
+<p><strong>In <code>functions</code> why do we represent the domain of a procedure by another procedure?</strong></p>
+<p><em>The domain of a procedure is a set, and sets are generally represented in programs as lists.</em> You might think that we’d have to store, for example, a list of all the legal arguments to <code>butfirst</code>. But that would be impossible, since that list would have to be infinitely large. Instead, we can take advantage of the fact that the only use we make of this set is membership testing, that is, finding out whether a particular argument is in a function’s domain.</p>
+<p><strong>How do the domain-checking procedures work?</strong></p>
+<p>Each domain-checking procedure, or <em>type predicate</em>, takes the same arguments as the procedure whose domain it checks. For example, the type predicate for <code>+</code> is</p>
+<div class="sourceCode" id="cb46"><pre class="sourceCode scheme"><code class="sourceCode scheme"><a class="sourceLine" id="cb46-1" title="1">(<span class="kw">lambda</span> (x y) (<span class="kw">and</span> (<span class="kw">number?</span> x) (<span class="kw">number?</span> y)))</a></code></pre></div>
+<p>The type predicate returns <code>#t</code> if its arguments are valid and <code>#f</code> otherwise. So in the case of <code>+</code> , any two numbers are valid inputs, but any other types of arguments aren’t.</p>
+<p><strong>How to define <code>in-domain?</code> predicate?</strong></p>
+<div class="sourceCode" id="cb47"><pre class="sourceCode scheme"><code class="sourceCode scheme"><a class="sourceLine" id="cb47-1" title="1">(<span class="ex">define</span><span class="fu"> </span>(in-domain? args fn-name)</a>
+<a class="sourceLine" id="cb47-2" title="2">  (apply (type-predicate fn-name) args))</a></code></pre></div>
+<p><strong>How to define certain type predicate to be applicable to more than one procedure?</strong></p>
+<p>For <code>+</code>, <code>-</code>, <code>=</code>, and so on. We give this function a name:</p>
+<div class="sourceCode" id="cb48"><pre class="sourceCode scheme"><code class="sourceCode scheme"><a class="sourceLine" id="cb48-1" title="1">(<span class="ex">define</span><span class="fu"> </span>(two-numbers? x y)</a>
+<a class="sourceLine" id="cb48-2" title="2">  (<span class="kw">and</span> (<span class="kw">number?</span> x) (<span class="kw">number?</span> y)))</a></code></pre></div>
+<p>We then refer to the type predicate by name in the a-list:</p>
+<div class="sourceCode" id="cb49"><pre class="sourceCode scheme"><code class="sourceCode scheme"><a class="sourceLine" id="cb49-1" title="1">(<span class="ex">define</span><span class="fu"> *the-functions*                         </span><span class="co">;; partial listing, revised</span></a>
+<a class="sourceLine" id="cb49-2" title="2">  (<span class="kw">list</span> (<span class="kw">list</span> &#39;* * <span class="dv">2</span> two-numbers?)</a>
+<a class="sourceLine" id="cb49-3" title="3">        (<span class="kw">list</span> &#39;+ <span class="op">+</span> <span class="dv">2</span> two-numbers?)</a>
+<a class="sourceLine" id="cb49-4" title="4">        (<span class="kw">list</span> &#39;and (<span class="kw">lambda</span> (x y) (<span class="kw">and</span> x y)) <span class="dv">2</span></a>
+<a class="sourceLine" id="cb49-5" title="5">              (<span class="kw">lambda</span> (x y) (<span class="kw">and</span> (<span class="kw">boolean?</span> x) (<span class="kw">boolean?</span> y))))</a>
+<a class="sourceLine" id="cb49-6" title="6">        (<span class="kw">list</span> &#39;equal? <span class="kw">equal?</span> <span class="dv">2</span> (<span class="kw">lambda</span> (x y) <span class="dv">#t</span>))</a>
+<a class="sourceLine" id="cb49-7" title="7">        (<span class="kw">list</span> &#39;even? <span class="kw">even?</span> <span class="dv">1</span> <span class="kw">integer?</span>)</a>
+<a class="sourceLine" id="cb49-8" title="8">        (<span class="kw">list</span> &#39;word word <span class="dv">2</span> (<span class="kw">lambda</span> (x y) (<span class="kw">and</span> (word? x) (word? y))))))</a></code></pre></div>
+<p><strong>How to define type predicate for <code>member?</code> and <code>appearances</code>?</strong></p>
+<div class="sourceCode" id="cb50"><pre class="sourceCode scheme"><code class="sourceCode scheme"><a class="sourceLine" id="cb50-1" title="1">(<span class="ex">define</span><span class="fu"> </span>(member-types-ok? small big)</a>
+<a class="sourceLine" id="cb50-2" title="2">  (<span class="kw">and</span> (word? small)</a>
+<a class="sourceLine" id="cb50-3" title="3">       (<span class="kw">or</span> (sentence? big) (<span class="kw">and</span> (word? big) (<span class="op">=</span> (count small) <span class="dv">1</span>)))))</a></code></pre></div>
+<p><strong>How to define type predicate for <code>item</code> and <code>count</code>?</strong></p>
+<div class="sourceCode" id="cb51"><pre class="sourceCode scheme"><code class="sourceCode scheme"><a class="sourceLine" id="cb51-1" title="1">(<span class="kw">lambda</span> (n stuff)</a>
+<a class="sourceLine" id="cb51-2" title="2">  (<span class="kw">and</span> (<span class="kw">integer?</span> n) (<span class="op">&gt;</span> n <span class="dv">0</span>)</a>
+<a class="sourceLine" id="cb51-3" title="3">       (word-or-sent? stuff) (<span class="op">&lt;=</span> n (count stuff))))</a></code></pre></div>
+<p>This invokes <code>word-or-sent?</code>, which is itself the type predicate for the <code>count</code> procedure:</p>
+<div class="sourceCode" id="cb52"><pre class="sourceCode scheme"><code class="sourceCode scheme"><a class="sourceLine" id="cb52-1" title="1">(<span class="ex">define</span><span class="fu"> </span>(word-or-sent? x)</a>
+<a class="sourceLine" id="cb52-2" title="2">  (<span class="kw">or</span> (word? x) (sentence? x)))</a></code></pre></div>
+<p><strong>How to define type predicate for <code>equal?</code>?</strong></p>
+<div class="sourceCode" id="cb53"><pre class="sourceCode scheme"><code class="sourceCode scheme"><a class="sourceLine" id="cb53-1" title="1">(<span class="kw">lambda</span> (x y) <span class="dv">#t</span>)</a></code></pre></div>
+<p><strong>Why to restrict domain in <code>functions</code>?</strong></p>
+<p>Note that the <code>functions</code> program has a more restricted idea of domain than Scheme does. For example, in Scheme</p>
+<div class="sourceCode" id="cb54"><pre class="sourceCode scheme"><code class="sourceCode scheme"><a class="sourceLine" id="cb54-1" title="1">(<span class="kw">and</span> <span class="dv">6</span> <span class="dv">#t</span>)</a></code></pre></div>
+<p>returns <code>#t</code> and does not generate an error. But in the <code>functions</code> program the argument <code>6</code> is considered out of the domain.</p>
+<blockquote>
+<p>Why did we choose to restrict the domain? We were trying to make the point that invoking a procedure makes sense only with appropriate arguments; that point is obscured by the complicating fact that Scheme interprets any non-<code>#f</code> value as true. In the <code>functions</code> program, where composition of functions is not allowed, there’s no benefit to Scheme’s more permissive rule.</p>
+</blockquote>
+<blockquote>
+<p>A reason that we restricted the domains of some mathematical functions is to protect ourselves from the fact that some version of Scheme support complex numbers while others do not. We wanted to write one version of <code>functions</code> that would work in either case; sometimes the easiest way to avoid possible problems was to restrict some function’s domain.</p>
+</blockquote>
+<hr />
+<h3 id="intentionally-confusing-a-function-with-its-name">Intentionally Confusing a Function with Its Name</h3>
+<p><strong>How does <code>functions</code> program completely hide the distinction between a procedure and its name from the user?</strong></p>
+<div class="sourceCode" id="cb55"><pre class="sourceCode scheme"><code class="sourceCode scheme"><a class="sourceLine" id="cb55-1" title="1">Function: count</a>
+<a class="sourceLine" id="cb55-2" title="2">Argument: butlast</a>
+<a class="sourceLine" id="cb55-3" title="3"></a>
+<a class="sourceLine" id="cb55-4" title="4">The result is: <span class="dv">7</span></a>
+<a class="sourceLine" id="cb55-5" title="5"></a>
+<a class="sourceLine" id="cb55-6" title="6">Function: every</a>
+<a class="sourceLine" id="cb55-7" title="7">Argument: butlast</a>
+<a class="sourceLine" id="cb55-8" title="8">Argument: (helter skelter)</a>
+<a class="sourceLine" id="cb55-9" title="9"></a>
+<a class="sourceLine" id="cb55-10" title="10">The result is: (HELTE SKELTE)</a></code></pre></div>
+<p>When we give <code>butlast</code> as an argument to <code>count</code> , it’s as if we’d said</p>
+<div class="sourceCode" id="cb56"><pre class="sourceCode scheme"><code class="sourceCode scheme"><a class="sourceLine" id="cb56-1" title="1">(count &#39;butlast)</a></code></pre></div>
+<p>In other words, it’s taken as a word. But when we give <code>butlast</code> as an argument to <code>every</code>, it’s as if we’d said</p>
+<div class="sourceCode" id="cb57"><pre class="sourceCode scheme"><code class="sourceCode scheme"><a class="sourceLine" id="cb57-1" title="1">(every butlast &#39;(helter skelter))</a></code></pre></div>
+<p><strong>How does <code>functions</code> treat some arguments as quoted and others not?</strong></p>
+<p><em>The way this works is that everything is considered a word or a sentence by the <code>functions</code> program.</em> The higher-order functions <code>every</code> and <code>keep</code> are actually represented in the <code>functions</code> implementation by Scheme procedures that take the name of a function as an argument, instead of a procedure itself as the ordinary versions do:</p>
+<div class="sourceCode" id="cb58"><pre class="sourceCode scheme"><code class="sourceCode scheme"><a class="sourceLine" id="cb58-1" title="1">(<span class="ex">define</span><span class="fu"> </span>(named-every fn-name <span class="kw">list</span>)</a>
+<a class="sourceLine" id="cb58-2" title="2">  (every (scheme-procedure fn-name) <span class="kw">list</span>))</a>
+<a class="sourceLine" id="cb58-3" title="3"></a>
+<a class="sourceLine" id="cb58-4" title="4">(<span class="ex">define</span><span class="fu"> </span>(named-keep fn-name <span class="kw">list</span>)</a>
+<a class="sourceLine" id="cb58-5" title="5">  (keep (scheme-procedure fn-name) <span class="kw">list</span>))</a>
+<a class="sourceLine" id="cb58-6" title="6"></a>
+<a class="sourceLine" id="cb58-7" title="7">(every first &#39;(another girl))</a>
+<a class="sourceLine" id="cb58-8" title="8"><span class="co">; (A G)</span></a>
+<a class="sourceLine" id="cb58-9" title="9"></a>
+<a class="sourceLine" id="cb58-10" title="10">(named-every &#39;first &#39;(another girl))</a>
+<a class="sourceLine" id="cb58-11" title="11"><span class="co">; (A G)</span></a>
+<a class="sourceLine" id="cb58-12" title="12"></a>
+<a class="sourceLine" id="cb58-13" title="13">(every &#39;first &#39;(another girl))</a>
+<a class="sourceLine" id="cb58-14" title="14"><span class="co">; ERROR: ATTEMPT TO APPLY NON-PROCEDURE FIRST</span></a></code></pre></div>
+<p><strong>How does <code>functions</code> process the input with quotations?</strong></p>
+<p>This illustration hides a subtle point. When we invoked <code>named-every</code> at a Scheme prompt, we had to quote the word first that we used as its argument. But when you run the functions program, you don’t quote anything. The point is that <code>functions</code> provides an evaluator that uses a different notation from Scheme’s notation. It may be clearer if we show an interaction with an imaginary version of functions that does use Scheme notation:</p>
+<div class="sourceCode" id="cb59"><pre class="sourceCode scheme"><code class="sourceCode scheme"><a class="sourceLine" id="cb59-1" title="1">Function: first</a>
+<a class="sourceLine" id="cb59-2" title="2">Non-Automatically-Quoted-Argument: &#39;datum</a>
+<a class="sourceLine" id="cb59-3" title="3"></a>
+<a class="sourceLine" id="cb59-4" title="4">The result is: D</a>
+<a class="sourceLine" id="cb59-5" title="5"></a>
+<a class="sourceLine" id="cb59-6" title="6">Function: first</a>
+<a class="sourceLine" id="cb59-7" title="7">Non-Automatically-Quoted-Argument: datum</a>
+<a class="sourceLine" id="cb59-8" title="8"></a>
+<a class="sourceLine" id="cb59-9" title="9">ERROR: THE VARIABLE DATUM IS UNBOUND.</a></code></pre></div>
+<p>We wrote <code>functions</code> so that <em>every</em> argument is automatically quoted. Well, if that’s the case, it’s true even when we’re invoking <code>every</code>. If you say</p>
+<div class="sourceCode" id="cb60"><pre class="sourceCode scheme"><code class="sourceCode scheme"><a class="sourceLine" id="cb60-1" title="1">Function: every</a>
+<a class="sourceLine" id="cb60-2" title="2">Argument: first</a>
+<a class="sourceLine" id="cb60-3" title="3">...</a></code></pre></div>
+<p>then by the rules of the <code>functions</code> program, that argument is the quoted word <em>first</em>. So <code>named-every</code> , the procedure that pretends to be <code>every</code> in the <code>functions</code> world, has to “un-quote” that argument by looking up the corresponding procedure.</p>
+<hr />
+<h3 id="more-on-higher-order-functions">More on Higher-Order Functions</h3>
+<p><strong>How does <code>number-of-arguments</code> work in <code>functions</code> program?</strong></p>
+<p>The implementation of <code>number-of-arguments</code> makes use of the same a-list of functions that the <code>functions</code> evaluator itself uses. Since the functions program needs to know the number of arguments for every procedure anyway, it’s hardly any extra effort to make that information available to the user. We just add an entry to the a-list:</p>
+<div class="sourceCode" id="cb61"><pre class="sourceCode scheme"><code class="sourceCode scheme"><a class="sourceLine" id="cb61-1" title="1">(<span class="kw">list</span> &#39;number-of-arguments arg-count <span class="dv">1</span> valid-fn-name?)</a></code></pre></div>
+<p>The type predicate merely has to check that the argument is found in the a-list of functions:</p>
+<div class="sourceCode" id="cb62"><pre class="sourceCode scheme"><code class="sourceCode scheme"><a class="sourceLine" id="cb62-1" title="1">(<span class="ex">define</span><span class="fu"> </span>(valid-fn-name? name)</a>
+<a class="sourceLine" id="cb62-2" title="2">  (<span class="kw">assoc</span> name *the-functions*))</a></code></pre></div>
+<p><strong>How to implement the type checking for the arguments to <code>every</code> and <code>keep</code> in <code>functions</code>?</strong></p>
+<p>The type checking for the arguments to <code>every</code> and <code>keep</code> is unusually complicated because what’s allowed as the second argument (the collection of data) depends on which function is used as the first argument.</p>
+<p>The type-checking procedures for <code>every</code> and <code>keep</code> use a common subprocedure. The one for <code>every</code> is</p>
+<div class="sourceCode" id="cb63"><pre class="sourceCode scheme"><code class="sourceCode scheme"><a class="sourceLine" id="cb63-1" title="1">(<span class="kw">lambda</span> (fn stuff)</a>
+<a class="sourceLine" id="cb63-2" title="2">  (hof-types-ok? fn stuff word-or-sent?))</a></code></pre></div>
+<p>and the one for <code>keep</code> is</p>
+<div class="sourceCode" id="cb64"><pre class="sourceCode scheme"><code class="sourceCode scheme"><a class="sourceLine" id="cb64-1" title="1">(<span class="kw">lambda</span> (fn stuff)</a>
+<a class="sourceLine" id="cb64-2" title="2">  (hof-types-ok? fn stuff <span class="kw">boolean?</span>))</a></code></pre></div>
+<p>The third argument specifies what types of results <code>fn</code> must return when applied to the elements of stuff.</p>
+<div class="sourceCode" id="cb65"><pre class="sourceCode scheme"><code class="sourceCode scheme"><a class="sourceLine" id="cb65-1" title="1">(<span class="ex">define</span><span class="fu"> </span>(hof-types-ok? fn-name stuff range-predicate)</a>
+<a class="sourceLine" id="cb65-2" title="2">  (<span class="kw">and</span> (valid-fn-name? fn-name)</a>
+<a class="sourceLine" id="cb65-3" title="3">       (<span class="op">=</span> <span class="dv">1</span> (arg-count fn-name))</a>
+<a class="sourceLine" id="cb65-4" title="4">       (word-or-sent? stuff)</a>
+<a class="sourceLine" id="cb65-5" title="5">       (empty? (keep (<span class="kw">lambda</span> (element)</a>
+<a class="sourceLine" id="cb65-6" title="6">                       (<span class="kw">not</span> ((type-predicate fn-name) element)))</a>
+<a class="sourceLine" id="cb65-7" title="7">                     stuff))</a>
+<a class="sourceLine" id="cb65-8" title="8">       (<span class="kw">null?</span> (filter (<span class="kw">lambda</span> (element)</a>
+<a class="sourceLine" id="cb65-9" title="9">                        (<span class="kw">not</span> (range-predicate element)))</a>
+<a class="sourceLine" id="cb65-10" title="10">                      (map (scheme-procedure fn-name)</a>
+<a class="sourceLine" id="cb65-11" title="11">                           (every (<span class="kw">lambda</span> (x) x) stuff))))))</a></code></pre></div>
+<p>This says that:</p>
+<ul>
+<li>the function being used as the first argument must be a one-argument function (so you can’t say, for example, <code>every</code> of <code>word</code> and something);</li>
+<li>each element of the second argument must be an acceptable argument to that function. (If you <code>keep</code> the unacceptable arguments, you get nothing.)</li>
+<li>Finally, each invocation of the given function on an element of <code>stuff</code> must return an object of the appropriate type: words or sentences for <code>every</code>, true or false for <code>keep</code>.</li>
+</ul>
+<blockquote>
+<p>That last argument to <code>and</code> is complicated. The reason we use <code>map</code> instead of <code>every</code> is that the results of the invocations of <code>fn</code> might not be words or sentences, so <code>every</code> wouldn’t accept them. But <code>map</code> has its own limitation: It won’t accept a word as the <code>stuff</code> argument. So we use <code>every</code> to turn <code>stuff</code> into a sentence—which, as you know, is really a list—and that’s guaranteed to be acceptable to <code>map</code>. (This is an example of a situation in which respecting a data abstraction would be too horrible to contemplate.)</p>
+</blockquote>
+<hr />
+<h3 id="more-robustness">More Robustness</h3>
 </body>
 </html>

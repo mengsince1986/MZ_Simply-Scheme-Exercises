@@ -41,7 +41,7 @@ Like *sequence*, the notion of *state* contradicts functional programming. Earli
 * Programs that must read and write long-term data file storage;
 * Computations that model an actual sequence of events in time and use the state of the program to model information about the state of the simulated events.
 
-After introducing Scheme’s mechanisms for sequential programming, we’ll use those mechanisms to implement versions of two commonly used types of business computer applications, a spreadsheet and a database program.
+After introducing Scheme's mechanisms for sequential programming, we'll use those mechanisms to implement versions of two commonly used types of business computer applications, a spreadsheet and a database program.
 
 ---
 
@@ -51,7 +51,7 @@ After introducing Scheme’s mechanisms for sequential programming, we’ll use 
 
 **How to print the lyrics of "99 Bottles of Beer on the Wall" with scheme?**
 
-We’ll write a program to print a verse, rather than return it in a list:
+We'll write a program to print a verse, rather than return it in a list:
 
 ```scheme
 (define (bottles n)
@@ -86,7 +86,7 @@ We’ll write a program to print a verse, rather than return it in a list:
 ; BURP
 ```
 
-Why was "burp" printed at the end? Just because we’re printing things explicitly doesn’t mean that the read-eval-print loop stops functioning. We typed the expression `(bottles 3)` . In the course of evaluating that expression, Scheme printed several lines for us. But the value of the expression was the word burp, because that’s what bottles returned.
+Why was "burp" printed at the end? Just because we're printing things explicitly doesn't mean that the read-eval-print loop stops functioning. We typed the expression `(bottles 3)` . In the course of evaluating that expression, Scheme printed several lines for us. But the value of the expression was the word burp, because that's what bottles returned.
 
 ---
 
@@ -94,7 +94,7 @@ Why was "burp" printed at the end? Just because we’re printing things explicit
 
 **How does procedure `show` work?**
 
-The procedures we’ve used compute and return a value, and do nothing else. `show` is different. Although every Scheme procedure returns a value, *the Scheme language standard doesn’t specify what value the printing procedures should return*. Instead, we are interested in their side effects. *we invoke show because we want it to do something, namely, print its argument on the screen.*
+The procedures we've used compute and return a value, and do nothing else. `show` is different. Although every Scheme procedure returns a value, *the Scheme language standard doesn't specify what value the printing procedures should return*. Instead, we are interested in their side effects. *we invoke show because we want it to do something, namely, print its argument on the screen.*
 
 Suppose `show` returns `#f` in your version of Scheme. Then you might see
 
@@ -104,17 +104,17 @@ Suppose `show` returns `#f` in your version of Scheme. Then you might see
 ; #F
 ```
 
-But since the return value is unspecified, we try to write programs in such a way that *we never use `show`’s return value as the return value from our procedures.*
+But since the return value is unspecified, we try to write programs in such a way that *we never use `show`'s return value as the return value from our procedures.*
 
 **What is "side effect"?**
 
-What exactly do we mean by “side effect”? The kinds of procedures that we’ve used before this chapter can compute values, invoke helper procedures, provide arguments to the helper procedures, and return a value. There may be a lot of activity going on within the procedure, but the procedure affects the world outside of itself only by returning a value that some other procedure might use. `show` affects the world outside of itself by putting something on the screen. After show has finished its work, someone who looks at the screen can tell that show was used.
+What exactly do we mean by “side effect”? The kinds of procedures that we've used before this chapter can compute values, invoke helper procedures, provide arguments to the helper procedures, and return a value. There may be a lot of activity going on within the procedure, but the procedure affects the world outside of itself only by returning a value that some other procedure might use. `show` affects the world outside of itself by putting something on the screen. After show has finished its work, someone who looks at the screen can tell that show was used.
 
-The term *side effect* is based on the idea that a procedure may have a useful return value as its main purpose and may also have an effect “on the side.” It’s a misnomer to talk about the side effect of `show`, since the effect is its main purpose.
+The term *side effect* is based on the idea that a procedure may have a useful return value as its main purpose and may also have an effect “on the side.” It's a misnomer to talk about the side effect of `show`, since the effect is its main purpose.
 
 **What is the difference between values and effects?**
 
-Here’s an example to illustrate the difference between values and effects:
+Here's an example to illustrate the difference between values and effects:
 
 ```scheme
 (define (effect x)
@@ -154,7 +154,7 @@ Here’s an example to illustrate the difference between values and effects:
 ; (OH! DARLING)
 ; DONE
 
-(lots-of-value ’(oh! darling))
+(lots-of-value '(oh! darling))
 ; (OH! DARLING)
 ```
 
@@ -178,7 +178,7 @@ This example also demonstrates the second new idea, *sequencing*: Each of `effec
 ; VALUE
 ```
 
-> In Chapter 4, we said that the body of a procedure was always one single expression. We lied. *But as long as you don’t use any procedures with side effects, it doesn’t do you any good to evaluate more than one expression in a body.*
+> In Chapter 4, we said that the body of a procedure was always one single expression. We lied. *But as long as you don't use any procedures with side effects, it doesn't do you any good to evaluate more than one expression in a body.*
 
 When we invoked `lots-of-value`, Scheme invoked `value` three times; it discarded the values returned by the first two invocations, and returned the value from the third invocation. Similarly, when we invoked `lots-of-effect`, Scheme invoked `effect` three times and returned the value from the third invocation. But each invocation of `effect` caused its argument to be printed by invoking `show`.
 
@@ -188,7 +188,7 @@ When we invoked `lots-of-value`, Scheme invoked `value` three times; it discarde
 
 **Why is that multiple expressions can't be used in an `if` construction?**
 
-The `lots-of-effect` procedure accomplished sequencing by having more than one expression in its body. This works fine if the sequence of events that you want to perform is the entire body of a procedure. But in `bottles` we wanted to include a sequence as one of the alternatives in an `if` construction. We couldn’t just say
+The `lots-of-effect` procedure accomplished sequencing by having more than one expression in its body. This works fine if the sequence of events that you want to perform is the entire body of a procedure. But in `bottles` we wanted to include a sequence as one of the alternatives in an `if` construction. We couldn't just say
 
 ```scheme
 (define (bottles n)
@@ -207,7 +207,7 @@ Instead, to turn the sequence of expressions into a single expression, we use th
 ```scheme
 (define bottles n)
 (if (= n 0)
-’burp
+'burp
 (begin (verse n)
 (bottles (- n 1)))))
 ```
@@ -220,7 +220,7 @@ Instead, to turn the sequence of expressions into a single expression, we use th
 
 **What is the difference between a function and procedure?**
 
-Sequencing and side effects are radical departures from the idea of functional programming. In fact, we’d like to reserve the name *function* for something that computes and returns one value, with no side effects.
+Sequencing and side effects are radical departures from the idea of functional programming. In fact, we'd like to reserve the name *function* for something that computes and returns one value, with no side effects.
 
 “*Procedure*” is the general term for the thing that lambda returns—an embodiment of an algorithm. If the algorithm is the kind that computes and returns a single value without side effects, then we say that the procedure implements a function.
 
@@ -234,9 +234,9 @@ There is a certain kind of sequencing even in functional programming. If you say
 (* (+ 3 4) (- 92 15))
 ```
 
-it’s clear that the addition has to happen before the multiplication, because the result of the addition provides one of the arguments to the multiplication.
+it's clear that the addition has to happen before the multiplication, because the result of the addition provides one of the arguments to the multiplication.
 
-What’s new in the sequential programming style is the emphasis on *sequence*, and the fact that the expressions in the sequence are independent instead of contributing values to each other. In this multiplication problem, for example, we don’t care whether the addition happens before or after the subtraction. If the addition and subtraction were in a sequence, we’d be using them for independent purposes:
+What's new in the sequential programming style is the emphasis on *sequence*, and the fact that the expressions in the sequence are independent instead of contributing values to each other. In this multiplication problem, for example, we don't care whether the addition happens before or after the subtraction. If the addition and subtraction were in a sequence, we'd be using them for independent purposes:
 
 ```scheme
 (begin
@@ -262,7 +262,7 @@ This is what we mean by being independent. *Neither expression helps in computin
 ; DONE
 ```
 
-We use `display`, which doesn’t move to the next line after printing its argument:
+We use `display`, which doesn't move to the next line after printing its argument:
 
 ```scheme
 (define (show-addition x y)
@@ -288,7 +288,7 @@ You use `newline`:
   (newline))                                                       ; replaces (show '())
 ```
 
-In fact, `show` isn’t an official Scheme primitive; we wrote it in terms of `display` and `newline` .
+In fact, `show` isn't an official Scheme primitive; we wrote it in terms of `display` and `newline` .
 
 ---
 
@@ -321,7 +321,7 @@ Since any character can be in a string, including spaces, the easiest thing to d
 ; #F                                             ; or whatever is returned by (newline)
 ```
 
-It’s strange to think of “bottles of beer on the wall,” as a single word. But *the rule is that anything inside double quotes counts as a single word. It doesn’t have to be an English word.*
+It's strange to think of “bottles of beer on the wall,” as a single word. But *the rule is that anything inside double quotes counts as a single word. It doesn't have to be an English word.*
 
 ---
 
@@ -343,7 +343,7 @@ It’s strange to think of “bottles of beer on the wall,” as a single word. 
 ; DONE
 ```
 
-**How to abstract `show-list` into a higher order procedure? (We can’t call it a “higher-order function” because this one is for computations with side effects.)**
+**How to abstract `show-list` into a higher order procedure? (We can't call it a “higher-order function” because this one is for computations with side effects.)**
 
 The procedure `for-each` is part of standard Scheme:
 
@@ -358,7 +358,7 @@ The value returned by `for-each` is unspecified.
 
 **Why is that we use `for-each` instead of `map` to print each element of a list?**
 
-There are two reasons. One is just an efficiency issue: `map` constructs a list containing the values returned by each of its sub-computations; in this example, it would be a list of three instances of the unspecified value returned by `show`. But we aren’t going to use that list for anything, so there’s no point in constructing it.
+There are two reasons. One is just an efficiency issue: `map` constructs a list containing the values returned by each of its sub-computations; in this example, it would be a list of three instances of the unspecified value returned by `show`. But we aren't going to use that list for anything, so there's no point in constructing it.
 
 The second reason is more serious. *In functional programming, the order of evaluation of subexpressions is unspecified.* For example, when we evaluate the expression
 
@@ -966,4 +966,232 @@ Each entry in the association list is a list of four elements:
 
 ### Domain Checking
 
+**In `functions` why do we represent the domain of a procedure by another procedure?**
+
+*The domain of a procedure is a set, and sets are generally represented in programs as lists.*  You might think that we’d have to store, for example, a list of all the legal arguments to `butfirst`.  But that would be impossible, since that list would have to be infinitely large. Instead, we can take advantage of the fact that the only use we make of this set is membership testing, that is, finding out whether a particular argument is in a function’s domain.
+
+**How do the domain-checking procedures work?**
+
+Each domain-checking procedure, or *type predicate*, takes the same arguments as the procedure whose domain it checks. For example, the type predicate for `+` is
+
+```scheme
+(lambda (x y) (and (number? x) (number? y)))
+```
+
+The type predicate returns `#t` if its arguments are valid and `#f` otherwise. So in the case of `+` , any two numbers are valid inputs, but any other types of arguments aren’t.
+
+**How to define `in-domain?` predicate?**
+
+```scheme
+(define (in-domain? args fn-name)
+  (apply (type-predicate fn-name) args))
+```
+
+**How to define certain type predicate to be applicable to more than one procedure?**
+
+For `+`, `-`, `=`, and so on. We give this function a name:
+
+```scheme
+(define (two-numbers? x y)
+  (and (number? x) (number? y)))
+```
+
+We then refer to the type predicate by name in the a-list:
+
+```scheme
+(define *the-functions*                         ;; partial listing, revised
+  (list (list '* * 2 two-numbers?)
+        (list '+ + 2 two-numbers?)
+        (list 'and (lambda (x y) (and x y)) 2
+              (lambda (x y) (and (boolean? x) (boolean? y))))
+        (list 'equal? equal? 2 (lambda (x y) #t))
+        (list 'even? even? 1 integer?)
+        (list 'word word 2 (lambda (x y) (and (word? x) (word? y))))))
+```
+
+**How to define type predicate for `member?` and `appearances`?**
+
+```scheme
+(define (member-types-ok? small big)
+  (and (word? small)
+       (or (sentence? big) (and (word? big) (= (count small) 1)))))
+```
+
+**How to define type predicate for `item` and `count`?**
+
+```scheme
+(lambda (n stuff)
+  (and (integer? n) (> n 0)
+       (word-or-sent? stuff) (<= n (count stuff))))
+```
+
+This invokes `word-or-sent?`, which is itself the type predicate for the `count` procedure:
+
+```scheme
+(define (word-or-sent? x)
+  (or (word? x) (sentence? x)))
+```
+
+**How to define type predicate for `equal?`?**
+
+```scheme
+(lambda (x y) #t)
+```
+
+**Why to restrict domain in `functions`?**
+
+Note that the `functions` program has a more restricted idea of domain than Scheme does. For example, in Scheme
+
+```scheme
+(and 6 #t)
+```
+
+returns `#t` and does not generate an error. But in the `functions` program the argument `6` is considered out of the domain.
+
+> Why did we choose to restrict the domain? We were trying to make the point that invoking a procedure makes sense only with appropriate arguments; that point is obscured by the complicating fact that Scheme interprets any non-`#f` value as true. In the `functions` program, where composition of functions is not allowed, there’s no benefit to Scheme’s more permissive rule.
+
+> A reason that we restricted the domains of some mathematical functions is to protect ourselves from the fact that some version of Scheme support complex numbers while others do not. We wanted to write one version of `functions` that would work in either case; sometimes the easiest way to avoid possible problems was to restrict some function’s domain.
+
+---
+
+### Intentionally Confusing a Function with Its Name
+
+**How does `functions` program completely hide the distinction between a procedure and its name from the user?**
+
+```scheme
+Function: count
+Argument: butlast
+
+The result is: 7
+
+Function: every
+Argument: butlast
+Argument: (helter skelter)
+
+The result is: (HELTE SKELTE)
+```
+
+When we give `butlast` as an argument to `count` , it’s as if we’d said
+
+```scheme
+(count 'butlast)
+```
+
+In other words, it’s taken as a word. But when we give `butlast` as an argument to `every`, it’s as if we’d said
+
+```scheme
+(every butlast '(helter skelter))
+```
+
+**How does `functions` treat some arguments as quoted and others not?**
+
+*The way this works is that everything is considered a word or a sentence by the `functions` program.* The higher-order functions `every` and `keep` are actually represented in the `functions` implementation by Scheme procedures that take the name of a function as an argument, instead of a procedure itself as the ordinary versions do:
+
+```scheme
+(define (named-every fn-name list)
+  (every (scheme-procedure fn-name) list))
+
+(define (named-keep fn-name list)
+  (keep (scheme-procedure fn-name) list))
+
+(every first '(another girl))
+; (A G)
+
+(named-every 'first '(another girl))
+; (A G)
+
+(every 'first '(another girl))
+; ERROR: ATTEMPT TO APPLY NON-PROCEDURE FIRST
+```
+
+**How does `functions` process the input with quotations?**
+
+This illustration hides a subtle point. When we invoked `named-every` at a Scheme prompt, we had to quote the word first that we used as its argument. But when you run the functions program, you don’t quote anything. The point is that `functions` provides an evaluator that uses a different notation from Scheme’s notation. It may be clearer if we show an interaction with an imaginary version of functions that does use Scheme notation:
+
+```scheme
+Function: first
+Non-Automatically-Quoted-Argument: 'datum
+
+The result is: D
+
+Function: first
+Non-Automatically-Quoted-Argument: datum
+
+ERROR: THE VARIABLE DATUM IS UNBOUND.
+```
+
+We wrote `functions` so that *every* argument is automatically quoted. Well, if that’s the case, it’s true even when we’re invoking `every`. If you say
+
+```scheme
+Function: every
+Argument: first
+...
+```
+
+then by the rules of the `functions` program, that argument is the quoted word *first*.  So `named-every` , the procedure that pretends to be `every` in the `functions` world, has to “un-quote” that argument by looking up the corresponding procedure.
+
+---
+
+### More on Higher-Order Functions
+
+**How does `number-of-arguments` work in `functions` program?**
+
+The implementation of `number-of-arguments` makes use of the same a-list of functions that the `functions` evaluator itself uses. Since the functions program needs to know the number of arguments for every procedure anyway, it’s hardly any extra effort to make that information available to the user. We just add an entry to the a-list:
+
+```scheme
+(list 'number-of-arguments arg-count 1 valid-fn-name?)
+```
+
+The type predicate merely has to check that the argument is found in the a-list of functions:
+
+```scheme
+(define (valid-fn-name? name)
+  (assoc name *the-functions*))
+```
+
+**How to implement the type checking for the arguments to `every` and `keep` in `functions`?**
+
+The type checking for the arguments to `every` and `keep` is unusually complicated because what’s allowed as the second argument (the collection of data) depends on which function is used as the first argument.
+
+The type-checking procedures for `every` and `keep` use a common subprocedure. The one for `every` is
+
+```scheme
+(lambda (fn stuff)
+  (hof-types-ok? fn stuff word-or-sent?))
+```
+
+and the one for `keep` is
+
+```scheme
+(lambda (fn stuff)
+  (hof-types-ok? fn stuff boolean?))
+```
+
+The third argument specifies what types of results `fn` must return when applied to the elements of stuff.
+
+```scheme
+(define (hof-types-ok? fn-name stuff range-predicate)
+  (and (valid-fn-name? fn-name)
+       (= 1 (arg-count fn-name))
+       (word-or-sent? stuff)
+       (empty? (keep (lambda (element)
+                       (not ((type-predicate fn-name) element)))
+                     stuff))
+       (null? (filter (lambda (element)
+                        (not (range-predicate element)))
+                      (map (scheme-procedure fn-name)
+                           (every (lambda (x) x) stuff))))))
+```
+
+This says that:
+
+* the function being used as the first argument must be a one-argument function (so you can’t say, for example, `every` of `word` and something);
+* each element of the second argument must be an acceptable argument to that function. (If you `keep` the unacceptable arguments, you get nothing.)
+* Finally, each invocation of the given function on an element of `stuff` must return an object of the appropriate type: words or sentences for `every`, true or false for `keep`.
+
+> That last argument to `and` is complicated. The reason we use `map` instead of `every` is that the results of the invocations of `fn` might not be words or sentences, so `every` wouldn’t accept them.  But `map` has its own limitation: It won’t accept a word as the `stuff` argument. So we use `every` to turn `stuff` into a sentence—which, as you know, is really a list—and that’s guaranteed to be acceptable to `map`. (This is an example of a situation in which respecting a data abstraction would be too horrible to contemplate.)
+
+---
+
+### More Robustness
 
