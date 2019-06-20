@@ -1195,3 +1195,89 @@ This says that:
 
 ### More Robustness
 
+**What are the disadvantages of using `read`?**
+
+Using read to accept user input has a number of disadvantages:
+
+* If the user enters an empty line, read continues waiting silently for input.
+* If the user types an unmatched open parenthesis, read continues reading forever.
+* If the user types two expressions on a line, the second one will be taken as a response to the question the functions program hasn’t asked yet.
+
+We solve all these problems by using `read-line` to read exactly one line, even if it’s empty or ill-formed, and then checking explicitly for possible errors.
+
+**How to make `get-arg` robust with `read-line`?**
+
+`read-line` treats parentheses no differently from any other character. That’s an advantage if the user enters mismatched or inappropriately nested parentheses. However, if the user correctly enters a sentence as an argument to some function, `read-line` will include the initial open parenthesis as the first character of the first word, and the final close parenthesis as the last character of the last word. `get-arg` must correct for these extra characters.
+
+Similarly, `read-line` treats number signs (`#`) like any other character, so it doesn’t recognize `#t` and `#f` as special values. Instead it reads them as the strings *"#t"* and *"#f"* . `get-arg` calls `booleanize` to convert those strings into Boolean values.
+
+```scheme
+(define (get-arg)
+  (display "Argument: ")
+  (let ((line (read-line)))
+    (cond ((empty? line)
+           (show "Please type an argument!")
+           (get-arg))
+          ((and (equal? "(" (first (first line)))
+                (equal? ")" (last (last line))))
+           (let ((sent (remove-first-paren (remove-last-paren line))))
+             (if (any-parens? sent)
+                 (begin
+                   (show "Sentences can't have parentheses inside.")
+                   (get-arg))
+                 (map booleanize sent))))
+          ((any-parens? line)
+           (show "Bad parentheses")
+           (get-arg))
+          ((empty? (bf line)) (booleanize (first line)))
+          ((member? (first (first line)) "\"'")
+           (show "No quoting arguments in this program.  Try again.")
+           (get-arg))
+          (else (show "You typed more than one argument!  Try again.")
+                (get-arg)))))
+```
+
+**How to make `get-fn` robust with `read-line`?**
+
+`get-fn` is simpler than `get-arg`, because there’s no issue about parentheses, but it’s still much more complicated than the original version, because of error checking.
+
+```scheme
+(define (get-fn)
+  (display "Function: ")
+  (let ((line (read-line)))
+    (cond ((empty? line)
+           (show "Please type a function!")
+           (get-fn))
+          ((not (= (count line) 1))
+           (show "You typed more than one thing!  Try again.")
+           (get-fn))
+          ((not (valid-fn-name? (first line)))
+           (show "Sorry, that's not a function.")
+           (get-fn))
+          (else (first line)))))
+```
+
+What is the problem with using `read-line`
+
+There’s a problem with using `read-line`. As we mentioned in a pitfall in Chapter 20, reading some input with `read` and then reading the next input with `read-line` results in `read-line` returning an empty line left over by `read`. *Although the functions program doesn’t use `read`, Scheme itself used `read` to read the (functions) expression that started the program.* Therefore, `get-fn`’s first attempt to read a function name will see an empty line. To fix this problem, the functions procedure has an extra invocation of `read-line`:
+
+```scheme
+(define (functions)
+  (read-line)
+  (show "Welcome to the FUNCTIONS program.")
+  (functions-loop))
+```
+
+---
+
+### Complete Program Listing
+
+[functions.scm](https://github.com/mengsince1986/Simply-Scheme-exercises/blob/master/functions.scm)
+
+---
+
+### Exercises 21.1-21.9
+
+[solutions]()
+
+---

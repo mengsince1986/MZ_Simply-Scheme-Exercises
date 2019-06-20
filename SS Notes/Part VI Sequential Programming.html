@@ -861,5 +861,67 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 </blockquote>
 <hr />
 <h3 id="more-robustness">More Robustness</h3>
+<p><strong>What are the disadvantages of using <code>read</code>?</strong></p>
+<p>Using read to accept user input has a number of disadvantages:</p>
+<ul>
+<li>If the user enters an empty line, read continues waiting silently for input.</li>
+<li>If the user types an unmatched open parenthesis, read continues reading forever.</li>
+<li>If the user types two expressions on a line, the second one will be taken as a response to the question the functions program hasn’t asked yet.</li>
+</ul>
+<p>We solve all these problems by using <code>read-line</code> to read exactly one line, even if it’s empty or ill-formed, and then checking explicitly for possible errors.</p>
+<p><strong>How to make <code>get-arg</code> robust with <code>read-line</code>?</strong></p>
+<p><code>read-line</code> treats parentheses no differently from any other character. That’s an advantage if the user enters mismatched or inappropriately nested parentheses. However, if the user correctly enters a sentence as an argument to some function, <code>read-line</code> will include the initial open parenthesis as the first character of the first word, and the final close parenthesis as the last character of the last word. <code>get-arg</code> must correct for these extra characters.</p>
+<p>Similarly, <code>read-line</code> treats number signs (<code>#</code>) like any other character, so it doesn’t recognize <code>#t</code> and <code>#f</code> as special values. Instead it reads them as the strings <em>“#t”</em> and <em>“#f”</em> . <code>get-arg</code> calls <code>booleanize</code> to convert those strings into Boolean values.</p>
+<div class="sourceCode" id="cb66"><pre class="sourceCode scheme"><code class="sourceCode scheme"><a class="sourceLine" id="cb66-1" title="1">(<span class="ex">define</span><span class="fu"> </span>(get-arg)</a>
+<a class="sourceLine" id="cb66-2" title="2">  (<span class="kw">display</span> <span class="st">&quot;Argument: &quot;</span>)</a>
+<a class="sourceLine" id="cb66-3" title="3">  (<span class="kw">let</span> ((line (read-line)))</a>
+<a class="sourceLine" id="cb66-4" title="4">    (<span class="kw">cond</span> ((empty? line)</a>
+<a class="sourceLine" id="cb66-5" title="5">           (show <span class="st">&quot;Please type an argument!&quot;</span>)</a>
+<a class="sourceLine" id="cb66-6" title="6">           (get-arg))</a>
+<a class="sourceLine" id="cb66-7" title="7">          ((<span class="kw">and</span> (<span class="kw">equal?</span> <span class="st">&quot;(&quot;</span> (first (first line)))</a>
+<a class="sourceLine" id="cb66-8" title="8">                (<span class="kw">equal?</span> <span class="st">&quot;)&quot;</span> (last (last line))))</a>
+<a class="sourceLine" id="cb66-9" title="9">           (<span class="kw">let</span> ((sent (remove-first-paren (remove-last-paren line))))</a>
+<a class="sourceLine" id="cb66-10" title="10">             (<span class="kw">if</span> (any-parens? sent)</a>
+<a class="sourceLine" id="cb66-11" title="11">                 (<span class="kw">begin</span></a>
+<a class="sourceLine" id="cb66-12" title="12">                   (show <span class="st">&quot;Sentences can&#39;t have parentheses inside.&quot;</span>)</a>
+<a class="sourceLine" id="cb66-13" title="13">                   (get-arg))</a>
+<a class="sourceLine" id="cb66-14" title="14">                 (map booleanize sent))))</a>
+<a class="sourceLine" id="cb66-15" title="15">          ((any-parens? line)</a>
+<a class="sourceLine" id="cb66-16" title="16">           (show <span class="st">&quot;Bad parentheses&quot;</span>)</a>
+<a class="sourceLine" id="cb66-17" title="17">           (get-arg))</a>
+<a class="sourceLine" id="cb66-18" title="18">          ((empty? (bf line)) (booleanize (first line)))</a>
+<a class="sourceLine" id="cb66-19" title="19">          ((member? (first (first line)) <span class="st">&quot;</span><span class="ch">\&quot;</span><span class="st">&#39;&quot;</span>)</a>
+<a class="sourceLine" id="cb66-20" title="20">           (show <span class="st">&quot;No quoting arguments in this program.  Try again.&quot;</span>)</a>
+<a class="sourceLine" id="cb66-21" title="21">           (get-arg))</a>
+<a class="sourceLine" id="cb66-22" title="22">          (<span class="kw">else</span> (show <span class="st">&quot;You typed more than one argument!  Try again.&quot;</span>)</a>
+<a class="sourceLine" id="cb66-23" title="23">                (get-arg)))))</a></code></pre></div>
+<p><strong>How to make <code>get-fn</code> robust with <code>read-line</code>?</strong></p>
+<p><code>get-fn</code> is simpler than <code>get-arg</code>, because there’s no issue about parentheses, but it’s still much more complicated than the original version, because of error checking.</p>
+<div class="sourceCode" id="cb67"><pre class="sourceCode scheme"><code class="sourceCode scheme"><a class="sourceLine" id="cb67-1" title="1">(<span class="ex">define</span><span class="fu"> </span>(get-fn)</a>
+<a class="sourceLine" id="cb67-2" title="2">  (<span class="kw">display</span> <span class="st">&quot;Function: &quot;</span>)</a>
+<a class="sourceLine" id="cb67-3" title="3">  (<span class="kw">let</span> ((line (read-line)))</a>
+<a class="sourceLine" id="cb67-4" title="4">    (<span class="kw">cond</span> ((empty? line)</a>
+<a class="sourceLine" id="cb67-5" title="5">           (show <span class="st">&quot;Please type a function!&quot;</span>)</a>
+<a class="sourceLine" id="cb67-6" title="6">           (get-fn))</a>
+<a class="sourceLine" id="cb67-7" title="7">          ((<span class="kw">not</span> (<span class="op">=</span> (count line) <span class="dv">1</span>))</a>
+<a class="sourceLine" id="cb67-8" title="8">           (show <span class="st">&quot;You typed more than one thing!  Try again.&quot;</span>)</a>
+<a class="sourceLine" id="cb67-9" title="9">           (get-fn))</a>
+<a class="sourceLine" id="cb67-10" title="10">          ((<span class="kw">not</span> (valid-fn-name? (first line)))</a>
+<a class="sourceLine" id="cb67-11" title="11">           (show <span class="st">&quot;Sorry, that&#39;s not a function.&quot;</span>)</a>
+<a class="sourceLine" id="cb67-12" title="12">           (get-fn))</a>
+<a class="sourceLine" id="cb67-13" title="13">          (<span class="kw">else</span> (first line)))))</a></code></pre></div>
+<p>What is the problem with using <code>read-line</code></p>
+<p>There’s a problem with using <code>read-line</code>. As we mentioned in a pitfall in Chapter 20, reading some input with <code>read</code> and then reading the next input with <code>read-line</code> results in <code>read-line</code> returning an empty line left over by <code>read</code>. <em>Although the functions program doesn’t use <code>read</code>, Scheme itself used <code>read</code> to read the (functions) expression that started the program.</em> Therefore, <code>get-fn</code>’s first attempt to read a function name will see an empty line. To fix this problem, the functions procedure has an extra invocation of <code>read-line</code>:</p>
+<div class="sourceCode" id="cb68"><pre class="sourceCode scheme"><code class="sourceCode scheme"><a class="sourceLine" id="cb68-1" title="1">(<span class="ex">define</span><span class="fu"> </span>(functions)</a>
+<a class="sourceLine" id="cb68-2" title="2">  (read-line)</a>
+<a class="sourceLine" id="cb68-3" title="3">  (show <span class="st">&quot;Welcome to the FUNCTIONS program.&quot;</span>)</a>
+<a class="sourceLine" id="cb68-4" title="4">  (functions-loop))</a></code></pre></div>
+<hr />
+<h3 id="complete-program-listing">Complete Program Listing</h3>
+<p><a href="https://github.com/mengsince1986/Simply-Scheme-exercises/blob/master/functions.scm">functions.scm</a></p>
+<hr />
+<h3 id="exercises-21.1-21.9">Exercises 21.1-21.9</h3>
+<p><a href="">solutions</a></p>
+<hr />
 </body>
 </html>
