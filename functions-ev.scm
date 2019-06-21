@@ -1,48 +1,11 @@
-; Exercises 21.1-21.9
-
-; 21.1 The get-args procedure has a let that creates the variable first, and then that variable is used only once inside the body of the let. Why doesn’t it just say the following?
-
-(define (get-args n)
-  (if (= n 0)
-      '()
-      (cons (get-arg) (get-args (- n 1)))))
-
-; answer:
-; Creating a variable to store the value of `get-arg` in `get-args` is necessary because the order to evaluate the subexpressions in `cons` is unspecified.
-
-; If `get-arg` is put into `cons` directly and the user's scheme interpreter evaluates subexpresssions from right to left, (get-args (- n 1)) will be evaluated before (get-arg) in `cons`. As a result, the first argument the user inputs will be put at the end of the argument list and cause error of "Argument(s) not in domain.".
-
-; **********************************************************
-
-; 21.2 The domain-checking function for equal? is
-
-(lambda (x y) #t)
-
-; This seems silly; it’s a function of two arguments that ignores both arguments and always returns #t. Since we know ahead of time that the answer is #t , why won’t it work to have equal? ’s entry in the a-list be
-
-(list 'equal? equal? 2 #t)
-
-; answer:
-; The domain-checking function (lambda (x y) #t) for `equal?` can't be replaced by expression #t
-; because in `in-domain?` a domain-checking function is required to be used as the first argument for `apply` function
-
-(apply (type-predicate fn-name) args)
-
-; It will cause error of "bad arguments" if a domain-checking functions is replaced by an expression.
-
-; **********************************************************
-
-; 21.3 Every time we want to know something about a function that the user typed in, such as its number of arguments or its domain-checking predicate, we have to do an assoc in *the-functions*. That’s inefficient. Instead, rewrite the program so that get-fn returns a function’s entry from the a-list, instead of just its name. Then rename the variable fn-name to fn-entry in the functions-loop procedure, and rewrite the selectors scheme-procedure, arg-count, and so on, so that they don’t invoke assoc.
-
-; solution:
-
 (define (functions-loop)
   (let ((fn-entry (get-fn)))
     (if (equal? (car fn-entry) 'exit)
         "Thanks for using FUNCTIONS!"
         (let ((args (get-args (arg-count fn-entry))))
           (if (not (in-domain? args fn-entry))
-              (show "Argument(s) not in domain.")
+              (begin (show "Argument(s) not in domain.")
+                     (show (cadddr (cdr fn-entry))))
               (show-answer (apply (scheme-function fn-entry) args)))
           (functions-loop)))))
 
@@ -91,23 +54,115 @@
                         (map (scheme-function fn-entry)
                              (every (lambda (x) x) stuff)))))))
 
-; **********************************************************
 
-; 21.4 Currently, the program always gives the message “argument(s) not in domain” when you try to apply a function to bad arguments. Modify the program so that each record in *the-functions* also contains a specific out-of-domain message like “both arguments must be numbers,” then modify functions to look up and print this error message along with “argument(s) not in domain.”
 
-; solution:
-; here I only add a specific out-of-domain message to the `*` entry, any other specific out-of-domain messages are supposed to add to the end of each entry in *the-functions*.
+; ----------------------------dependencies
+;;; The functions program
 
-(define (functions-loop)
-  (let ((fn-entry (get-fn)))
-    (if (equal? (car fn-entry) 'exit)
-        "Thanks for using FUNCTIONS!"
-        (let ((args (get-args (arg-count fn-entry))))
-          (if (not (in-domain? args fn-entry))
-              (begin (show "Argument(s) not in domain.")
-                     (show (cadddr (cdr fn-entry))))
-              (show-answer (apply (scheme-function fn-entry) args)))
-          (functions-loop)))))
+(define (functions)
+  (read-line)
+  (show "Welcome to the FUNCTIONS program.")
+  (functions-loop))
+
+
+(define (get-args n)
+  (if (= n 0)
+      '()
+      (let ((first (get-arg)))
+        (cons first (get-args (- n 1))))))
+
+(define (get-arg)
+  (display "Argument: ")
+  (let ((line (read-line)))
+    (cond ((empty? line)
+           (show "Please type an argument!")
+           (get-arg))
+          ((and (equal? "(" (first (first line)))
+                (equal? ")" (last (last line))))
+           (let ((sent (remove-first-paren (remove-last-paren line))))
+             (if (any-parens? sent)
+                 (begin
+                   (show "Sentences can't have parentheses inside.")
+                   (get-arg))
+                 (map booleanize sent))))
+          ((any-parens? line)
+           (show "Bad parentheses")
+           (get-arg))
+          ((empty? (bf line)) (booleanize (first line)))
+          ((member? (first (first line)) "\"'")
+           (show "No quoting arguments in this program.  Try again.")
+           (get-arg))
+          (else (show "You typed more than one argument!  Try again.")
+                (get-arg)))))
+
+(define (any-parens? line)
+  (let ((letters (accumulate word line)))
+    (or (member? "(" letters)
+        (member? ")" letters))))
+
+(define (remove-first-paren line)
+  (if (equal? (first line) "(")
+      (bf line)
+      (se (bf (first line)) (bf line))))
+
+(define (remove-last-paren line)
+  (if (equal? (last line) ")")
+      (bl line)
+      (se (bl line) (bl (last line)))))
+
+(define (booleanize x)
+  (cond ((equal? x "#t") #t)
+        ((equal? x "#f") #f)
+        (else x)))
+
+(define (show-answer answer)
+  (newline)
+  (display "The result is: ")
+  (if (not answer)
+      (show "#F")
+      (show answer))
+  (newline))
+
+;; Type predicates
+
+(define (word-or-sent? x)
+  (or (word? x) (sentence? x)))
+
+(define (not-empty? x)
+  (and (word-or-sent? x) (not (empty? x))))
+
+(define (two-numbers? x y)
+  (and (number? x) (number? y)))
+
+(define (two-reals? x y)
+  (and (real? x) (real? y)))
+
+(define (two-integers? x y)
+  (and (integer? x) (integer? y)))
+
+(define (can-divide? x y)
+  (and (number? x) (number? y) (not (= y 0))))
+
+(define (dividable-integers? x y)
+  (and (two-integers? x y) (not (= y 0))))
+
+(define (trig-range? x)
+  (and (number? x) (<= (abs x) 1)))
+
+
+(define (member-types-ok? small big)
+  (and (word? small)
+       (or (sentence? big) (= (count small) 1))))
+
+
+;; Names of functions as functions
+
+
+(define (valid-fn-name? name)
+  (assoc name *the-functions*))
+
+
+;; The list itself
 
 (define *the-functions*
   (list (list '* * 2 two-numbers? "Both arguments must be numbers.")
@@ -193,6 +248,3 @@
               (lambda (x) #t))
         (list 'word word 2 (lambda (x y) (and (word? x) (word? y))))
         (list 'word? word? 1 (lambda (x) #t))))
-
-; **********************************************************
-
