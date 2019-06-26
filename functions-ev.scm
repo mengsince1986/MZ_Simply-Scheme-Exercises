@@ -1,3 +1,10 @@
+;;; The functions program exercise version
+
+(define (functions)
+  (read-line)
+  (show "Welcome to the FUNCTIONS program.")
+  (functions-loop))
+
 (define (functions-loop)
   (let ((fn-entry (get-fn)))
     (if (equal? (car fn-entry) 'exit)
@@ -23,56 +30,32 @@
            (get-fn))
           (else (assoc (car line) *the-functions*)))))
 
-(define (scheme-function fn-entry)
-  (cadr fn-entry))
-
-(define (arg-count fn-entry)
-  (caddr fn-entry))
-
-(define (type-predicate fn-entry)
-  (cadddr fn-entry))
-
-(define (in-domain? args fn-entry)
-  (apply (type-predicate fn-entry) args))
-
-(define (named-every fn-name list)
-  (every (scheme-function (assoc fn-name *the-functions*)) list))
-
-(define (named-keep fn-name list)
-  (keep (scheme-function (assoc fn-name *the-functions*)) list))
-
-(define (hof-types-ok? fn-name stuff range-predicate)
-  (let ((fn-entry (assoc fn-name *the-functions*)))
-    (and (valid-fn-name? fn-name)
-         (= 1 (arg-count fn-entry))
-         (word-or-sent? stuff)
-         (empty? (keep (lambda (element)
-                         (not ((type-predicate fn-entry) element)))
-                       stuff))
-         (null? (filter (lambda (element)
-                          (not (range-predicate element)))
-                        (map (scheme-function fn-entry)
-                             (every (lambda (x) x) stuff)))))))
-
-
-
-; ----------------------------dependencies
-;;; The functions program
-
-(define (functions)
-  (read-line)
-  (show "Welcome to the FUNCTIONS program.")
-  (functions-loop))
-
-
 (define (get-args n)
+  (if (= n 1)
+      (get-args-single-helper n)
+      (get-args-multi-helper n 1)))
+
+(define (get-args-single-helper n)
   (if (= n 0)
       '()
-      (let ((first (get-arg)))
-        (cons first (get-args (- n 1))))))
+      (begin (display "Argument: ")
+             (let ((first (get-arg)))
+               (cons first (get-args-single-helper (- n 1)))))))
+
+(define (get-args-multi-helper n num-order)
+  (if (= n 0)
+      '()
+      (begin (display (num-to-order num-order))
+             (display " Argument: ")
+             (let ((arg (get-arg)))
+               (cons arg (get-args-multi-helper (- n 1) (+ num-order 1)))))))
+
+(define (num-to-order num)
+  (cond ((= num 1) 'First)
+        ((= num 2) 'Second)
+        ((= num 3) 'Third)))
 
 (define (get-arg)
-  (display "Argument: ")
   (let ((line (read-line)))
     (cond ((empty? line)
            (show "Please type an argument!")
@@ -123,6 +106,18 @@
       (show answer))
   (newline))
 
+(define (scheme-function fn-entry)
+  (cadr fn-entry))
+
+(define (arg-count fn-entry)
+  (caddr fn-entry))
+
+(define (type-predicate fn-entry)
+  (cadddr fn-entry))
+
+(define (in-domain? args fn-entry)
+  (apply (type-predicate fn-entry) args))
+
 ;; Type predicates
 
 (define (word-or-sent? x)
@@ -149,6 +144,18 @@
 (define (trig-range? x)
   (and (number? x) (<= (abs x) 1)))
 
+(define (hof-types-ok? fn-name stuff range-predicate)
+  (let ((fn-entry (assoc fn-name *the-functions*)))
+    (and (valid-fn-name? fn-name)
+         (= 1 (arg-count fn-entry))
+         (word-or-sent? stuff)
+         (empty? (keep (lambda (element)
+                         (not ((type-predicate fn-entry) element)))
+                       stuff))
+         (null? (filter (lambda (element)
+                          (not (range-predicate element)))
+                        (map (scheme-function fn-entry)
+                             (every (lambda (x) x) stuff)))))))
 
 (define (member-types-ok? small big)
   (and (word? small)
@@ -157,10 +164,14 @@
 
 ;; Names of functions as functions
 
+(define (named-every fn-name list)
+  (every (scheme-function (assoc fn-name *the-functions*)) list))
+
+(define (named-keep fn-name list)
+  (keep (scheme-function (assoc fn-name *the-functions*)) list))
 
 (define (valid-fn-name? name)
   (assoc name *the-functions*))
-
 
 ;; The list itself
 

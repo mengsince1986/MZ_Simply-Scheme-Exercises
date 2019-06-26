@@ -196,3 +196,104 @@
 
 ; **********************************************************
 
+; 21.5 Modify the program so that it prompts for the arguments this way:
+
+; Function: if
+; First Argument: #t
+; Second Argument: paperback
+; Third Argument: writer
+
+; The result is: PAPERBACK
+
+; but if there’s only one argument, the program shouldn’t say First :
+
+; Function: sqrt
+; Argument: 36
+
+; The result is 6
+
+; solution:
+
+(define (get-args n)
+  (if (= n 1)
+      (get-args-single-helper n)
+      (get-args-multi-helper n 1)))
+
+(define (get-args-single-helper n)
+  (if (= n 0)
+      '()
+      (begin (display "Argument: ")
+             (let ((first (get-arg)))
+               (cons first (get-args-single-helper (- n 1)))))))
+
+(define (get-args-multi-helper n num-order)
+  (if (= n 0)
+      '()
+      (begin (display (num-to-order num-order))
+             (display " Argument: ")
+             (let ((arg (get-arg)))
+               (cons arg (get-args-multi-helper (- n 1) (+ num-order 1)))))))
+
+(define (get-arg)
+  (let ((line (read-line)))
+    (cond ((empty? line)
+           (show "Please type an argument!")
+           (get-arg))
+          ((and (equal? "(" (first (first line)))
+                (equal? ")" (last (last line))))
+           (let ((sent (remove-first-paren (remove-last-paren line))))
+             (if (any-parens? sent)
+                 (begin
+                   (show "Sentences can't have parentheses inside.")
+                   (get-arg))
+                 (map booleanize sent))))
+          ((any-parens? line)
+           (show "Bad parentheses")
+           (get-arg))
+          ((empty? (bf line)) (booleanize (first line)))
+          ((member? (first (first line)) "\"'")
+           (show "No quoting arguments in this program.  Try again.")
+           (get-arg))
+          (else (show "You typed more than one argument!  Try again.")
+                (get-arg)))))
+
+(define (num-to-order num)
+  (cond ((= num 1) 'First)
+        ((= num 2) 'Second)
+        ((= num 3) 'Third)))
+
+; **********************************************************
+
+; 21.6 The assoc procedure might return #f instead of an a-list record. How come it’s okay for arg-count to take the caddr of assoc ’s return value if (caddr #f) is an error?
+
+; answer:
+; It's okay for arg-count if assoc's return value is #f (when the input of function name doesn't match any record in *the-functions*), because procedure get-fn checks if the input function name is valid first and shows "sorry, that's not a function" when the input of function name is not valid and ask for the input of function name by invoking get-fn again.
+
+; **********************************************************
+
+; 21.7 Why is the domain-checking predicate for the word? function
+
+(lambda (x) #t)
+
+; instead of the following procedure?
+
+(lambda (x) (word? x))
+
+; answer:
+; Because word? takes any scheme input as its argument and return #t when the input is a word and #f when it is not. If the domain-checking preicate for word? is replaced by (lambda (x) (word? x)), the valid non-word argument input will be considered invalid.
+
+; **********************************************************
+
+; 21.8 What is the value of the following Scheme expression?
+
+(functions)
+
+; answer:
+; The returned value of (functions) is "Thanks for using Functions!". Everything else are side-effects printed on the screen.
+
+; **********************************************************
+
+; 21.9 We said in the recursion chapters that every recursive procedure has to have a base case and a recursive case, and that the recursive case has to somehow reduce the size of the problem, getting closer to the base case. How does the recursive call in get-fn reduce the size of the problem?
+
+; answer:
+; In get-fn the recursive call (get-fn) gets to base case (first line) by printing the debug messages to the end-users. The messages printed help the end-users to debug their input and make less and less invlaid input in every recursive call unitl the input falls in the domain of the procedure.
