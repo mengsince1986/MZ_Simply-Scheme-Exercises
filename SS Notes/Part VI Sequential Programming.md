@@ -1278,6 +1278,6 @@ There’s a problem with using `read-line`. As we mentioned in a pitfall in Chap
 
 ### Exercises 21.1-21.9
 
-[solutions]()
+[solutions](https://github.com/mengsince1986/Simply-Scheme-exercises/blob/master/SS%20Exercises/Exercises%2021.1-21.9.scm)
 
 ---
