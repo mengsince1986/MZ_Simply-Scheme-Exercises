@@ -640,7 +640,6 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <hr />
 <h2 id="chapter-21-example-the-functions-program">Chapter 21 Example: The Functions Program</h2>
 <p><strong>Topic:</strong> the <code>functions</code> program</p>
-<hr />
 <h2 id="the-main-loop">The Main Loop</h2>
 <p><strong>What does <code>functions</code> do?</strong></p>
 <p>The <code>functions</code> program is an infinite loop similar to Scheme’s read-eval-print loop. It reads in a function name and some arguments, prints the result of applying that function to those arguments, and then does the whole thing over again.</p>
@@ -923,5 +922,160 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <h3 id="exercises-21.1-21.9">Exercises 21.1-21.9</h3>
 <p><a href="https://github.com/mengsince1986/Simply-Scheme-exercises/blob/master/SS%20Exercises/Exercises%2021.1-21.9.scm">solutions</a></p>
 <hr />
+<h2 id="chapter-22-files">Chapter 22 Files</h2>
+<h3 id="ports">Ports</h3>
+<p><strong>What are <em>ports</em>?</strong> <strong>How to create a file?</strong></p>
+<p>Before you can use a file, you have to <em>open</em> it. If you want to read a file, the system has to check that the file exists. If you want to write a file, the system has to create a new, empty file. The Scheme procedures that open a file return a <em>port</em>, which is what Scheme uses to remember the file you opened. <em>Ports are useful only as arguments to the input/output procedures.</em> Here’s an example:</p>
+<div class="sourceCode" id="cb69"><pre class="sourceCode scheme"><code class="sourceCode scheme"><a class="sourceLine" id="cb69-1" title="1">(<span class="kw">let</span> ((port (<span class="kw">open-output-file</span> <span class="st">&quot;songs&quot;</span>)))</a>
+<a class="sourceLine" id="cb69-2" title="2">  (show &#39;(all my loving) port)</a>
+<a class="sourceLine" id="cb69-3" title="3">  (show &#39;(ticket to ride) port)</a>
+<a class="sourceLine" id="cb69-4" title="4">  (show &#39;(martha my dear) port)</a>
+<a class="sourceLine" id="cb69-5" title="5">  (<span class="kw">close-output-port</span> port))</a></code></pre></div>
+<p>(<code>close-output-port</code>,like <code>define</code>, has an unspecified return value that we’re not going to include in the examples.)</p>
+<p>We’ve created a file named <code>songs</code> and put three expressions, each on its own line, in that file. Notice that nothing appeared on the screen when we called <code>show</code>. Because we used a port argument to <code>show</code>, the output went into the file. Here’s what’s in the file:</p>
+<div class="sourceCode" id="cb70"><pre class="sourceCode scheme"><code class="sourceCode scheme"><a class="sourceLine" id="cb70-1" title="1">(ALL MY LOVING)</a>
+<a class="sourceLine" id="cb70-2" title="2">(TICKET TO RIDE)</a>
+<a class="sourceLine" id="cb70-3" title="3">(MARTHA MY DEAR)</a></code></pre></div>
+<p>The example illustrates two more details about using files that we haven’t mentioned before:</p>
+<ul>
+<li>First, the name of a file must be given in double-quote marks.</li>
+<li>Second, when you’re finished using a file, you have to close the port associated with it. (This is very important. On some systems, if you forget to close the port, the file disappears.)</li>
+</ul>
+<p><strong>How to read a file using Scheme?</strong></p>
+<p>The file is now permanent. If we were to exit from Scheme, we could read the file in a word processor or any other program. But let’s read it using Scheme:</p>
+<div class="sourceCode" id="cb71"><pre class="sourceCode scheme"><code class="sourceCode scheme"><a class="sourceLine" id="cb71-1" title="1">(<span class="ex">define</span><span class="fu"> in </span>(<span class="kw">open-input-file</span> <span class="st">&quot;songs&quot;</span>))</a>
+<a class="sourceLine" id="cb71-2" title="2"></a>
+<a class="sourceLine" id="cb71-3" title="3">(<span class="kw">read</span> in)</a>
+<a class="sourceLine" id="cb71-4" title="4"><span class="co">; (ALL MY LOVING)</span></a>
+<a class="sourceLine" id="cb71-5" title="5"></a>
+<a class="sourceLine" id="cb71-6" title="6">(<span class="kw">read</span> in)</a>
+<a class="sourceLine" id="cb71-7" title="7"><span class="co">; (TICKET TO RIDE)</span></a>
+<a class="sourceLine" id="cb71-8" title="8"></a>
+<a class="sourceLine" id="cb71-9" title="9">(<span class="kw">read</span> in)</a>
+<a class="sourceLine" id="cb71-10" title="10"><span class="co">; (MARTHA MY DEAR)</span></a>
+<a class="sourceLine" id="cb71-11" title="11"></a>
+<a class="sourceLine" id="cb71-12" title="12">(<span class="kw">close-input-port</span> in)</a></code></pre></div>
+<p>(In this illustration, we’ve used a global variable to hold the port because we wanted to show the results of reading the file step by step. In a real program, we’d generally use a <code>let</code> structure like the one we used to write the file. Now that we’ve closed the port, the variable <code>in</code> contains a port that can no longer be used.)</p>
+<hr />
+<h3 id="writing-files-for-people-to-read">Writing Files for People to Read</h3>
+<p><strong>How to create a file without parentheses around sentences?</strong></p>
+<p>We could use <code>show-line</code> instead of <code>show</code> to create a file, still with one song title per line, but without the parentheses:</p>
+<div class="sourceCode" id="cb72"><pre class="sourceCode scheme"><code class="sourceCode scheme"><a class="sourceLine" id="cb72-1" title="1">(<span class="kw">let</span> ((port (<span class="kw">open-output-file</span> <span class="st">&quot;songs2&quot;</span>)))</a>
+<a class="sourceLine" id="cb72-2" title="2">  (show-line &#39;(all my loving) port)</a>
+<a class="sourceLine" id="cb72-3" title="3">  (show-line &#39;(ticket to ride) port)</a>
+<a class="sourceLine" id="cb72-4" title="4">  (show-line &#39;(martha my dear) port)</a>
+<a class="sourceLine" id="cb72-5" title="5">  (<span class="kw">close-output-port</span> port))</a></code></pre></div>
+<p>The file <code>songs2</code> will contain</p>
+<div class="sourceCode" id="cb73"><pre class="sourceCode scheme"><code class="sourceCode scheme"><a class="sourceLine" id="cb73-1" title="1">ALL MY LOVING</a>
+<a class="sourceLine" id="cb73-2" title="2">TICKET TO RIDE</a>
+<a class="sourceLine" id="cb73-3" title="3">MARTHA MY DEAR</a></code></pre></div>
+<p><strong>How to read <code>songs2</code> back into Scheme?</strong></p>
+<p>We must read the file a line at a time, with <code>read-line</code>. In effect, <code>read-line</code> treats the breaks between lines as if they were parentheses:</p>
+<div class="sourceCode" id="cb74"><pre class="sourceCode scheme"><code class="sourceCode scheme"><a class="sourceLine" id="cb74-1" title="1">(<span class="ex">define</span><span class="fu"> in </span>(<span class="kw">open-input-file</span> <span class="st">&quot;songs2&quot;</span>))</a>
+<a class="sourceLine" id="cb74-2" title="2"></a>
+<a class="sourceLine" id="cb74-3" title="3">(read-line in)</a>
+<a class="sourceLine" id="cb74-4" title="4"><span class="co">; (ALL MY LOVING)</span></a>
+<a class="sourceLine" id="cb74-5" title="5"></a>
+<a class="sourceLine" id="cb74-6" title="6">(<span class="kw">close-input-port</span> in)</a></code></pre></div>
+<p>(Notice that we don’t have to read the entire file before closing the port. If we open the file again later, we start over again from the beginning.)</p>
+<p><strong>What are the differences between <code>show-line</code>/<code>read-line</code> and <code>show</code>/<code>read</code> when writing a file?</strong></p>
+<p>As far as Scheme is concerned, the result of writing the file with <code>show-line</code> and reading it with <code>read-line</code> was the same as that of writing it with <code>show</code> and reading it with <code>read</code>. The difference is that without parentheses the file itself is more “user-friendly” for someone who reads it outside of Scheme.</p>
+<p>Another difference, not apparent in this example, is that <code>show</code> and <code>read</code> can handle structured lists. <code>show-line</code> can print a structured list, leaving off only the outermost parentheses, but <code>read-line</code> will treat any parentheses in the file as ordinary characters; it always returns a sentence.</p>
+<hr />
+<h3 id="using-a-file-as-a-database">Using a File as a Database</h3>
+<p><strong>How to make a file a database?</strong></p>
+<div class="sourceCode" id="cb75"><pre class="sourceCode scheme"><code class="sourceCode scheme"><a class="sourceLine" id="cb75-1" title="1">(<span class="ex">define</span><span class="fu"> </span>(get-song n)</a>
+<a class="sourceLine" id="cb75-2" title="2">  (<span class="kw">let</span> ((port (<span class="kw">open-input-file</span> <span class="st">&quot;songs2&quot;</span>)))</a>
+<a class="sourceLine" id="cb75-3" title="3">    (skip-songs (<span class="op">-</span> n <span class="dv">1</span>) port)              <span class="co">; attention! it&#39;s (- n 1) rather than n</span></a>
+<a class="sourceLine" id="cb75-4" title="4">    (<span class="kw">let</span> ((answer (read-line port)))</a>
+<a class="sourceLine" id="cb75-5" title="5">      (<span class="kw">close-input-port</span> port)</a>
+<a class="sourceLine" id="cb75-6" title="6">      answer)))</a>
+<a class="sourceLine" id="cb75-7" title="7"></a>
+<a class="sourceLine" id="cb75-8" title="8">(<span class="ex">define</span><span class="fu"> </span>(skip-songs n port)</a>
+<a class="sourceLine" id="cb75-9" title="9">  (<span class="kw">if</span> (<span class="op">=</span> n <span class="dv">0</span>)</a>
+<a class="sourceLine" id="cb75-10" title="10">      &#39;done</a>
+<a class="sourceLine" id="cb75-11" title="11">      (<span class="kw">begin</span> (read-line port)</a>
+<a class="sourceLine" id="cb75-12" title="12">             (skip-songs (<span class="op">-</span> n <span class="dv">1</span>) port))))</a>
+<a class="sourceLine" id="cb75-13" title="13"></a>
+<a class="sourceLine" id="cb75-14" title="14">(get-song <span class="dv">2</span>)</a>
+<a class="sourceLine" id="cb75-15" title="15"><span class="co">; (TICKET TO RIDE)</span></a></code></pre></div>
+<p>When we invoke <code>read-line</code> in <code>skip-songs</code>, we pay no attention to the value it returns. Remember that <em>the values of all but the last expression in a sequence are discarded</em>. <em><code>read</code> and <code>read-line</code> are the first procedures we’ve seen that have both a useful return value and a useful side effect—moving forward in the file</em>.</p>
+<p><code>skip-songs</code> returns the word <code>done</code> when it’s finished. We don’t do anything with that return value, and there’s no particular reason why we chose that word. But every Scheme procedure has to return something, and this was as good as anything.</p>
+<p><strong>What happens if we <code>read</code> beyond the end of the file?</strong></p>
+<p>In that case, <code>read</code> will return a special value called an <code>end-of-file object</code>. The only useful thing to do with that value is to test for it. Our next sample program reads an entire file and prints it to the screen:</p>
+<div class="sourceCode" id="cb76"><pre class="sourceCode scheme"><code class="sourceCode scheme"><a class="sourceLine" id="cb76-1" title="1">(<span class="ex">define</span><span class="fu"> </span>(print-file name)</a>
+<a class="sourceLine" id="cb76-2" title="2">  (<span class="kw">let</span> ((port (<span class="kw">open-input-file</span> name)))</a>
+<a class="sourceLine" id="cb76-3" title="3">    (print-file-helper port)</a>
+<a class="sourceLine" id="cb76-4" title="4">    (<span class="kw">close-input-port</span> port)</a>
+<a class="sourceLine" id="cb76-5" title="5">    &#39;done))</a>
+<a class="sourceLine" id="cb76-6" title="6"></a>
+<a class="sourceLine" id="cb76-7" title="7">(<span class="ex">define</span><span class="fu"> </span>(print-file-helper port)      <span class="co">;; first version</span></a>
+<a class="sourceLine" id="cb76-8" title="8">  (<span class="kw">let</span> ((stuff (read-line port)))</a>
+<a class="sourceLine" id="cb76-9" title="9">    (<span class="kw">if</span> (<span class="kw">eof-object?</span> stuff)</a>
+<a class="sourceLine" id="cb76-10" title="10">        &#39;done</a>
+<a class="sourceLine" id="cb76-11" title="11">        (<span class="kw">begin</span> (show-line stuff)</a>
+<a class="sourceLine" id="cb76-12" title="12">               (print-file-helper port)))))</a>
+<a class="sourceLine" id="cb76-13" title="13"></a>
+<a class="sourceLine" id="cb76-14" title="14">(print-file <span class="st">&quot;songs&quot;</span>)</a>
+<a class="sourceLine" id="cb76-15" title="15"><span class="co">; ALL MY LOVING</span></a>
+<a class="sourceLine" id="cb76-16" title="16"><span class="co">; TICKET TO RIDE</span></a>
+<a class="sourceLine" id="cb76-17" title="17"><span class="co">; MARTHA MY DEAR</span></a>
+<a class="sourceLine" id="cb76-18" title="18"><span class="co">; DONE</span></a></code></pre></div>
+<p>How does the recursive case make the problem smaller in <code>print-file-helper</code>?</p>
+<p>Each recursive call in <code>print-file-helper</code> has exactly the same argument as the one before. How does the problem get smaller? (Up to now, recursive calls have involved something like the <code>butfirst</code> of an old argument, or one less than an old number.) When we’re reading a file, the sense in which the problem gets smaller at each invocation is that we’re getting closer to the end of the file. You don’t <code>butfirst</code> the port; <em>reading it makes the unread portion of the file smaller as a side effect</em>.</p>
+<hr />
+<p><strong>Transforming the Lines of a File</strong></p>
+<p><strong>How to write a procedure <code>file-map</code> analogous to <code>map</code> but for files?</strong></p>
+<p><code>file-map</code> will take three arguments: The first will be a procedure whose domain and range are sentences; the second will be the name of the input file; the third will be the name of the output file.</p>
+<p>One of the important features of files is that they let us handle amounts of information that are too big to fit all at once in the computer’s memory. Another feature is that once we write a file, it’s there permanently, until we erase it. So instead of having a <code>file-map</code> function that returns the contents of the new file, we have a procedure that writes its result to the disk.</p>
+<div class="sourceCode" id="cb77"><pre class="sourceCode scheme"><code class="sourceCode scheme"><a class="sourceLine" id="cb77-1" title="1">(<span class="ex">define</span><span class="fu"> </span>(file-map fn inname outname)</a>
+<a class="sourceLine" id="cb77-2" title="2">  (<span class="kw">let</span> ((inport (<span class="kw">open-input-file</span> inname))</a>
+<a class="sourceLine" id="cb77-3" title="3">        (outport (<span class="kw">open-output-file</span> outname)))</a>
+<a class="sourceLine" id="cb77-4" title="4">    (file-map-helper fn inport outport)</a>
+<a class="sourceLine" id="cb77-5" title="5">    (<span class="kw">close-input-port</span> inport)</a>
+<a class="sourceLine" id="cb77-6" title="6">    (<span class="kw">close-output-port</span> outport)</a>
+<a class="sourceLine" id="cb77-7" title="7">    &#39;done))</a>
+<a class="sourceLine" id="cb77-8" title="8"></a>
+<a class="sourceLine" id="cb77-9" title="9">(<span class="ex">define</span><span class="fu"> </span>(file-map-helper fn inport outport)</a>
+<a class="sourceLine" id="cb77-10" title="10">  (<span class="kw">let</span> ((line (read-line inport)))</a>
+<a class="sourceLine" id="cb77-11" title="11">    (<span class="kw">if</span> (<span class="kw">eof-object?</span> line)</a>
+<a class="sourceLine" id="cb77-12" title="12">    &#39;done</a>
+<a class="sourceLine" id="cb77-13" title="13">    (<span class="kw">begin</span> (show-line (fn line) outport)</a>
+<a class="sourceLine" id="cb77-14" title="14">           (file-map-helper fn inport outport)))))</a></code></pre></div>
+<p><strong>What are the differences between <code>file-map</code> and <code>print-file</code>?</strong></p>
+<p>The two are almost identical. One difference is that now the output goes to a file instead of to the screen; the other is that we apply the function <code>fn</code> to each line before doing the output.</p>
+<p><strong>How to put the last name first in a file full of names with <code>file-map</code>?</strong></p>
+<p>Since we are using <code>file-map</code> to handle our progress through the file, all we have to write is a procedure that takes a sentence (one name) as its argument and returns the same name but with the last word moved to the front and with a comma added:</p>
+<div class="sourceCode" id="cb78"><pre class="sourceCode scheme"><code class="sourceCode scheme"><a class="sourceLine" id="cb78-1" title="1">(<span class="ex">define</span><span class="fu"> </span>(lastfirst name)</a>
+<a class="sourceLine" id="cb78-2" title="2">  (se (word (last name) <span class="st">&quot;,&quot;</span>) (bl name)))</a></code></pre></div>
+<p>We use <code>butlast</code> rather than <code>first</code> in case someone in the file has a middle name.</p>
+<div class="sourceCode" id="cb79"><pre class="sourceCode scheme"><code class="sourceCode scheme"><a class="sourceLine" id="cb79-1" title="1">(file-map lastfirst <span class="st">&quot;dddbmt&quot;</span> <span class="st">&quot;dddbmt-reversed&quot;</span>)</a>
+<a class="sourceLine" id="cb79-2" title="2"><span class="co">; DONE</span></a></code></pre></div>
+<p>Although you don’t see the results on the screen, you can</p>
+<div class="sourceCode" id="cb80"><pre class="sourceCode scheme"><code class="sourceCode scheme"><a class="sourceLine" id="cb80-1" title="1">(print-file <span class="st">&quot;dddbmt-reversed&quot;</span>)</a></code></pre></div>
+<p>to see that we got the results we wanted.</p>
+<p><strong>How to get averaging grades with <code>file-map</code>?</strong></p>
+<p>Suppose the file grades contains this text:</p>
+<div class="sourceCode" id="cb81"><pre class="sourceCode scheme"><code class="sourceCode scheme"><a class="sourceLine" id="cb81-1" title="1">John <span class="dv">88</span> <span class="dv">92</span> <span class="dv">100</span> <span class="dv">75</span> <span class="dv">95</span></a>
+<a class="sourceLine" id="cb81-2" title="2">Paul <span class="dv">90</span> <span class="dv">91</span> <span class="dv">85</span> <span class="dv">80</span> <span class="dv">91</span></a>
+<a class="sourceLine" id="cb81-3" title="3">George <span class="dv">85</span> <span class="dv">87</span> <span class="dv">90</span> <span class="dv">72</span> <span class="dv">96</span></a>
+<a class="sourceLine" id="cb81-4" title="4">Ringo <span class="dv">95</span> <span class="dv">84</span> <span class="dv">88</span> <span class="dv">87</span> <span class="dv">87</span></a></code></pre></div>
+<p>The output we want is:</p>
+<div class="sourceCode" id="cb82"><pre class="sourceCode scheme"><code class="sourceCode scheme"><a class="sourceLine" id="cb82-1" title="1">John total: <span class="dv">450</span> average: <span class="dv">90</span></a>
+<a class="sourceLine" id="cb82-2" title="2">Paul total: <span class="dv">437</span> average: <span class="fl">87.4</span></a>
+<a class="sourceLine" id="cb82-3" title="3">George total: <span class="dv">430</span> average: <span class="dv">86</span></a>
+<a class="sourceLine" id="cb82-4" title="4">Ringo total: <span class="dv">441</span> average: <span class="fl">88.2</span></a></code></pre></div>
+<p>Here’s the program:</p>
+<div class="sourceCode" id="cb83"><pre class="sourceCode scheme"><code class="sourceCode scheme"><a class="sourceLine" id="cb83-1" title="1">(<span class="ex">define</span><span class="fu"> </span>(process-grades line)</a>
+<a class="sourceLine" id="cb83-2" title="2">  (se (first line)</a>
+<a class="sourceLine" id="cb83-3" title="3">      <span class="st">&quot;total:&quot;</span></a>
+<a class="sourceLine" id="cb83-4" title="4">      (accumulate <span class="op">+</span> (bf line))</a>
+<a class="sourceLine" id="cb83-5" title="5">      <span class="st">&quot;average:&quot;</span></a>
+<a class="sourceLine" id="cb83-6" title="6">      (<span class="op">/</span> (accumulate <span class="op">+</span> (bf line))</a>
+<a class="sourceLine" id="cb83-7" title="7">         (count (bf line)))))</a>
+<a class="sourceLine" id="cb83-8" title="8"></a>
+<a class="sourceLine" id="cb83-9" title="9">(file-map process-grades <span class="st">&quot;grades&quot;</span> <span class="st">&quot;results&quot;</span>)</a></code></pre></div>
+<hr />
+<h3 id="justifying-text">Justifying Text</h3>
 </body>
 </html>

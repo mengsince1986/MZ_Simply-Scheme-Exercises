@@ -830,8 +830,6 @@ If the answer is `yes`, this procedure will work fine. But if not, the second in
 
 **Topic:** the `functions` program
 
----
-
 ## The Main Loop
 
 **What does `functions` do?**
@@ -1281,3 +1279,252 @@ There’s a problem with using `read-line`. As we mentioned in a pitfall in Chap
 [solutions](https://github.com/mengsince1986/Simply-Scheme-exercises/blob/master/SS%20Exercises/Exercises%2021.1-21.9.scm)
 
 ---
+
+## Chapter 22 Files
+
+### Ports
+
+**What are *ports*?**
+**How to create a file?**
+
+Before you can use a file, you have to *open* it. If you want to read a file, the system has to check that the file exists. If you want to write a file, the system has to create a new, empty file. The Scheme procedures that open a file return a *port*, which is what Scheme uses to remember the file you opened. *Ports are useful only as arguments to the input/output procedures.* Here’s an example:
+
+```scheme
+(let ((port (open-output-file "songs")))
+  (show '(all my loving) port)
+  (show '(ticket to ride) port)
+  (show '(martha my dear) port)
+  (close-output-port port))
+```
+
+(`close-output-port`,like `define`, has an unspecified return value that we’re not going to include in the examples.)
+
+We’ve created a file named `songs` and put three expressions, each on its own line, in that file. Notice that nothing appeared on the screen when we called `show`. Because we used a port argument to `show`, the output went into the file. Here’s what’s in the file:
+
+```scheme
+(ALL MY LOVING)
+(TICKET TO RIDE)
+(MARTHA MY DEAR)
+```
+
+The example illustrates two more details about using files that we haven’t mentioned before:
+
+* First, the name of a file must be given in double-quote marks.
+* Second, when you’re finished using a file, you have to close the port associated with it. (This is very important. On some systems, if you forget to close the port, the file disappears.)
+
+**How to read a file using Scheme?**
+
+The file is now permanent. If we were to exit from Scheme, we could read the file in a word processor or any other program. But let’s read it using Scheme:
+
+```scheme
+(define in (open-input-file "songs"))
+
+(read in)
+; (ALL MY LOVING)
+
+(read in)
+; (TICKET TO RIDE)
+
+(read in)
+; (MARTHA MY DEAR)
+
+(close-input-port in)
+```
+
+(In this illustration, we’ve used a global variable to hold the port because we wanted to show the results of reading the file step by step. In a real program, we’d generally use a `let` structure like the one we used to write the file. Now that we’ve closed the port, the variable `in` contains a port that can no longer be used.)
+
+---
+
+### Writing Files for People to Read
+
+**How to create a file without parentheses around sentences?**
+
+We could use `show-line` instead of `show` to create a file, still with one song title per line, but without the parentheses:
+
+```scheme
+(let ((port (open-output-file "songs2")))
+  (show-line '(all my loving) port)
+  (show-line '(ticket to ride) port)
+  (show-line '(martha my dear) port)
+  (close-output-port port))
+```
+
+The file `songs2` will contain
+
+```scheme
+ALL MY LOVING
+TICKET TO RIDE
+MARTHA MY DEAR
+```
+
+**How to read `songs2` back into Scheme?**
+
+We must read the file a line at a time, with `read-line`. In effect, `read-line` treats the breaks between lines as if they were parentheses:
+
+```scheme
+(define in (open-input-file "songs2"))
+
+(read-line in)
+; (ALL MY LOVING)
+
+(close-input-port in)
+```
+
+(Notice that we don’t have to read the entire file before closing the port. If we open the file again later, we start over again from the beginning.)
+
+**What are the differences between `show-line`/`read-line` and `show`/`read` when writing a file?**
+
+As far as Scheme is concerned, the result of writing the file with `show-line` and reading it with `read-line` was the same as that of writing it with `show` and reading it with `read`. The difference is that without parentheses the file itself is more “user-friendly” for someone who reads it outside of Scheme.
+
+Another difference, not apparent in this example, is that `show` and `read` can handle structured lists. `show-line` can print a structured list, leaving off only the outermost parentheses, but `read-line` will treat any parentheses in the file as ordinary characters; it always returns a sentence.
+
+---
+
+### Using a File as a Database
+
+**How to make a file a database?**
+
+```scheme
+(define (get-song n)
+  (let ((port (open-input-file "songs2")))
+    (skip-songs (- n 1) port)              ; attention! it's (- n 1) rather than n
+    (let ((answer (read-line port)))
+      (close-input-port port)
+      answer)))
+
+(define (skip-songs n port)
+  (if (= n 0)
+      'done
+      (begin (read-line port)
+             (skip-songs (- n 1) port))))
+
+(get-song 2)
+; (TICKET TO RIDE)
+```
+
+When we invoke `read-line` in `skip-songs`, we pay no attention to the value it returns. Remember that *the values of all but the last expression in a sequence are discarded*. *`read` and `read-line` are the first procedures we’ve seen that have both a useful return value and a useful side effect—moving forward in the file*.
+
+`skip-songs` returns the word `done` when it’s finished. We don’t do anything with that return value, and there’s no particular reason why we chose that word. But every Scheme procedure has to return something, and this was as good as anything.
+
+**What happens if we `read` beyond the end of the file?**
+
+In that case, `read` will return a special value called an `end-of-file object`. The only useful thing to do with that value is to test for it. Our next sample program reads an entire file and prints it to the screen:
+
+```scheme
+(define (print-file name)
+  (let ((port (open-input-file name)))
+    (print-file-helper port)
+    (close-input-port port)
+    'done))
+
+(define (print-file-helper port)      ;; first version
+  (let ((stuff (read-line port)))
+    (if (eof-object? stuff)
+        'done
+        (begin (show-line stuff)
+               (print-file-helper port)))))
+
+(print-file "songs")
+; ALL MY LOVING
+; TICKET TO RIDE
+; MARTHA MY DEAR
+; DONE
+```
+
+How does the recursive case make the problem smaller in `print-file-helper`?
+
+Each recursive call in `print-file-helper` has exactly the same argument as the one before. How does the problem get smaller? (Up to now, recursive calls have involved something like the `butfirst` of an old argument, or one less than an old number.) When we’re reading a file, the sense in which the problem gets smaller at each invocation is that we’re getting closer to the end of the file. You don’t `butfirst` the port; *reading it makes the unread portion of the file smaller as a side effect*.
+
+---
+
+**Transforming the Lines of a File**
+
+**How to write a procedure `file-map` analogous to `map` but for files?**
+
+`file-map` will take three arguments: The first will be a procedure whose domain and range are sentences; the second will be the name of the input file; the third will be the name of the output file.
+
+One of the important features of files is that they let us handle amounts of information that are too big to fit all at once in the computer’s memory. Another feature is that once we write a file, it’s there permanently, until we erase it. So instead of having a `file-map` function that returns the contents of the new file, we have a procedure that writes its result to the disk.
+
+```scheme
+(define (file-map fn inname outname)
+  (let ((inport (open-input-file inname))
+        (outport (open-output-file outname)))
+    (file-map-helper fn inport outport)
+    (close-input-port inport)
+    (close-output-port outport)
+    'done))
+
+(define (file-map-helper fn inport outport)
+  (let ((line (read-line inport)))
+    (if (eof-object? line)
+    'done
+    (begin (show-line (fn line) outport)
+           (file-map-helper fn inport outport)))))
+```
+
+**What are the differences between `file-map` and `print-file`?**
+
+The two are almost identical. One difference is that now the output goes to a file instead of to the screen; the other is that we apply the function `fn` to each line before doing the output.
+
+**How to put the last name first in a file full of names with `file-map`?**
+
+Since we are using `file-map` to handle our progress through the file, all we have to write is a procedure that takes a sentence (one name) as its argument and returns the same name but with the last word moved to the front and with a comma added:
+
+```scheme
+(define (lastfirst name)
+  (se (word (last name) ",") (bl name)))
+```
+
+We use `butlast` rather than `first` in case someone in the file has a middle name.
+
+```scheme
+(file-map lastfirst "dddbmt" "dddbmt-reversed")
+; DONE
+```
+
+Although you don’t see the results on the screen, you can
+
+```scheme
+(print-file "dddbmt-reversed")
+```
+
+to see that we got the results we wanted.
+
+**How to get averaging grades with `file-map`?**
+
+Suppose the file grades contains this text:
+
+```scheme
+John 88 92 100 75 95
+Paul 90 91 85 80 91
+George 85 87 90 72 96
+Ringo 95 84 88 87 87
+```
+
+The output we want is:
+
+```scheme
+John total: 450 average: 90
+Paul total: 437 average: 87.4
+George total: 430 average: 86
+Ringo total: 441 average: 88.2
+```
+
+Here’s the program:
+
+```scheme
+(define (process-grades line)
+  (se (first line)
+      "total:"
+      (accumulate + (bf line))
+      "average:"
+      (/ (accumulate + (bf line))
+         (count (bf line)))))
+
+(file-map process-grades "grades" "results")
+```
+---
+
+### Justifying Text
+
+
