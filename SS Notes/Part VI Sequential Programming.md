@@ -1527,4 +1527,152 @@ Here’s the program:
 
 ### Justifying Text
 
+**What does `justify` do?**
 
+Many word-processing programs *justify* text; they insert extra space between words so that every line reaches exactly to the right margin.
+
+**How to define `justify`?**
+
+The solution used in this program is that each line of the output file is constructed as *a single long word*, including space characters that we place explicitly within it. (Since `show-line` requires a sentence as its argument, our procedure will actually return *a one-word sentence*. In the following program, `pad` constructs the word, and `justify` makes a one-word sentence containing it.)
+
+`justify` takes two arguments, the line of text (a sentence) and a number indicating the desired width (how many characters).
+
+Here’s the algorithm:
+
+* First the program computes the total number of characters the sentence would take up without adding extras. That’s the job of `char-count`, which adds up the lengths of all the words, and adds to that the n − 1 spaces between words.
+* `extra-spaces` subtracts that length from the desired line width to get the number of extra spaces we need.
+* `pad` invoked with three arguments: 1.the part of the line not yet processed, 2.the number of opportunities there are to insert extra spaces in that part of the line (that is, the number of words minus one), and 3.the number of extra spaces that the program still needs to insert. The number of extra spaces to insert this time is the integer quotient of the number pad wants to insert and the number of chances it’ll have. That is, if there are five words on the line, there are four places where pad can insert extra space. If it needs to insert nine spaces altogether, then it should insert 9/4 or two spaces at the first opportunity.
+
+```scheme
+(define (justify line width)
+  (if (< (count line) 2)
+      line
+      (se (pad line
+               (- (count line) 1)
+               (extra-spaces width (char-count line))))))
+
+(define (char-count line)
+  (+ (accumulate + (every count line))  ; letters within words
+     (- (count line) 1)))               ; plus spaces between words
+
+(define (extra-spaces width chars)
+  (if (> chars width)
+      0                                 ; none if already too wide
+      (- width chars)))
+
+(define (pad line chances needed)
+  (if (= chances 0)                     ; only one word in line
+      (first line)
+      (let ((extra (quotient needed chances)))
+        (word (first line)
+              (spaces (+ extra 1))      ; the added 1 is the orginal space between words
+              (pad (bf line) (- chances 1) (- needed extra))))))
+
+(define (spaces n)
+  (if (= n 0)
+      ""
+      (word " " (spaces (- n 1)))))
+```
+
+Because `justify` takes two arguments, we have to decide what line width we want to give it. Here’s how to make each line take 50 characters:
+
+```scheme
+(file-map (lambda (sent) (justify sent 50)) "r5rs" "r5rs-just")
+```
+
+---
+
+### Preserving Spacing of Text from Files
+
+**Why we can't use `print-file` to print file `r5rs-just`?**
+
+If we try to print the file `r5rs-just` from the previous section using `print-file`, it’ll look exactly like `r5rs`. That’s because `read-line` doesn’t preserve consecutive spaces in the lines that it reads. `read-line` cares only where each word (consisting of non-space characters) begins and ends; it pays no attention to how many spaces come between any two words.
+
+**How does `read-string` work?**
+
+For situations in which we do care about spacing, we have another way to read a line from a file. The procedure `read-string` reads all of the characters on a line, returning a single word that contains all of them, spaces included.
+
+Like all the input and output primitives, `read-string` can be invoked with or without a port argument.
+
+**How to rewrite `print-file` with `read-string` so that it makes an exact copy of the input file?**
+
+```scheme
+(define (print-file name)
+  (let ((port (open-input-file name)))
+    (print-file-helper port)
+    (close-input-port port)
+    'done))
+
+(define (print-file-helper port)
+  (let ((stuff (read-string port)))
+    (if (eof-object? stuff)
+        'done
+        (begin (show stuff)
+               (print-file-helper port)))))
+```
+
+---
+
+### Merging Two Files
+
+**What's the point to merge two sorted files?**
+
+Suppose you have two files of people’s names. Each file has been sorted in alphabetical order. You want to combine them to form a single file, still in order.
+
+Programs that sort very large amounts of information can’t always fit it all in memory at once, so they read in as much as fits, sort it, and write a file. Then they read and sort another chunk. At the end of this process, the program is left with several sorted partial files, and it has to merge those files to get the overall result.
+
+**How to define `filemerge`?**
+
+The algorithm for merging files is exactly the same as the one we used for merging sentences in the `mergesort` program of Chapter 15. The only difference is that the items to be sorted come from reading ports instead of from first ing a sentence.
+
+```scheme
+(define (filemerge file1 file2 outfile)
+  (let ((p1 (open-input-file file1))
+        (p2 (open-input-file file2))
+        (outp (open-output-file outfile)))
+    (filemerge-helper p1 p2 outp (read-string p1) (read-string p2))
+    (close-output-port outp)
+    (close-input-port p1)
+    (close-input-port p2)
+    'done))
+
+(define (filemerge-helper p1 p2 outp line1 line2)
+  (cond ((eof-object? line1) (merge-copy line2 p2 outp))
+        ((eof-object? line2) (merge-copy line1 p1 outp))
+        ((before? line1 line2)
+         (show line1 outp)
+         (filemerge-helper p1 p2 outp (read-string p1) line2))
+        (else (show line2 outp)
+              (filemerge-helper p1 p2 outp line1 (read-string p2)))))
+
+(define (merge-copy line inp outp)
+  (if (eof-object? line)
+      #f
+      (begin (show line outp)
+             (merge-copy (read-string inp) inp outp))))
+```
+
+**Why it donesn't work if `filemerge-helper` takes just the three ports as arguments?**
+
+```scheme
+(define (filemerge-helper p1 p2 outp)        ;; wrong
+  (let ((line1 (read-string p1))
+        (line2 (read-string p2)))
+    (cond ((eof-object? line1) (merge-copy p2 outp))
+          ((eof-object? line2) (merge-copy p1 outp))
+          ((before? line1 line2)
+           (show line1 outp)
+           (filemerge-helper p1 p2 outp))
+          (else (show line2 outp)
+                (filemerge-helper p1 p2 outp)))))
+```
+
+This won’t work. Suppose that the first line of `file2` comes before the first line of `file1`. This program correctly writes the first line of `file2` to the output file, as we expect. But what about the first line of `file1`? Since we called `read-string` on `file1`, we’ve "gobbled" that line, but we’re not yet ready to write it to the output.
+
+In each invocation of `filemerge-helper`, only one line is written to the output file, so unless we want to lose information, we’d better read only one line. This means that we can’t call `read-string` twice on each recursive call. One of the lines has to be handed down from one invocation to the next. (That is, it has to be an argument to the recursive call.) Since we don’t know in advance which line to keep, the easiest solution is to hand down both lines.
+
+Therefore, `filemerge-helper` also takes as arguments the first line of each file that hasn’t yet been written to the output. When we first call `filemerge-helper` from `filemerge`, we read the first line of each file to provide the initial values of these arguments. Then, on each recursive call, `filemerge-helper` calls `read-string` only once.
+
+---
+
+### Wrting Files for Scheme to Read

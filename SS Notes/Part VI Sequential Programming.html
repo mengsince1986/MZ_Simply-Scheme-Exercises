@@ -1077,5 +1077,113 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <a class="sourceLine" id="cb83-9" title="9">(file-map process-grades <span class="st">&quot;grades&quot;</span> <span class="st">&quot;results&quot;</span>)</a></code></pre></div>
 <hr />
 <h3 id="justifying-text">Justifying Text</h3>
+<p><strong>What does <code>justify</code> do?</strong></p>
+<p>Many word-processing programs <em>justify</em> text; they insert extra space between words so that every line reaches exactly to the right margin.</p>
+<p><strong>How to define <code>justify</code>?</strong></p>
+<p>The solution used in this program is that each line of the output file is constructed as <em>a single long word</em>, including space characters that we place explicitly within it. (Since <code>show-line</code> requires a sentence as its argument, our procedure will actually return <em>a one-word sentence</em>. In the following program, <code>pad</code> constructs the word, and <code>justify</code> makes a one-word sentence containing it.)</p>
+<p><code>justify</code> takes two arguments, the line of text (a sentence) and a number indicating the desired width (how many characters).</p>
+<p>Here’s the algorithm:</p>
+<ul>
+<li>First the program computes the total number of characters the sentence would take up without adding extras. That’s the job of <code>char-count</code>, which adds up the lengths of all the words, and adds to that the n − 1 spaces between words.</li>
+<li><code>extra-spaces</code> subtracts that length from the desired line width to get the number of extra spaces we need.</li>
+<li><code>pad</code> invoked with three arguments: 1.the part of the line not yet processed, 2.the number of opportunities there are to insert extra spaces in that part of the line (that is, the number of words minus one), and 3.the number of extra spaces that the program still needs to insert. The number of extra spaces to insert this time is the integer quotient of the number pad wants to insert and the number of chances it’ll have. That is, if there are five words on the line, there are four places where pad can insert extra space. If it needs to insert nine spaces altogether, then it should insert 9/4 or two spaces at the first opportunity.</li>
+</ul>
+<div class="sourceCode" id="cb84"><pre class="sourceCode scheme"><code class="sourceCode scheme"><a class="sourceLine" id="cb84-1" title="1">(<span class="ex">define</span><span class="fu"> </span>(justify line width)</a>
+<a class="sourceLine" id="cb84-2" title="2">  (<span class="kw">if</span> (<span class="op">&lt;</span> (count line) <span class="dv">2</span>)</a>
+<a class="sourceLine" id="cb84-3" title="3">      line</a>
+<a class="sourceLine" id="cb84-4" title="4">      (se (pad line</a>
+<a class="sourceLine" id="cb84-5" title="5">               (<span class="op">-</span> (count line) <span class="dv">1</span>)</a>
+<a class="sourceLine" id="cb84-6" title="6">               (extra-spaces width (char-count line))))))</a>
+<a class="sourceLine" id="cb84-7" title="7"></a>
+<a class="sourceLine" id="cb84-8" title="8">(<span class="ex">define</span><span class="fu"> </span>(char-count line)</a>
+<a class="sourceLine" id="cb84-9" title="9">  (<span class="op">+</span> (accumulate <span class="op">+</span> (every count line))  <span class="co">; letters within words</span></a>
+<a class="sourceLine" id="cb84-10" title="10">     (<span class="op">-</span> (count line) <span class="dv">1</span>)))               <span class="co">; plus spaces between words</span></a>
+<a class="sourceLine" id="cb84-11" title="11"></a>
+<a class="sourceLine" id="cb84-12" title="12">(<span class="ex">define</span><span class="fu"> </span>(extra-spaces width chars)</a>
+<a class="sourceLine" id="cb84-13" title="13">  (<span class="kw">if</span> (<span class="op">&gt;</span> chars width)</a>
+<a class="sourceLine" id="cb84-14" title="14">      <span class="dv">0</span>                                 <span class="co">; none if already too wide</span></a>
+<a class="sourceLine" id="cb84-15" title="15">      (<span class="op">-</span> width chars)))</a>
+<a class="sourceLine" id="cb84-16" title="16"></a>
+<a class="sourceLine" id="cb84-17" title="17">(<span class="ex">define</span><span class="fu"> </span>(pad line chances needed)</a>
+<a class="sourceLine" id="cb84-18" title="18">  (<span class="kw">if</span> (<span class="op">=</span> chances <span class="dv">0</span>)                     <span class="co">; only one word in line</span></a>
+<a class="sourceLine" id="cb84-19" title="19">      (first line)</a>
+<a class="sourceLine" id="cb84-20" title="20">      (<span class="kw">let</span> ((extra (<span class="kw">quotient</span> needed chances)))</a>
+<a class="sourceLine" id="cb84-21" title="21">        (word (first line)</a>
+<a class="sourceLine" id="cb84-22" title="22">              (spaces (<span class="op">+</span> extra <span class="dv">1</span>))      <span class="co">; the added 1 is the orginal space between words</span></a>
+<a class="sourceLine" id="cb84-23" title="23">              (pad (bf line) (<span class="op">-</span> chances <span class="dv">1</span>) (<span class="op">-</span> needed extra))))))</a>
+<a class="sourceLine" id="cb84-24" title="24"></a>
+<a class="sourceLine" id="cb84-25" title="25">(<span class="ex">define</span><span class="fu"> </span>(spaces n)</a>
+<a class="sourceLine" id="cb84-26" title="26">  (<span class="kw">if</span> (<span class="op">=</span> n <span class="dv">0</span>)</a>
+<a class="sourceLine" id="cb84-27" title="27">      <span class="st">&quot;&quot;</span></a>
+<a class="sourceLine" id="cb84-28" title="28">      (word <span class="st">&quot; &quot;</span> (spaces (<span class="op">-</span> n <span class="dv">1</span>)))))</a></code></pre></div>
+<p>Because <code>justify</code> takes two arguments, we have to decide what line width we want to give it. Here’s how to make each line take 50 characters:</p>
+<div class="sourceCode" id="cb85"><pre class="sourceCode scheme"><code class="sourceCode scheme"><a class="sourceLine" id="cb85-1" title="1">(file-map (<span class="kw">lambda</span> (sent) (justify sent <span class="dv">50</span>)) <span class="st">&quot;r5rs&quot;</span> <span class="st">&quot;r5rs-just&quot;</span>)</a></code></pre></div>
+<hr />
+<h3 id="preserving-spacing-of-text-from-files">Preserving Spacing of Text from Files</h3>
+<p><strong>Why we can’t use <code>print-file</code> to print file <code>r5rs-just</code>?</strong></p>
+<p>If we try to print the file <code>r5rs-just</code> from the previous section using <code>print-file</code>, it’ll look exactly like <code>r5rs</code>. That’s because <code>read-line</code> doesn’t preserve consecutive spaces in the lines that it reads. <code>read-line</code> cares only where each word (consisting of non-space characters) begins and ends; it pays no attention to how many spaces come between any two words.</p>
+<p><strong>How does <code>read-string</code> work?</strong></p>
+<p>For situations in which we do care about spacing, we have another way to read a line from a file. The procedure <code>read-string</code> reads all of the characters on a line, returning a single word that contains all of them, spaces included.</p>
+<p>Like all the input and output primitives, <code>read-string</code> can be invoked with or without a port argument.</p>
+<p><strong>How to rewrite <code>print-file</code> with <code>read-string</code> so that it makes an exact copy of the input file?</strong></p>
+<div class="sourceCode" id="cb86"><pre class="sourceCode scheme"><code class="sourceCode scheme"><a class="sourceLine" id="cb86-1" title="1">(<span class="ex">define</span><span class="fu"> </span>(print-file name)</a>
+<a class="sourceLine" id="cb86-2" title="2">  (<span class="kw">let</span> ((port (<span class="kw">open-input-file</span> name)))</a>
+<a class="sourceLine" id="cb86-3" title="3">    (print-file-helper port)</a>
+<a class="sourceLine" id="cb86-4" title="4">    (<span class="kw">close-input-port</span> port)</a>
+<a class="sourceLine" id="cb86-5" title="5">    &#39;done))</a>
+<a class="sourceLine" id="cb86-6" title="6"></a>
+<a class="sourceLine" id="cb86-7" title="7">(<span class="ex">define</span><span class="fu"> </span>(print-file-helper port)</a>
+<a class="sourceLine" id="cb86-8" title="8">  (<span class="kw">let</span> ((stuff (read-string port)))</a>
+<a class="sourceLine" id="cb86-9" title="9">    (<span class="kw">if</span> (<span class="kw">eof-object?</span> stuff)</a>
+<a class="sourceLine" id="cb86-10" title="10">        &#39;done</a>
+<a class="sourceLine" id="cb86-11" title="11">        (<span class="kw">begin</span> (show stuff)</a>
+<a class="sourceLine" id="cb86-12" title="12">               (print-file-helper port)))))</a></code></pre></div>
+<hr />
+<h3 id="merging-two-files">Merging Two Files</h3>
+<p><strong>What’s the point to merge two sorted files?</strong></p>
+<p>Suppose you have two files of people’s names. Each file has been sorted in alphabetical order. You want to combine them to form a single file, still in order.</p>
+<p>Programs that sort very large amounts of information can’t always fit it all in memory at once, so they read in as much as fits, sort it, and write a file. Then they read and sort another chunk. At the end of this process, the program is left with several sorted partial files, and it has to merge those files to get the overall result.</p>
+<p><strong>How to define <code>filemerge</code>?</strong></p>
+<p>The algorithm for merging files is exactly the same as the one we used for merging sentences in the <code>mergesort</code> program of Chapter 15. The only difference is that the items to be sorted come from reading ports instead of from first ing a sentence.</p>
+<div class="sourceCode" id="cb87"><pre class="sourceCode scheme"><code class="sourceCode scheme"><a class="sourceLine" id="cb87-1" title="1">(<span class="ex">define</span><span class="fu"> </span>(filemerge file1 file2 outfile)</a>
+<a class="sourceLine" id="cb87-2" title="2">  (<span class="kw">let</span> ((p1 (<span class="kw">open-input-file</span> file1))</a>
+<a class="sourceLine" id="cb87-3" title="3">        (p2 (<span class="kw">open-input-file</span> file2))</a>
+<a class="sourceLine" id="cb87-4" title="4">        (outp (<span class="kw">open-output-file</span> outfile)))</a>
+<a class="sourceLine" id="cb87-5" title="5">    (filemerge-helper p1 p2 outp (read-string p1) (read-string p2))</a>
+<a class="sourceLine" id="cb87-6" title="6">    (<span class="kw">close-output-port</span> outp)</a>
+<a class="sourceLine" id="cb87-7" title="7">    (<span class="kw">close-input-port</span> p1)</a>
+<a class="sourceLine" id="cb87-8" title="8">    (<span class="kw">close-input-port</span> p2)</a>
+<a class="sourceLine" id="cb87-9" title="9">    &#39;done))</a>
+<a class="sourceLine" id="cb87-10" title="10"></a>
+<a class="sourceLine" id="cb87-11" title="11">(<span class="ex">define</span><span class="fu"> </span>(filemerge-helper p1 p2 outp line1 line2)</a>
+<a class="sourceLine" id="cb87-12" title="12">  (<span class="kw">cond</span> ((<span class="kw">eof-object?</span> line1) (merge-copy line2 p2 outp))</a>
+<a class="sourceLine" id="cb87-13" title="13">        ((<span class="kw">eof-object?</span> line2) (merge-copy line1 p1 outp))</a>
+<a class="sourceLine" id="cb87-14" title="14">        ((before? line1 line2)</a>
+<a class="sourceLine" id="cb87-15" title="15">         (show line1 outp)</a>
+<a class="sourceLine" id="cb87-16" title="16">         (filemerge-helper p1 p2 outp (read-string p1) line2))</a>
+<a class="sourceLine" id="cb87-17" title="17">        (<span class="kw">else</span> (show line2 outp)</a>
+<a class="sourceLine" id="cb87-18" title="18">              (filemerge-helper p1 p2 outp line1 (read-string p2)))))</a>
+<a class="sourceLine" id="cb87-19" title="19"></a>
+<a class="sourceLine" id="cb87-20" title="20">(<span class="ex">define</span><span class="fu"> </span>(merge-copy line inp outp)</a>
+<a class="sourceLine" id="cb87-21" title="21">  (<span class="kw">if</span> (<span class="kw">eof-object?</span> line)</a>
+<a class="sourceLine" id="cb87-22" title="22">      <span class="dv">#f</span></a>
+<a class="sourceLine" id="cb87-23" title="23">      (<span class="kw">begin</span> (show line outp)</a>
+<a class="sourceLine" id="cb87-24" title="24">             (merge-copy (read-string inp) inp outp))))</a></code></pre></div>
+<p><strong>Why it donesn’t work if <code>filemerge-helper</code> takes just the three ports as arguments?</strong></p>
+<div class="sourceCode" id="cb88"><pre class="sourceCode scheme"><code class="sourceCode scheme"><a class="sourceLine" id="cb88-1" title="1">(<span class="ex">define</span><span class="fu"> </span>(filemerge-helper p1 p2 outp)        <span class="co">;; wrong</span></a>
+<a class="sourceLine" id="cb88-2" title="2">  (<span class="kw">let</span> ((line1 (read-string p1))</a>
+<a class="sourceLine" id="cb88-3" title="3">        (line2 (read-string p2)))</a>
+<a class="sourceLine" id="cb88-4" title="4">    (<span class="kw">cond</span> ((<span class="kw">eof-object?</span> line1) (merge-copy p2 outp))</a>
+<a class="sourceLine" id="cb88-5" title="5">          ((<span class="kw">eof-object?</span> line2) (merge-copy p1 outp))</a>
+<a class="sourceLine" id="cb88-6" title="6">          ((before? line1 line2)</a>
+<a class="sourceLine" id="cb88-7" title="7">           (show line1 outp)</a>
+<a class="sourceLine" id="cb88-8" title="8">           (filemerge-helper p1 p2 outp))</a>
+<a class="sourceLine" id="cb88-9" title="9">          (<span class="kw">else</span> (show line2 outp)</a>
+<a class="sourceLine" id="cb88-10" title="10">                (filemerge-helper p1 p2 outp)))))</a></code></pre></div>
+<p>This won’t work. Suppose that the first line of <code>file2</code> comes before the first line of <code>file1</code>. This program correctly writes the first line of <code>file2</code> to the output file, as we expect. But what about the first line of <code>file1</code>? Since we called <code>read-string</code> on <code>file1</code>, we’ve “gobbled” that line, but we’re not yet ready to write it to the output.</p>
+<p>In each invocation of <code>filemerge-helper</code>, only one line is written to the output file, so unless we want to lose information, we’d better read only one line. This means that we can’t call <code>read-string</code> twice on each recursive call. One of the lines has to be handed down from one invocation to the next. (That is, it has to be an argument to the recursive call.) Since we don’t know in advance which line to keep, the easiest solution is to hand down both lines.</p>
+<p>Therefore, <code>filemerge-helper</code> also takes as arguments the first line of each file that hasn’t yet been written to the output. When we first call <code>filemerge-helper</code> from <code>filemerge</code>, we read the first line of each file to provide the initial values of these arguments. Then, on each recursive call, <code>filemerge-helper</code> calls <code>read-string</code> only once.</p>
+<hr />
+<h3 id="wrting-files-for-scheme-to-read">Wrting Files for Scheme to Read</h3>
 </body>
 </html>
