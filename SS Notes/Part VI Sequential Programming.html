@@ -1185,5 +1185,43 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <p>Therefore, <code>filemerge-helper</code> also takes as arguments the first line of each file that hasn’t yet been written to the output. When we first call <code>filemerge-helper</code> from <code>filemerge</code>, we read the first line of each file to provide the initial values of these arguments. Then, on each recursive call, <code>filemerge-helper</code> calls <code>read-string</code> only once.</p>
 <hr />
 <h3 id="wrting-files-for-scheme-to-read">Wrting Files for Scheme to Read</h3>
+<p><strong>What are the differences of the three file-reading procedure <code>read</code>, <code>read-line</code> and <code>read-string</code>?</strong></p>
+<p><code>read</code> ignores case and forces you to have parentheses in your file. <code>read-line</code> fixes those problems, but it loses spacing information. <code>read-string</code> can read anything and always gets it right.</p>
+<p><strong>When do we use <code>read-line</code> instead of <code>read-string</code>?</strong></p>
+<p>But there’s a cost to the generality of <code>read-string</code>; it can read any file, but it <em>loses structure information</em>. For example, when we processed a file of people’s names with <code>file-map</code> , we used this function:</p>
+<div class="sourceCode" id="cb89"><pre class="sourceCode scheme"><code class="sourceCode scheme"><a class="sourceLine" id="cb89-1" title="1">(<span class="ex">define</span><span class="fu"> </span>(lastfirst name)</a>
+<a class="sourceLine" id="cb89-2" title="2">  (se (word (last name) <span class="st">&quot;,&quot;</span>) (bl name)))</a></code></pre></div>
+<p>It’s easy to break a name into its components if you have the name in the form of a sentence, with the words separated already. But if we had read each line with <code>read-string</code>, <code>last</code> of a line would have been the last letter, not the last name.</p>
+<p>The <code>lastfirst</code> example illustrates why you might want to use <code>read-line</code> rather than <code>read-string</code>: <code>read-line</code> “understands” spaces.</p>
+<p><strong>When do we use <code>read</code> instead of <code>read-line</code> and <code>read-string</code>?</strong></p>
+<p>Here’s an example in which the even more structured <code>read</code> is appropriate. We have a file of Beatles songs and the albums on which they appear:</p>
+<div class="sourceCode" id="cb90"><pre class="sourceCode scheme"><code class="sourceCode scheme"><a class="sourceLine" id="cb90-1" title="1">&#39;((love me <span class="kw">do</span>) (please please me))</a>
+<a class="sourceLine" id="cb90-2" title="2">&#39;((<span class="kw">do</span> you want to know a secret?) (please please me))</a>
+<a class="sourceLine" id="cb90-3" title="3">&#39;((think for yourself) (rubber soul))</a>
+<a class="sourceLine" id="cb90-4" title="4">&#39;((your mother should know) (magical mystery tour))</a></code></pre></div>
+<p>Each line of this file contains two pieces of information: a song title and an album title.</p>
+<p>The natural way to represent this grouping information is to use the mechanism Scheme provides for grouping–list structure.</p>
+<p>If we use <code>read-line</code> to read the file, we’ll lose the list structure; it will return a sentence containing words like <code>&quot;((love&quot;</code>. <code>read</code> , however, will do what we want.</p>
+<p>How did we create this file in the first place? We just used one <code>show</code> per line of the file, like this:</p>
+<div class="sourceCode" id="cb91"><pre class="sourceCode scheme"><code class="sourceCode scheme"><a class="sourceLine" id="cb91-1" title="1">(show &#39;((love me <span class="kw">do</span>) (please please me)) port)</a></code></pre></div>
+<p><strong>What’s the disadvantage when using <code>show</code>/<code>show-line</code> to write files with apostrophe <code>'</code>?</strong></p>
+<p>We’re going to have to come to terms with the apostrophe in “A Hard Day’s Night.”</p>
+<p>The straightforward solution is to put <code>day’s</code> in a string:</p>
+<div class="sourceCode" id="cb92"><pre class="sourceCode scheme"><code class="sourceCode scheme"><a class="sourceLine" id="cb92-1" title="1">(show &#39;((<span class="kw">and</span> i love her) (a hard <span class="st">&quot;day&#39;s&quot;</span> night)) port)</a></code></pre></div>
+<p>The corresponding line in the file will look like this:</p>
+<div class="sourceCode" id="cb93"><pre class="sourceCode scheme"><code class="sourceCode scheme"><a class="sourceLine" id="cb93-1" title="1">&#39;((AND I LOVE HER) (A HARD day&#39;s NIGHT))   <span class="co">; the double quotes around day&#39;s are eliminated</span></a></code></pre></div>
+<p>This result is actually even worse than it looks, because when we try to <code>read</code> the line back, the <code>'s</code> will be expanded into <code>(quote s)</code> in most versions of Scheme. Using a string made it possible for us to get an apostrophe into Scheme. If the word <code>day's</code> were inside quotation marks in the file, then read would understand our intentions.</p>
+<p>Why aren’t there double quotes in the file? All of the printing procedures we’ve seen so far assume that whatever you’re printing is intended to be read by people. Therefore, they try to minimize distracting notation such as double-quote marks. But, as we’ve discovered, if you’re writing a file to be read by Scheme, then you do want enough notation so that Scheme can tell what the original object was.</p>
+<p><strong>What is the difference between <code>write</code> and <code>show</code>/<code>show-line</code>?</strong></p>
+<p><code>write</code> is a printing procedure just like <code>display</code>, except that it includes quote marks around strings:</p>
+<div class="sourceCode" id="cb94"><pre class="sourceCode scheme"><code class="sourceCode scheme"><a class="sourceLine" id="cb94-1" title="1">(<span class="kw">write</span> &#39;(a hard <span class="st">&quot;day’s&quot;</span> night))</a>
+<a class="sourceLine" id="cb94-2" title="2"><span class="co">; (A HARD &quot;day&#39;s&quot; NIGHT)</span></a></code></pre></div>
+<blockquote>
+<p>There are other kinds of data that <code>write</code> prints differently from <code>display</code>, but we don’t use them in this book. The general rule is that <code>display</code> formats the output for human readers, while <code>write</code> ensures that Scheme can reread the information unambiguously. <code>show</code> and <code>show-line</code> are extensions that we wrote using <code>display</code>. We could have written <code>show-in-write-format</code>, for example, but happened not to need it.</p>
+</blockquote>
+<p>Once we’re using strings, and since we’re not extracting individual words from the titles, we might as well represent each title as one string:</p>
+<div class="sourceCode" id="cb95"><pre class="sourceCode scheme"><code class="sourceCode scheme"><a class="sourceLine" id="cb95-1" title="1">(<span class="kw">write</span> &#39;(<span class="st">&quot;And I Love Her&quot;</span> <span class="st">&quot;A Hard Day’s Night&quot;</span>) port)</a></code></pre></div>
+<hr />
+<h3 id="pitfalls-1">Pitfalls</h3>
 </body>
 </html>

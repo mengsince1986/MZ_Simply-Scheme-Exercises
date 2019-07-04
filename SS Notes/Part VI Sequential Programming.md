@@ -1676,3 +1676,84 @@ Therefore, `filemerge-helper` also takes as arguments the first line of each fil
 ---
 
 ### Wrting Files for Scheme to Read
+
+**What are the differences of the three file-reading procedure `read`, `read-line` and `read-string`?**
+
+`read` ignores case and forces you to have parentheses in your file. `read-line` fixes those problems, but it loses spacing information. `read-string` can read anything and always gets it right.
+
+**When do we use `read-line` instead of `read-string`?**
+
+But there’s a cost to the generality of `read-string`; it can read any file, but it *loses structure information*. For example, when we processed a file of people’s names with `file-map` , we used this function:
+
+```scheme
+(define (lastfirst name)
+  (se (word (last name) ",") (bl name)))
+```
+
+It’s easy to break a name into its components if you have the name in the form of a sentence, with the words separated already. But if we had read each line with `read-string`, `last` of a line would have been the last letter, not the last name.
+
+The `lastfirst` example illustrates why you might want to use `read-line` rather than `read-string`: `read-line` “understands” spaces.
+
+**When do we use `read` instead of `read-line` and `read-string`?**
+
+Here’s an example in which the even more structured `read` is appropriate. We have a file of Beatles songs and the albums on which they appear:
+
+```scheme
+'((love me do) (please please me))
+'((do you want to know a secret?) (please please me))
+'((think for yourself) (rubber soul))
+'((your mother should know) (magical mystery tour))
+```
+
+Each line of this file contains two pieces of information: a song title and an album title.
+
+The natural way to represent this grouping information is to use the mechanism Scheme provides for grouping--list structure.
+
+If we use `read-line` to read the file, we’ll lose the list structure; it will return a sentence containing words like `"((love"`. `read` , however, will do what we want.
+
+How did we create this file in the first place? We just used one `show` per line of the file, like this:
+
+```scheme
+(show '((love me do) (please please me)) port)
+```
+
+**What's the disadvantage when using `show`/`show-line` to write files with apostrophe `'`?**
+
+We’re going to have to come to terms with the apostrophe in “A Hard Day’s Night.”
+
+The straightforward solution is to put `day’s` in a string:
+
+```scheme
+(show '((and i love her) (a hard "day's" night)) port)
+```
+
+The corresponding line in the file will look like this:
+
+```scheme
+'((AND I LOVE HER) (A HARD day's NIGHT))   ; the double quotes around day's are eliminated
+```
+
+This result is actually even worse than it looks, because when we try to `read` the line back, the `'s` will be expanded into `(quote s)` in most versions of Scheme. Using a string made it possible for us to get an apostrophe into Scheme. If the word `day's` were inside quotation marks in the file, then read would understand our intentions.
+
+Why aren’t there double quotes in the file? All of the printing procedures we’ve seen so far assume that whatever you’re printing is intended to be read by people. Therefore, they try to minimize distracting notation such as double-quote marks. But, as we’ve discovered, if you’re writing a file to be read by Scheme, then you do want enough notation so that Scheme can tell what the original object was.
+
+**What is the difference between `write` and `show`/`show-line`?**
+
+`write` is a printing procedure just like `display`, except that it includes quote marks around strings:
+
+```scheme
+(write '(a hard "day’s" night))
+; (A HARD "day's" NIGHT)
+```
+
+> There are other kinds of data that `write` prints differently from `display`, but we don’t use them in this book. The general rule is that `display` formats the output for human readers, while `write` ensures that Scheme can reread the information unambiguously. `show` and `show-line` are extensions that we wrote using `display`. We could have written `show-in-write-format`, for example, but happened not to need it.
+
+Once we’re using strings, and since we’re not extracting individual words from the titles, we might as well represent each title as one string:
+
+```scheme
+(write '("And I Love Her" "A Hard Day’s Night") port)
+```
+
+---
+
+### Pitfalls
