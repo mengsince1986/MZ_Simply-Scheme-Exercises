@@ -1757,3 +1757,21 @@ Once we’re using strings, and since we’re not extracting individual words fr
 ---
 
 ### Pitfalls
+
+* One pitfall crucial to avoid when using files is that if there is an error in your program, it might blow up and return you to the Scheme prompt without closing the open files. If you fix the program and try to run it again, you may get a message like “file busy” because the operating system of your computer may not allow you to open the same file on two ports at once. Even worse, if you exit from Scheme without closing all your ports, on some computers you may find that you have unreadable files thereafter.
+
+To help cope with this problem, we’ve provided a procedure `close-all-ports` that can be invoked to close every port that you’ve opened since starting Scheme. This procedure works only in our modified Scheme, but it can help you out of trouble while you’re learning.
+
+* *Be sure you don’t open or close a file within a recursive procedure, if you intend to do it only once*. That’s why most of the programs in this chapter have the structure of a procedure that opens files, calls a recursive helper, and then closes the files.
+
+* As we explained in the filemerge example, *you can’t read the same line twice*. Be sure your program remembers each line in a variable as long as it’s needed.
+
+---
+
+### Exercises 22.1-22.8
+
+[Solution]()
+
+---
+
+

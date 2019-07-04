@@ -1223,5 +1223,17 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <div class="sourceCode" id="cb95"><pre class="sourceCode scheme"><code class="sourceCode scheme"><a class="sourceLine" id="cb95-1" title="1">(<span class="kw">write</span> &#39;(<span class="st">&quot;And I Love Her&quot;</span> <span class="st">&quot;A Hard Day’s Night&quot;</span>) port)</a></code></pre></div>
 <hr />
 <h3 id="pitfalls-1">Pitfalls</h3>
+<ul>
+<li>One pitfall crucial to avoid when using files is that if there is an error in your program, it might blow up and return you to the Scheme prompt without closing the open files. If you fix the program and try to run it again, you may get a message like “file busy” because the operating system of your computer may not allow you to open the same file on two ports at once. Even worse, if you exit from Scheme without closing all your ports, on some computers you may find that you have unreadable files thereafter.</li>
+</ul>
+<p>To help cope with this problem, we’ve provided a procedure <code>close-all-ports</code> that can be invoked to close every port that you’ve opened since starting Scheme. This procedure works only in our modified Scheme, but it can help you out of trouble while you’re learning.</p>
+<ul>
+<li><p><em>Be sure you don’t open or close a file within a recursive procedure, if you intend to do it only once</em>. That’s why most of the programs in this chapter have the structure of a procedure that opens files, calls a recursive helper, and then closes the files.</p></li>
+<li><p>As we explained in the filemerge example, <em>you can’t read the same line twice</em>. Be sure your program remembers each line in a variable as long as it’s needed.</p></li>
+</ul>
+<hr />
+<h3 id="exercises-22.1-22.8">Exercises 22.1-22.8</h3>
+<p><a href="">Solution</a></p>
+<hr />
 </body>
 </html>
