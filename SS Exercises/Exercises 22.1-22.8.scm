@@ -226,6 +226,32 @@
 
 ; solution:
 
+(define (join file-a file-b overlap-index-a overlap-index-b file-ab)
+  (let ((inport-a (open-input-file file-a))
+        (inport-b (open-input-file file-b))
+        (outport-ab (open-output-file file-ab)))
+    (join-helper inport-a (read inport-a) inport-b (read inport-b) overlap-index-a overlap-index-b outport-ab)
+    (close-output-port outport-ab)
+    (close-input-port inport-a)
+    (close-input-port inport-b)
+    'done))
 
+(define (join-helper inport-a data-a inport-b data-b overlap-index-a overlap-index-b outport-ab)
+  (if (or (eof-object? data-a) (eof-object? data-b))
+      #f
+      (let ((overlap-a (list-ref data-a (- overlap-index-a 1)))
+            (overlap-b (list-ref data-b (- overlap-index-b 1))))
+        (if (before? overlap-a overlap-b)
+            (join-helper inport-a (read inport-a) inport-b data-b overlap-index-a overlap-index-b outport-ab)
+            (if (equal? overlap-a overlap-b)
+                (begin (show (combine-overlap-lsts data-a data-b overlap-b) outport-ab)
+                       (join-helper inport-a (read inport-a) inport-b (read inport-b) overlap-index-a overlap-index-b outport-ab))
+                (join-helper inport-a data-a inport-b (read inport-b) overlap-index-a overlap-index-b outport-ab))))))
 
+(define (combine-overlap-lsts lst-a lst-b overlap-b)
+  (append lst-a (cut-element overlap-b lst-b)))
 
+(define (cut-element target lst)
+  (cond ((null? lst) '())
+        ((equal? target (car lst)) (cdr lst))
+        (else (cons (car lst) (cut-element target (cdr lst))))))
