@@ -1233,7 +1233,85 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 </ul>
 <hr />
 <h3 id="exercises-22.1-22.8">Exercises 22.1-22.8</h3>
-<p><a href="">Solution</a></p>
+<p><a href="https://github.com/mengsince1986/Simply-Scheme-exercises/blob/master/SS%20Exercises/Exercises%2022.1-22.8.scm">Solution</a></p>
 <hr />
+<h2 id="chapter-23-vectors">Chapter 23 Vectors</h2>
+<p><strong>What is state?</strong></p>
+<p>So far all the programs we’ve written in this book have had no memory of the past history of the computation. We invoke a function with certain arguments, and we get back a value that depends only on those arguments.</p>
+<p>Compare this with the operation of Scheme itself:</p>
+<div class="sourceCode" id="cb96"><pre class="sourceCode scheme"><code class="sourceCode scheme"><a class="sourceLine" id="cb96-1" title="1">(foo <span class="dv">3</span>)</a>
+<a class="sourceLine" id="cb96-2" title="2"><span class="co">; ERROR: FOO HAS NO VALUE</span></a>
+<a class="sourceLine" id="cb96-3" title="3"></a>
+<a class="sourceLine" id="cb96-4" title="4">(<span class="ex">define</span><span class="fu"> </span>(foo x)</a>
+<a class="sourceLine" id="cb96-5" title="5">  (word x x))</a>
+<a class="sourceLine" id="cb96-6" title="6"></a>
+<a class="sourceLine" id="cb96-7" title="7">(foo <span class="dv">3</span>)</a>
+<a class="sourceLine" id="cb96-8" title="8"><span class="co">; 33</span></a></code></pre></div>
+<p>Scheme remembers that you have defined <code>foo</code>, so its response to the very same expression is different the second time.</p>
+<p>Scheme maintains a record of certain results of its past interaction with you; in particular, Scheme remembers the global variables that you have defined. This record is called its <em>state</em>.</p>
+<hr />
+<h3 id="the-indy-500">The Indy 500</h3>
+<p><strong>How to keep count of Indy 500 with procedure <code>lap</code>?</strong></p>
+<p>Let’s write a program to help this person keep count. Each car has a number, and the count person will invoke the procedure <code>lap</code> with that number as argument every time a car completes a lap. The procedure will return the number of laps that that car has completed altogether:</p>
+<div class="sourceCode" id="cb97"><pre class="sourceCode scheme"><code class="sourceCode scheme"><a class="sourceLine" id="cb97-1" title="1">(lap <span class="dv">87</span>)</a>
+<a class="sourceLine" id="cb97-2" title="2"><span class="co">; 1</span></a>
+<a class="sourceLine" id="cb97-3" title="3"></a>
+<a class="sourceLine" id="cb97-4" title="4">(lap <span class="dv">64</span>)</a>
+<a class="sourceLine" id="cb97-5" title="5"><span class="co">; 1</span></a>
+<a class="sourceLine" id="cb97-6" title="6"></a>
+<a class="sourceLine" id="cb97-7" title="7">(lap <span class="dv">17</span>)</a>
+<a class="sourceLine" id="cb97-8" title="8"><span class="co">; 1</span></a>
+<a class="sourceLine" id="cb97-9" title="9"></a>
+<a class="sourceLine" id="cb97-10" title="10">(lap <span class="dv">64</span>)</a>
+<a class="sourceLine" id="cb97-11" title="11"><span class="co">; 2</span></a>
+<a class="sourceLine" id="cb97-12" title="12"></a>
+<a class="sourceLine" id="cb97-13" title="13">(lap <span class="dv">64</span>)</a>
+<a class="sourceLine" id="cb97-14" title="14"><span class="co">; 3</span></a></code></pre></div>
+<p>Note that we typed the expression <code>(lap 64)</code> three times and got three different answers. <em><code>lap</code> isn’t a function! A function has to return the same answer whenever it’s invoked with the same arguments.</em></p>
+<hr />
+<h3 id="vectors">Vectors</h3>
+<p><strong>What is a <em>vector</em>?</strong></p>
+<p>we’re going to use a data structure called a <em>vector</em>. You may have seen something similar in other programming languages under the name “array.”</p>
+<p>A vector is, in effect, <em>a row of boxes into which values can be put</em>. Each vector has a fixed number of boxes; when you create a vector, you have to say how many boxes you want.</p>
+<p>Once a vector is created, there are two things you can do with it: You can put a new value into a box (replacing any old value that might have been there), or you can examine the value in a box. The boxes are numbered, starting with zero.</p>
+<div class="sourceCode" id="cb98"><pre class="sourceCode scheme"><code class="sourceCode scheme"><a class="sourceLine" id="cb98-1" title="1">(<span class="ex">define</span><span class="fu"> v </span>(<span class="kw">make-vector</span> <span class="dv">5</span>))</a>
+<a class="sourceLine" id="cb98-2" title="2"></a>
+<a class="sourceLine" id="cb98-3" title="3">(<span class="kw">vector-set!</span> v <span class="dv">0</span> &#39;shoe)</a>
+<a class="sourceLine" id="cb98-4" title="4"></a>
+<a class="sourceLine" id="cb98-5" title="5">(<span class="kw">vector-set!</span> v <span class="dv">3</span> &#39;bread)</a>
+<a class="sourceLine" id="cb98-6" title="6"></a>
+<a class="sourceLine" id="cb98-7" title="7">(<span class="kw">vector-set!</span> v <span class="dv">2</span> &#39;(savoy truffle))</a>
+<a class="sourceLine" id="cb98-8" title="8"></a>
+<a class="sourceLine" id="cb98-9" title="9">(<span class="kw">vector-ref</span> v <span class="dv">3</span>)</a>
+<a class="sourceLine" id="cb98-10" title="10"><span class="co">; BREAD</span></a></code></pre></div>
+<p><strong>How does <code>make-vector</code> work?</strong></p>
+<p>When we invoke <code>make-vector</code> we give it one argument, the number of boxes we want the vector to have. In this example, there are five boxes, numbered 0 through 4. There is no box 5. When we create the vector, there is nothing in any of the boxes.</p>
+<blockquote>
+<p>The Scheme standard says that the initial contents of the boxes is “unspecified.” That means that the result depends on the particular version of Scheme you’re using. It’s a bad idea to try to examine the contents of a box before putting something in it.</p>
+</blockquote>
+<p><strong>How does <code>vector-set!</code> work?</strong></p>
+<p>We put things in boxes using the <code>vector-set!</code> procedure. The exclamation point in its name, indicates that this is a <em>mutator</em>—a procedure that changes the value of some previously created data structure. The exclamation point is pronounced “bang,” as in “vector set bang.” Scheme actually has several such mutators, including mutators for lists. A procedure that modifies its argument is also called <em>destructive</em>.</p>
+<p>The arguments to <code>vector-set!</code> are the vector, the number of the box (the index), and the desired new value. Like <code>define</code>, <code>vector-set!</code> returns an unspecified value.</p>
+<p><strong>How does <code>vector-ref</code> work?</strong></p>
+<p>We examine the contents of a box using <code>vector-ref</code>, which takes two arguments, the vector and an index. <code>vector-ref</code> is similar to <code>vist-ref</code>, except that it operates on vectors instead of lists.</p>
+<p><strong>How to change the contents of a box that already had something in it?</strong></p>
+<div class="sourceCode" id="cb99"><pre class="sourceCode scheme"><code class="sourceCode scheme"><a class="sourceLine" id="cb99-1" title="1">(<span class="kw">vector-set!</span> v <span class="dv">3</span> &#39;jewel)</a>
+<a class="sourceLine" id="cb99-2" title="2"></a>
+<a class="sourceLine" id="cb99-3" title="3">(<span class="kw">vector-ref</span> v <span class="dv">3</span>)</a>
+<a class="sourceLine" id="cb99-4" title="4"><span class="co">; JEWEL</span></a></code></pre></div>
+<p>The old value of box 3, <code>bread</code>, is no longer there. It’s been replaced by the new value.</p>
+<p><strong>When can a whole vector be printed?</strong></p>
+<div class="sourceCode" id="cb100"><pre class="sourceCode scheme"><code class="sourceCode scheme"><a class="sourceLine" id="cb100-1" title="1">(<span class="kw">vector-set!</span> v <span class="dv">1</span> <span class="dv">741</span>)</a>
+<a class="sourceLine" id="cb100-2" title="2"></a>
+<a class="sourceLine" id="cb100-3" title="3">(<span class="kw">vector-set!</span> v <span class="dv">4</span> <span class="dv">#t</span>)</a>
+<a class="sourceLine" id="cb100-4" title="4"></a>
+<a class="sourceLine" id="cb100-5" title="5">v</a>
+<a class="sourceLine" id="cb100-6" title="6"><span class="co">; #(SHOE 741 (SAVOY TRUFFLE) JEWEL #T)</span></a></code></pre></div>
+<p>Once the vector is completely full, we can print its value. Scheme prints vectors in a format like that of lists, except that there is a number sign <code>#</code> before the open parenthesis.</p>
+<p>If you ever have need for a constant vector (one that you’re not going to mutate), you can quote it using the same notation:</p>
+<div class="sourceCode" id="cb101"><pre class="sourceCode scheme"><code class="sourceCode scheme"><a class="sourceLine" id="cb101-1" title="1">(<span class="kw">vector-ref</span> &#39;#(a b c d) <span class="dv">2</span>)</a>
+<a class="sourceLine" id="cb101-2" title="2"><span class="co">; C</span></a></code></pre></div>
+<hr />
+<h3 id="using-vectors-in-programs">Using Vectors in Programs</h3>
 </body>
 </html>

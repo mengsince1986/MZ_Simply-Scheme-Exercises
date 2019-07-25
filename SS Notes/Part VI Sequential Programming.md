@@ -366,7 +366,7 @@ The second reason is more serious. *In functional programming, the order of eval
 (- (+ 4 5) (* 6 7))
 ```
 
-we don’t know whether the addition or the multiplication happens first. Similarly, the order in which `map` computes the results for each element is unspecified. That’s okay as long as the ultimately returned list of results is in the right order. But when we are using side effects, we do care about the order of evaluation. In this case, we want to make sure that the elements of the argument list are printed from left to right. `for-each` guarantees this ordering.
+we don't know whether the addition or the multiplication happens first. Similarly, the order in which `map` computes the results for each element is unspecified. That’s okay as long as the ultimately returned list of results is in the right order. But when we are using side effects, we do care about the order of evaluation. In this case, we want to make sure that the elements of the argument list are printed from left to right. `for-each` guarantees this ordering.
 
 ---
 
@@ -1768,10 +1768,135 @@ To help cope with this problem, we’ve provided a procedure `close-all-ports` t
 
 ---
 
+
 ### Exercises 22.1-22.8
 
-[Solution]()
+[Solution](https://github.com/mengsince1986/Simply-Scheme-exercises/blob/master/SS%20Exercises/Exercises%2022.1-22.8.scm)
 
 ---
 
+## Chapter 23 Vectors
 
+**What is state?**
+
+So far all the programs we’ve written in this book have had no memory of the past history of the computation. We invoke a function with certain arguments, and we get back a value that depends only on those arguments.
+
+Compare this with the operation of Scheme itself:
+
+```scheme
+(foo 3)
+; ERROR: FOO HAS NO VALUE
+
+(define (foo x)
+  (word x x))
+
+(foo 3)
+; 33
+```
+
+Scheme remembers that you have defined `foo`, so its response to the very same expression is different the second time.
+
+Scheme maintains a record of certain results of its past interaction with you; in particular, Scheme remembers the global variables that you have defined. This record is called its *state*.
+
+---
+
+### The Indy 500
+
+**How to keep count of Indy 500 with procedure `lap`?**
+
+Let’s write a program to help this person keep count. Each car has a number, and the count person will invoke the procedure `lap` with that number as argument every time a car completes a lap. The procedure will return the number of laps that that car has completed altogether:
+
+```scheme
+(lap 87)
+; 1
+
+(lap 64)
+; 1
+
+(lap 17)
+; 1
+
+(lap 64)
+; 2
+
+(lap 64)
+; 3
+```
+
+Note that we typed the expression `(lap 64)` three times and got three different answers. *`lap` isn’t a function! A function has to return the same answer whenever it’s invoked with the same arguments.*
+
+---
+
+### Vectors
+
+**What is a *vector*?**
+
+we’re going to use a data structure called a *vector*. You may have seen something similar in other programming languages under the name “array.”
+
+A vector is, in effect, *a row of boxes into which values can be put*. Each vector has a fixed number of boxes; when you create a vector, you have to say how many boxes you want.
+
+Once a vector is created, there are two things you can do with it: You can put a new value into a box (replacing any old value that might have been there), or you can examine the value in a box. The boxes are numbered, starting with zero.
+
+```scheme
+(define v (make-vector 5))
+
+(vector-set! v 0 'shoe)
+
+(vector-set! v 3 'bread)
+
+(vector-set! v 2 '(savoy truffle))
+
+(vector-ref v 3)
+; BREAD
+```
+
+**How does `make-vector` work?**
+
+When we invoke `make-vector` we give it one argument, the number of boxes we want the vector to have. In this example, there are five boxes, numbered 0 through 4. There is no box 5. When we create the vector, there is nothing in any of the boxes.
+
+> The Scheme standard says that the initial contents of the boxes is “unspecified.” That means that the result depends on the particular version of Scheme you’re using. It’s a bad idea to try to examine the contents of a box before putting something in it.
+
+**How does `vector-set!` work?**
+
+We put things in boxes using the `vector-set!` procedure. The exclamation point in its name, indicates that this is a *mutator*—a procedure that changes the value of some previously created data structure. The exclamation point is pronounced “bang,” as in “vector set bang.” Scheme actually has several such mutators, including mutators for lists. A procedure that modifies its argument is also called *destructive*.
+
+The arguments to `vector-set!` are the vector, the number of the box (the index), and the desired new value. Like `define`, `vector-set!` returns an unspecified value.
+
+**How does `vector-ref` work?**
+
+We examine the contents of a box using `vector-ref`, which takes two arguments, the vector and an index. `vector-ref` is similar to `vist-ref`, except that it operates on vectors instead of lists.
+
+**How to change the contents of a box that already had something in it?**
+
+```scheme
+(vector-set! v 3 'jewel)
+
+(vector-ref v 3)
+; JEWEL
+```
+
+The old value of box 3, `bread`, is no longer there. It’s been replaced by the new value.
+
+**When can a whole vector be printed?**
+
+```scheme
+(vector-set! v 1 741)
+
+(vector-set! v 4 #t)
+
+v
+; #(SHOE 741 (SAVOY TRUFFLE) JEWEL #T)
+```
+
+Once the vector is completely full, we can print its value. Scheme prints vectors in a format like that of lists, except that there is a number sign `#` before the open parenthesis.
+
+If you ever have need for a constant vector (one that you’re not going to mutate), you can quote it using the same notation:
+
+```scheme
+(vector-ref '#(a b c d) 2)
+; C
+```
+
+---
+
+### Using Vectors in Programs
