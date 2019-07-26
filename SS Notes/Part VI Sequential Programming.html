@@ -1313,5 +1313,51 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <a class="sourceLine" id="cb101-2" title="2"><span class="co">; C</span></a></code></pre></div>
 <hr />
 <h3 id="using-vectors-in-programs">Using Vectors in Programs</h3>
+<p><strong>How to create <code>*lap-vector*</code> and its initial value?</strong></p>
+<p>To implement our <code>lap</code> procedure, we’ll keep its state information, the lap counts, in a vector. We’ll use the car number as the index into the vector. It’s not enough to create the vector; we have to make sure that each box has a zero as its initial value.</p>
+<div class="sourceCode" id="cb102"><pre class="sourceCode scheme"><code class="sourceCode scheme"><a class="sourceLine" id="cb102-1" title="1">(<span class="ex">define</span><span class="fu"> *lap-vector* </span>(<span class="kw">make-vector</span> <span class="dv">100</span>))</a>
+<a class="sourceLine" id="cb102-2" title="2"></a>
+<a class="sourceLine" id="cb102-3" title="3">(<span class="ex">define</span><span class="fu"> </span>(initialize-lap-vector index)</a>
+<a class="sourceLine" id="cb102-4" title="4">  (<span class="kw">if</span> (<span class="op">&lt;</span> index <span class="dv">0</span>)</a>
+<a class="sourceLine" id="cb102-5" title="5">      &#39;done</a>
+<a class="sourceLine" id="cb102-6" title="6">      (<span class="kw">begin</span> (<span class="kw">vector-set!</span> *lap-vector * index <span class="dv">0</span>)</a>
+<a class="sourceLine" id="cb102-7" title="7">             (initialize-lap-vector (<span class="op">-</span> index <span class="dv">1</span>)))))</a>
+<a class="sourceLine" id="cb102-8" title="8"></a>
+<a class="sourceLine" id="cb102-9" title="9">(initialize-lap-vector <span class="dv">99</span>)</a>
+<a class="sourceLine" id="cb102-10" title="10"><span class="co">; DONE</span></a></code></pre></div>
+<p>We’ve created a global variable whose value is the vector. We used a recursive procedure to put a zero into each box of the vector.</p>
+<blockquote>
+<p>In some versions of Scheme, make-vector can take an optional argument specifying an initial value to put in every box. In those versions, we could just say <code>(define *lap-vector* (make-vector 100 0))</code> without having to use the initialization procedure.</p>
+</blockquote>
+<p>Note that the vector is of length 100, but its largest index is 99. Also, the base case of the recursion is that the index is less than zero, not equal to zero as in many earlier examples. That’s because zero is a valid index.</p>
+<p><strong>How to define procedure <code>lap</code>?</strong></p>
+<div class="sourceCode" id="cb103"><pre class="sourceCode scheme"><code class="sourceCode scheme"><a class="sourceLine" id="cb103-1" title="1">(<span class="ex">define</span><span class="fu"> </span>(lap car-number)</a>
+<a class="sourceLine" id="cb103-2" title="2">  (<span class="kw">vector-set!</span> *lap-vector*</a>
+<a class="sourceLine" id="cb103-3" title="3">               car-number</a>
+<a class="sourceLine" id="cb103-4" title="4">               (<span class="op">+</span> (<span class="kw">vector-ref</span> *lap-vector * car-number) <span class="dv">1</span>))</a>
+<a class="sourceLine" id="cb103-5" title="5">  (<span class="kw">vector-ref</span> *lap-vector* car-number))</a></code></pre></div>
+<p>Remember that a procedure body can include more than one expression. When the procedure is invoked, the expressions will be evaluated in order. The value returned by the procedure is the value of the last expression (in this case, the second one).</p>
+<p><code>lap</code> has both a return value and a side effect. The job of the first expression is to carry out that side effect, that is, to add 1 to the lap count for the specified car. The second expression looks at the value we just put in a box to determine the return value.</p>
+<hr />
+<h3 id="non-functional-procedures-and-state">Non-Functional Procedures and State</h3>
+<p><strong>Is there a connection between non-functional procedures and state?</strong></p>
+<p>We remarked earlier that <code>lap</code> isn’t a function because invoking it twice with the same argument doesn’t return the same value both times.</p>
+<p>It’s not a coincidence that <code>lap</code> also violates functional programming by maintaining state information.</p>
+<p><em>Any procedure whose return value is not a function of its arguments (that is, whose return value is not always the same for any particular arguments) must depend on knowledge of what has happened in the past</em>. After all, computers don’t pull results out of the air; if the result of a computation doesn’t depend entirely on the arguments we give, then it must depend on some other information available to the program.</p>
+<p><strong>How does the connection between non-functional procedures and state apply to Scheme primitive <code>read</code>?</strong></p>
+<p>The connection between non-functional procedures and state also applies to non-functional Scheme primitives. The <code>read</code> procedure, for example, returns different results when you invoke it repeatedly with the same argument because it remembers how far it’s gotten in the file. That’s why the argument is a port instead of a file name: <em>A port is an abstract data type that includes, among other things, this piece of state. (If you’re reading from the keyboard, the state is in the person doing the typing.)</em></p>
+<p><strong>How does non-functional procedure <code>radom</code> work?</strong></p>
+<p><code>random</code> isn’t a function because it doesn’t always return the same value when called with the same argument.</p>
+<p>How does <code>random</code> compute its result? Some versions of <code>random</code> compute a number that’s based on the current time (in tiny units like milliseconds so you don’t get the same answer from two calls in quick succession). How does your computer know the time? Every so often some procedure (or some hardware device) adds 1 to a remembered value, the number of milliseconds since midnight. That’s state, and <code>random</code> relies on it.</p>
+<p>The most commonly used algorithm for random numbers is a little trickier; each time you invoke <code>random</code>, the result is a function of the result from the last time you invoked it. (The procedure is pretty complicated; typically the old number is multiplied by some large, carefully chosen constant, and only the middle digits of the product are kept.) Each time you invoke <code>random</code>, the returned value is stashed away somehow so that the next invocation can remember it. That’s state too.</p>
+<p><strong>Is a procedure that remembers something always stateful?</strong></p>
+<p>Just because a procedure remembers something doesn’t necessarily make it stateful. <code>every</code> procedure remembers the arguments with which it was invoked, while it’s running. Otherwise the arguments wouldn’t be able to affect the computation.</p>
+<ul>
+<li>A procedure whose result depends only on its arguments (the ones used in the current invocation) is functional.</li>
+<li>The procedure is non-functional if it depends on something outside of its current arguments. It’s that sort of “long-term” memory that we consider to be state.</li>
+</ul>
+<p>In particular, a procedure that uses <code>let</code> isn’t stateful merely because the body of the <code>let</code> remembers the values of the variables created by the <code>let</code>. Once <code>let</code> returns a value, the variables that it created no longer exist. You couldn’t use <code>let</code>, for example, to carry out the kind of remembering that <code>random</code> needs. <code>let</code> doesn’t remember a value between invocations, just during a single invocation.</p>
+<hr />
+<h3 id="shuffling-a-deck">Shuffling a Deck</h3>
 </body>
 </html>

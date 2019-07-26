@@ -1900,3 +1900,79 @@ If you ever have need for a constant vector (one that you’re not going to muta
 ---
 
 ### Using Vectors in Programs
+
+**How to create `*lap-vector*` and its initial value?**
+
+To implement our `lap` procedure, we’ll keep its state information, the lap counts, in a vector. We’ll use the car number as the index into the vector. It’s not enough to create the vector; we have to make sure that each box has a zero as its initial value.
+
+```scheme
+(define *lap-vector* (make-vector 100))
+
+(define (initialize-lap-vector index)
+  (if (< index 0)
+      'done
+      (begin (vector-set! *lap-vector * index 0)
+             (initialize-lap-vector (- index 1)))))
+
+(initialize-lap-vector 99)
+; DONE
+```
+
+We’ve created a global variable whose value is the vector. We used a recursive procedure to put a zero into each box of the vector.
+
+> In some versions of Scheme, make-vector can take an optional argument specifying an initial value to put in every box. In those versions, we could just say `(define *lap-vector* (make-vector 100 0))` without having to use the initialization procedure.
+
+Note that the vector is of length 100, but its largest index is 99. Also, the base case of the recursion is that the index is less than zero, not equal to zero as in many earlier examples. That’s because zero is a valid index.
+
+**How to define procedure `lap`?**
+
+```scheme
+(define (lap car-number)
+  (vector-set! *lap-vector*
+               car-number
+               (+ (vector-ref *lap-vector * car-number) 1))
+  (vector-ref *lap-vector* car-number))
+```
+
+Remember that a procedure body can include more than one expression. When the procedure is invoked, the expressions will be evaluated in order. The value returned by the procedure is the value of the last expression (in this case, the second one).
+
+`lap` has both a return value and a side effect. The job of the first expression is to carry out that side effect, that is, to add 1 to the lap count for the specified car. The second expression looks at the value we just put in a box to determine the return value.
+
+---
+
+### Non-Functional Procedures and State
+
+**Is there a connection between non-functional procedures and state?**
+
+We remarked earlier that `lap` isn’t a function because invoking it twice with the same argument doesn’t return the same value both times.
+
+It’s not a coincidence that `lap` also violates functional programming by maintaining state information.
+
+*Any procedure whose return value is not a function of its arguments (that is, whose return value is not always the same for any particular arguments) must depend on knowledge of what has happened in the past*. After all, computers don’t pull results out of the air; if the result of a computation doesn’t depend entirely on the arguments we give, then it must depend on some other information available to the program.
+
+**How does the connection between non-functional procedures and state apply to Scheme primitive `read`?**
+
+The connection between non-functional procedures and state also applies to non-functional Scheme primitives. The `read` procedure, for example, returns different results when you invoke it repeatedly with the same argument because it remembers how far it’s gotten in the file. That’s why the argument is a port instead of a file name: *A port is an abstract data type that includes, among other things, this piece of state. (If you’re reading from the keyboard, the state is in the person doing the typing.)*
+
+**How does non-functional procedure `radom` work?**
+
+`random` isn’t a function because it doesn’t always return the same value when called with the same argument.
+
+How does `random` compute its result? Some versions of `random` compute a number that’s based on the current time (in tiny units like milliseconds so you don’t get the same answer from two calls in quick succession). How does your computer know the time? Every so often some procedure (or some hardware device) adds 1 to a remembered value, the number of milliseconds since midnight. That’s state, and `random` relies on it.
+
+The most commonly used algorithm for random numbers is a little trickier; each time you invoke `random`, the result is a function of the result from the last time you invoked it. (The procedure is pretty complicated; typically the old number is multiplied by some large, carefully chosen constant, and only the middle digits of the product are kept.) Each time you invoke `random`, the returned value is stashed away somehow so that the next invocation can remember it. That’s state too.
+
+**Is a procedure that remembers something always stateful?**
+
+Just because a procedure remembers something doesn’t necessarily make it stateful. `every` procedure remembers the arguments with which it was invoked, while it’s running.  Otherwise the arguments wouldn’t be able to affect the computation.
+
+* A procedure whose result depends only on its arguments (the ones used in the current invocation) is functional.
+* The procedure is non-functional if it depends on something outside of its current arguments. It’s that sort of “long-term” memory that we consider to be state.
+
+In particular, a procedure that uses `let` isn’t stateful merely because the body of the `let` remembers the values of the variables created by the `let`. Once `let` returns a value, the variables that it created no longer exist. You couldn’t use `let`, for example, to carry out the kind of remembering that `random` needs. `let` doesn’t remember a value between invocations, just during a single invocation.
+
+---
+
+### Shuffling a Deck
+
+
