@@ -1975,4 +1975,162 @@ In particular, a procedure that uses `let` isn’t stateful merely because the b
 
 ### Shuffling a Deck
 
+One of the advantages of the vector data structure is that *it allows elements to be rearranged*. As an example, we’ll create and shuffle a deck of cards.
 
+**How to create a deck of cards in standard order with procedure `card-list`?**
+
+```scheme
+(define (card-list)
+  (reduce append
+          (map (lambda (suit) (map (lambda (rank) (word suit rank))
+                                   '(a 2 3 4 5 6 7 8 9 10 j q k)))
+               '(h s d c))))
+
+(card-list)
+; (HA H2 H3 H4 H5 H6 H7 H8 H9 H10 HJ HQ HK
+;  SA S2 S3 S4 S5 S6 S7 S8 S9 S10 SJ SQ SK
+;  DA D2 D3 D4 D5 D6 D7 D8 D9 D10 DJ DQ DK
+;  CA C2 C3 C4 C5 C6 C7 C8 C9 C10 CJ CQ CK)
+```
+
+**Why are `reduce` and `append` necessary in procedure `card-list`?**
+
+In writing `card-list`, we need `reduce` `append` because the result from the outer invocation of `map` is a list of lists:
+
+```scheme
+((HA H2 ...) (SA ...) ...)
+```
+
+We could get around this problem in a different way:
+
+```scheme
+(define (card-list)
+  (every (lambda (suit) (every (lambda (rank) (word suit rank))
+                               '(a 2 3 4 5 6 7 8 9 10 j q k)))
+         '(h s d c)))
+```
+
+In this version, we’re taking advantage of the fact that our *sentence data type was defined in a way that prevents the creation of sublists*. A sentence of cards is a good representation for the deck. However, with this approach we are mixing up the list and sentence data types, because later we’re going to invoke `list->vector` with this deck of cards as its argument. If we use sentence tools such as `every` to create the deck, then the procedure `card-list` should really be called `card-sentence`.
+
+What difference does it make? The `every` version works fine, as long as sentences are implemented as lists, so that `list->vector` can be applied to a sentence. But the point about abstract data types such as sentences is to avoid making assumptions about their implementation. If for some reason we decided to change the internal representation of sentences, then `list->vector` could no longer be applied to a sentence. Strictly speaking, if we’re going to use this trick, we need a separate conversion procedure `sentence->vector` .
+
+Of course, if you don’t mind a little typing, you can avoid this whole issue by having a quoted list of all 52 cards built into the definition of `card-list`.
+
+**How to convert a list into a vector?**
+
+Each time we want a new deck of cards, we start with this list of 52 cards, copy the list into a vector, and shuffle that vector.
+
+We’ll use the Scheme primitive `list->vector`, which takes a list as argument and returns a vector of the same length, with the boxes initialized to the corresponding elements of the list. (There is also a procedure `vector->list` that does the reverse. The characters `->` in these function names are meant to look like an arrow ( → ); this is a Scheme convention for functions that convert information from one data type to another.)
+
+**How to define procedure `make-deck` to shuffle a deck?**
+
+```scheme
+(define (make-deck)
+  (shuffle! (list->vector (card-list)) 51))
+
+(define (shuffle! deck index)
+  (if (< index 0)
+      deck
+      (begin (vector-swap! deck index (random (+ index 1)))
+             (shuffle! deck (- index 1)))))
+
+(define (vector-swap! vector index1 index2)
+  (let ((temp (vector-ref vector index1)))
+    (vector-set! vector index1 (vector-ref vector index2))
+    (vector-set! vector index2 temp)))
+
+```
+
+Now, each time we call make-deck , we get a randomly shuffled vector of cards.
+
+**How does the shuffling algorithm work?**
+
+The general idea is this: We want all the cards shuffled into a random order. So we choose any card at random, and make it the first card. We’re then left with a one-card-smaller deck to shuffle, and we do that by recursion. (This algorithm is similar to selection sort from Chapter 15, except that we select a random card each time instead of selecting the smallest value.)
+
+The details that complicate this algorithm have to do with the fact that we’re using a vector, in which it’s easy to change the value in one particular position, but it’s not easy to do what would otherwise be the most natural thing: If you had a handful of actual cards and wanted to move one of them to the front, you’d slide the other cards over to make room. There’s no “sliding over” in a vector. Instead we use a trick; we happen to have an empty slot, the one from which we removed the randomly chosen card, so instead of moving several cards, we just move the one card that was originally at the front into that slot. In other words, we exchange two cards, the randomly chosen one and the one that used to be in front.
+
+Second, there’s nothing comparable to `cdr` to provide a one-card-smaller vector to the recursive invocation. Instead, we must use the entire vector and also provide an additional `index` argument, a number that keeps track of how many cards remain to be shuffled. It’s simplest if each recursive invocation is responsible for the range of cards from position 0 to position `index` of the vector, and therefore the program actually moves each randomly selected card to the end of the remaining portion of the deck.
+
+---
+
+### More Vector Tools
+
+**How does constructor `vector` work?**
+
+If you want to make a vector with only a few boxes, and you know in advance what values you want in those boxes, you can use the constructor `vector`. Like `list`, it takes any number of arguments and returns a vector containing those arguments as elements:
+
+```scheme
+(define beatles (vector 'john 'paul 'george 'pete))
+
+(vector-set! beatles 3 'ringo)
+
+beatles
+; #(JOHN PAUL GEORGE RINGO)
+```
+
+**How does procedure `vector-length` work?**
+
+The procedure `vector-length` takes a vector as argument and returns the number of boxes in the vector.
+
+```scheme
+(vector-length beatles)
+; 4
+```
+
+**Can predicate `equal` apply to vectors?**
+
+The predicate `equal?`, which we’ve used with words and lists, also accepts vectors as arguments. Two vectors are equal if they are the same size and all their corresponding elements are equal.
+
+*A list and a vector are never equal, even if their elements are equal.*
+
+**How does predicate `vector` work?**
+
+The predicate `vector?` takes anything as argument and returns `#t` if and only if its argument is a vector.
+
+---
+
+### The Vector Pattern of Recurssion
+
+**What is the vector pattern of recurssion?**
+
+Here are two procedures that you’ve seen earlier in this chapter, which do something to each element of a vector:
+
+```scheme
+(define (initialize-lap-vector index)
+  (if (< index 0)
+      'done
+      (begin (vector-set! *lap-vector* index 0)
+             (initialize-lap-vector (- index 1)))))
+
+(define (shuffle! deck index)
+  (if (< index 0)
+      deck
+      (begin (vector-swap! deck index (random (+ index 1)))
+             (shuffle! deck (- index 1)))))
+```
+
+These procedures have a similar structure, like the similarities we found in other recursive patterns.
+
+* Both of these procedures take an index as an argument,
+* and both have `(< index 0)` as their base case.
+* Also, both have, as their recursive case, a `begin` in which the first action does something to the vector element selected by the current index, and the second action is a recursive call with the index decreased by one.
+* These procedures are initially called with the largest possible index value.
+
+**In what case it's more convenient to count the index upward from zero?**
+
+```scheme
+(define (list->vector lst)
+  (l->v-helper (make-vector (length lst)) lst 0))
+
+(define (l->v-helper vec lst index)
+  (if (= index (vector-length vec))
+      vec
+      (begin (vector-set! vec index (car lst))
+             (l->v-helper vec (cdr lst) (+ index 1)))))
+```
+
+Since lists are naturally processed from left to right (using `car` and `cdr`), this program must process the vector from left to right also.
+
+---
+
+### Vectors versus Lists 

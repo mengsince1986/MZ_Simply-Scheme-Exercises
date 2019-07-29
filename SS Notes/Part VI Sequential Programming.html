@@ -1359,5 +1359,104 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <p>In particular, a procedure that uses <code>let</code> isn’t stateful merely because the body of the <code>let</code> remembers the values of the variables created by the <code>let</code>. Once <code>let</code> returns a value, the variables that it created no longer exist. You couldn’t use <code>let</code>, for example, to carry out the kind of remembering that <code>random</code> needs. <code>let</code> doesn’t remember a value between invocations, just during a single invocation.</p>
 <hr />
 <h3 id="shuffling-a-deck">Shuffling a Deck</h3>
+<p>One of the advantages of the vector data structure is that <em>it allows elements to be rearranged</em>. As an example, we’ll create and shuffle a deck of cards.</p>
+<p><strong>How to create a deck of cards in standard order with procedure <code>card-list</code>?</strong></p>
+<div class="sourceCode" id="cb104"><pre class="sourceCode scheme"><code class="sourceCode scheme"><a class="sourceLine" id="cb104-1" title="1">(<span class="ex">define</span><span class="fu"> </span>(card-list)</a>
+<a class="sourceLine" id="cb104-2" title="2">  (reduce <span class="kw">append</span></a>
+<a class="sourceLine" id="cb104-3" title="3">          (map (<span class="kw">lambda</span> (suit) (map (<span class="kw">lambda</span> (rank) (word suit rank))</a>
+<a class="sourceLine" id="cb104-4" title="4">                                   &#39;(a <span class="dv">2</span> <span class="dv">3</span> <span class="dv">4</span> <span class="dv">5</span> <span class="dv">6</span> <span class="dv">7</span> <span class="dv">8</span> <span class="dv">9</span> <span class="dv">10</span> j q k)))</a>
+<a class="sourceLine" id="cb104-5" title="5">               &#39;(h s d c))))</a>
+<a class="sourceLine" id="cb104-6" title="6"></a>
+<a class="sourceLine" id="cb104-7" title="7">(card-list)</a>
+<a class="sourceLine" id="cb104-8" title="8"><span class="co">; (HA H2 H3 H4 H5 H6 H7 H8 H9 H10 HJ HQ HK</span></a>
+<a class="sourceLine" id="cb104-9" title="9"><span class="co">;  SA S2 S3 S4 S5 S6 S7 S8 S9 S10 SJ SQ SK</span></a>
+<a class="sourceLine" id="cb104-10" title="10"><span class="co">;  DA D2 D3 D4 D5 D6 D7 D8 D9 D10 DJ DQ DK</span></a>
+<a class="sourceLine" id="cb104-11" title="11"><span class="co">;  CA C2 C3 C4 C5 C6 C7 C8 C9 C10 CJ CQ CK)</span></a></code></pre></div>
+<p><strong>Why are <code>reduce</code> and <code>append</code> necessary in procedure <code>card-list</code>?</strong></p>
+<p>In writing <code>card-list</code>, we need <code>reduce</code> <code>append</code> because the result from the outer invocation of <code>map</code> is a list of lists:</p>
+<div class="sourceCode" id="cb105"><pre class="sourceCode scheme"><code class="sourceCode scheme"><a class="sourceLine" id="cb105-1" title="1">((HA H2 ...) (SA ...) ...)</a></code></pre></div>
+<p>We could get around this problem in a different way:</p>
+<div class="sourceCode" id="cb106"><pre class="sourceCode scheme"><code class="sourceCode scheme"><a class="sourceLine" id="cb106-1" title="1">(<span class="ex">define</span><span class="fu"> </span>(card-list)</a>
+<a class="sourceLine" id="cb106-2" title="2">  (every (<span class="kw">lambda</span> (suit) (every (<span class="kw">lambda</span> (rank) (word suit rank))</a>
+<a class="sourceLine" id="cb106-3" title="3">                               &#39;(a <span class="dv">2</span> <span class="dv">3</span> <span class="dv">4</span> <span class="dv">5</span> <span class="dv">6</span> <span class="dv">7</span> <span class="dv">8</span> <span class="dv">9</span> <span class="dv">10</span> j q k)))</a>
+<a class="sourceLine" id="cb106-4" title="4">         &#39;(h s d c)))</a></code></pre></div>
+<p>In this version, we’re taking advantage of the fact that our <em>sentence data type was defined in a way that prevents the creation of sublists</em>. A sentence of cards is a good representation for the deck. However, with this approach we are mixing up the list and sentence data types, because later we’re going to invoke <code>list-&gt;vector</code> with this deck of cards as its argument. If we use sentence tools such as <code>every</code> to create the deck, then the procedure <code>card-list</code> should really be called <code>card-sentence</code>.</p>
+<p>What difference does it make? The <code>every</code> version works fine, as long as sentences are implemented as lists, so that <code>list-&gt;vector</code> can be applied to a sentence. But the point about abstract data types such as sentences is to avoid making assumptions about their implementation. If for some reason we decided to change the internal representation of sentences, then <code>list-&gt;vector</code> could no longer be applied to a sentence. Strictly speaking, if we’re going to use this trick, we need a separate conversion procedure <code>sentence-&gt;vector</code> .</p>
+<p>Of course, if you don’t mind a little typing, you can avoid this whole issue by having a quoted list of all 52 cards built into the definition of <code>card-list</code>.</p>
+<p><strong>How to convert a list into a vector?</strong></p>
+<p>Each time we want a new deck of cards, we start with this list of 52 cards, copy the list into a vector, and shuffle that vector.</p>
+<p>We’ll use the Scheme primitive <code>list-&gt;vector</code>, which takes a list as argument and returns a vector of the same length, with the boxes initialized to the corresponding elements of the list. (There is also a procedure <code>vector-&gt;list</code> that does the reverse. The characters <code>-&gt;</code> in these function names are meant to look like an arrow ( → ); this is a Scheme convention for functions that convert information from one data type to another.)</p>
+<p><strong>How to define procedure <code>make-deck</code> to shuffle a deck?</strong></p>
+<div class="sourceCode" id="cb107"><pre class="sourceCode scheme"><code class="sourceCode scheme"><a class="sourceLine" id="cb107-1" title="1">(<span class="ex">define</span><span class="fu"> </span>(make-deck)</a>
+<a class="sourceLine" id="cb107-2" title="2">  (shuffle! (list-&gt;vector (card-list)) <span class="dv">51</span>))</a>
+<a class="sourceLine" id="cb107-3" title="3"></a>
+<a class="sourceLine" id="cb107-4" title="4">(<span class="ex">define</span><span class="fu"> </span>(shuffle! deck index)</a>
+<a class="sourceLine" id="cb107-5" title="5">  (<span class="kw">if</span> (<span class="op">&lt;</span> index <span class="dv">0</span>)</a>
+<a class="sourceLine" id="cb107-6" title="6">      deck</a>
+<a class="sourceLine" id="cb107-7" title="7">      (<span class="kw">begin</span> (vector-swap! deck index (random (<span class="op">+</span> index <span class="dv">1</span>)))</a>
+<a class="sourceLine" id="cb107-8" title="8">             (shuffle! deck (<span class="op">-</span> index <span class="dv">1</span>)))))</a>
+<a class="sourceLine" id="cb107-9" title="9"></a>
+<a class="sourceLine" id="cb107-10" title="10">(<span class="ex">define</span><span class="fu"> </span>(vector-swap! <span class="kw">vector</span> index1 index2)</a>
+<a class="sourceLine" id="cb107-11" title="11">  (<span class="kw">let</span> ((temp (<span class="kw">vector-ref</span> <span class="kw">vector</span> index1)))</a>
+<a class="sourceLine" id="cb107-12" title="12">    (<span class="kw">vector-set!</span> <span class="kw">vector</span> index1 (<span class="kw">vector-ref</span> <span class="kw">vector</span> index2))</a>
+<a class="sourceLine" id="cb107-13" title="13">    (<span class="kw">vector-set!</span> <span class="kw">vector</span> index2 temp)))</a></code></pre></div>
+<p>Now, each time we call make-deck , we get a randomly shuffled vector of cards.</p>
+<p><strong>How does the shuffling algorithm work?</strong></p>
+<p>The general idea is this: We want all the cards shuffled into a random order. So we choose any card at random, and make it the first card. We’re then left with a one-card-smaller deck to shuffle, and we do that by recursion. (This algorithm is similar to selection sort from Chapter 15, except that we select a random card each time instead of selecting the smallest value.)</p>
+<p>The details that complicate this algorithm have to do with the fact that we’re using a vector, in which it’s easy to change the value in one particular position, but it’s not easy to do what would otherwise be the most natural thing: If you had a handful of actual cards and wanted to move one of them to the front, you’d slide the other cards over to make room. There’s no “sliding over” in a vector. Instead we use a trick; we happen to have an empty slot, the one from which we removed the randomly chosen card, so instead of moving several cards, we just move the one card that was originally at the front into that slot. In other words, we exchange two cards, the randomly chosen one and the one that used to be in front.</p>
+<p>Second, there’s nothing comparable to <code>cdr</code> to provide a one-card-smaller vector to the recursive invocation. Instead, we must use the entire vector and also provide an additional <code>index</code> argument, a number that keeps track of how many cards remain to be shuffled. It’s simplest if each recursive invocation is responsible for the range of cards from position 0 to position <code>index</code> of the vector, and therefore the program actually moves each randomly selected card to the end of the remaining portion of the deck.</p>
+<hr />
+<h3 id="more-vector-tools">More Vector Tools</h3>
+<p><strong>How does constructor <code>vector</code> work?</strong></p>
+<p>If you want to make a vector with only a few boxes, and you know in advance what values you want in those boxes, you can use the constructor <code>vector</code>. Like <code>list</code>, it takes any number of arguments and returns a vector containing those arguments as elements:</p>
+<div class="sourceCode" id="cb108"><pre class="sourceCode scheme"><code class="sourceCode scheme"><a class="sourceLine" id="cb108-1" title="1">(<span class="ex">define</span><span class="fu"> beatles </span>(<span class="kw">vector</span> &#39;john &#39;paul &#39;george &#39;pete))</a>
+<a class="sourceLine" id="cb108-2" title="2"></a>
+<a class="sourceLine" id="cb108-3" title="3">(<span class="kw">vector-set!</span> beatles <span class="dv">3</span> &#39;ringo)</a>
+<a class="sourceLine" id="cb108-4" title="4"></a>
+<a class="sourceLine" id="cb108-5" title="5">beatles</a>
+<a class="sourceLine" id="cb108-6" title="6"><span class="co">; #(JOHN PAUL GEORGE RINGO)</span></a></code></pre></div>
+<p><strong>How does procedure <code>vector-length</code> work?</strong></p>
+<p>The procedure <code>vector-length</code> takes a vector as argument and returns the number of boxes in the vector.</p>
+<div class="sourceCode" id="cb109"><pre class="sourceCode scheme"><code class="sourceCode scheme"><a class="sourceLine" id="cb109-1" title="1">(<span class="kw">vector-length</span> beatles)</a>
+<a class="sourceLine" id="cb109-2" title="2"><span class="co">; 4</span></a></code></pre></div>
+<p><strong>Can predicate <code>equal</code> apply to vectors?</strong></p>
+<p>The predicate <code>equal?</code>, which we’ve used with words and lists, also accepts vectors as arguments. Two vectors are equal if they are the same size and all their corresponding elements are equal.</p>
+<p><em>A list and a vector are never equal, even if their elements are equal.</em></p>
+<p><strong>How does predicate <code>vector</code> work?</strong></p>
+<p>The predicate <code>vector?</code> takes anything as argument and returns <code>#t</code> if and only if its argument is a vector.</p>
+<hr />
+<h3 id="the-vector-pattern-of-recurssion">The Vector Pattern of Recurssion</h3>
+<p><strong>What is the vector pattern of recurssion?</strong></p>
+<p>Here are two procedures that you’ve seen earlier in this chapter, which do something to each element of a vector:</p>
+<div class="sourceCode" id="cb110"><pre class="sourceCode scheme"><code class="sourceCode scheme"><a class="sourceLine" id="cb110-1" title="1">(<span class="ex">define</span><span class="fu"> </span>(initialize-lap-vector index)</a>
+<a class="sourceLine" id="cb110-2" title="2">  (<span class="kw">if</span> (<span class="op">&lt;</span> index <span class="dv">0</span>)</a>
+<a class="sourceLine" id="cb110-3" title="3">      &#39;done</a>
+<a class="sourceLine" id="cb110-4" title="4">      (<span class="kw">begin</span> (<span class="kw">vector-set!</span> *lap-vector* index <span class="dv">0</span>)</a>
+<a class="sourceLine" id="cb110-5" title="5">             (initialize-lap-vector (<span class="op">-</span> index <span class="dv">1</span>)))))</a>
+<a class="sourceLine" id="cb110-6" title="6"></a>
+<a class="sourceLine" id="cb110-7" title="7">(<span class="ex">define</span><span class="fu"> </span>(shuffle! deck index)</a>
+<a class="sourceLine" id="cb110-8" title="8">  (<span class="kw">if</span> (<span class="op">&lt;</span> index <span class="dv">0</span>)</a>
+<a class="sourceLine" id="cb110-9" title="9">      deck</a>
+<a class="sourceLine" id="cb110-10" title="10">      (<span class="kw">begin</span> (vector-swap! deck index (random (<span class="op">+</span> index <span class="dv">1</span>)))</a>
+<a class="sourceLine" id="cb110-11" title="11">             (shuffle! deck (<span class="op">-</span> index <span class="dv">1</span>)))))</a></code></pre></div>
+<p>These procedures have a similar structure, like the similarities we found in other recursive patterns.</p>
+<ul>
+<li>Both of these procedures take an index as an argument,</li>
+<li>and both have <code>(&lt; index 0)</code> as their base case.</li>
+<li>Also, both have, as their recursive case, a <code>begin</code> in which the first action does something to the vector element selected by the current index, and the second action is a recursive call with the index decreased by one.</li>
+<li>These procedures are initially called with the largest possible index value.</li>
+</ul>
+<p><strong>In what case it’s more convenient to count the index upward from zero?</strong></p>
+<div class="sourceCode" id="cb111"><pre class="sourceCode scheme"><code class="sourceCode scheme"><a class="sourceLine" id="cb111-1" title="1">(<span class="ex">define</span><span class="fu"> </span>(list-&gt;vector lst)</a>
+<a class="sourceLine" id="cb111-2" title="2">  (l-&gt;v-helper (<span class="kw">make-vector</span> (<span class="kw">length</span> lst)) lst <span class="dv">0</span>))</a>
+<a class="sourceLine" id="cb111-3" title="3"></a>
+<a class="sourceLine" id="cb111-4" title="4">(<span class="ex">define</span><span class="fu"> </span>(l-&gt;v-helper vec lst index)</a>
+<a class="sourceLine" id="cb111-5" title="5">  (<span class="kw">if</span> (<span class="op">=</span> index (<span class="kw">vector-length</span> vec))</a>
+<a class="sourceLine" id="cb111-6" title="6">      vec</a>
+<a class="sourceLine" id="cb111-7" title="7">      (<span class="kw">begin</span> (<span class="kw">vector-set!</span> vec index (<span class="kw">car</span> lst))</a>
+<a class="sourceLine" id="cb111-8" title="8">             (l-&gt;v-helper vec (<span class="kw">cdr</span> lst) (<span class="op">+</span> index <span class="dv">1</span>)))))</a></code></pre></div>
+<p>Since lists are naturally processed from left to right (using <code>car</code> and <code>cdr</code>), this program must process the vector from left to right also.</p>
+<hr />
+<h3 id="vectors-versus-lists">Vectors versus Lists</h3>
 </body>
 </html>
