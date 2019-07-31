@@ -1458,5 +1458,54 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <p>Since lists are naturally processed from left to right (using <code>car</code> and <code>cdr</code>), this program must process the vector from left to right also.</p>
 <hr />
 <h3 id="vectors-versus-lists">Vectors versus Lists</h3>
+<p><strong>What is the most important difference between lists and vectors?</strong></p>
+<p>The most important difference between lists and vectors is that each kind of aggregate lends itself to a different style of programming, because some operations are faster than others in each.</p>
+<ul>
+<li><p><em>List</em> programming is characterized by two operations: dividing a list into its first element and all the rest, and sticking one new element onto the front of a list.</p></li>
+<li><p><em>Vector</em> programming is characterized by selecting elements in any order, from a collection whose size is set permanently when the vector is created.</p></li>
+</ul>
+<p>Here are two procedures, one of which squares every number in a list, and the other of which squares every number in a vector:</p>
+<div class="sourceCode" id="cb112"><pre class="sourceCode scheme"><code class="sourceCode scheme"><a class="sourceLine" id="cb112-1" title="1">(<span class="ex">define</span><span class="fu"> </span>(list-square numbers)</a>
+<a class="sourceLine" id="cb112-2" title="2">  (<span class="kw">if</span> (<span class="kw">null?</span> numbers)</a>
+<a class="sourceLine" id="cb112-3" title="3">      &#39;()</a>
+<a class="sourceLine" id="cb112-4" title="4">      (<span class="kw">cons</span> (square (<span class="kw">car</span> numbers))</a>
+<a class="sourceLine" id="cb112-5" title="5">            (list-square (<span class="kw">cdr</span> numbers)))))</a>
+<a class="sourceLine" id="cb112-6" title="6"></a>
+<a class="sourceLine" id="cb112-7" title="7">(<span class="ex">define</span><span class="fu"> </span>(vector-square numbers)</a>
+<a class="sourceLine" id="cb112-8" title="8">  (vec-sq-helper (<span class="kw">make-vector</span> (<span class="kw">vector-length</span> numbers))</a>
+<a class="sourceLine" id="cb112-9" title="9">                 numbers</a>
+<a class="sourceLine" id="cb112-10" title="10">                 (<span class="op">-</span> (<span class="kw">vector-length</span> numbers) <span class="dv">1</span>)))</a>
+<a class="sourceLine" id="cb112-11" title="11"></a>
+<a class="sourceLine" id="cb112-12" title="12">(<span class="ex">define</span><span class="fu"> </span>(vec-sq-helper new old index)</a>
+<a class="sourceLine" id="cb112-13" title="13">  (<span class="kw">if</span> (<span class="op">&lt;</span> index <span class="dv">0</span>)</a>
+<a class="sourceLine" id="cb112-14" title="14">      new</a>
+<a class="sourceLine" id="cb112-15" title="15">      (<span class="kw">begin</span> (<span class="kw">vector-set!</span> new index (square (<span class="kw">vector-ref</span> old index)))</a>
+<a class="sourceLine" id="cb112-16" title="16">             (vec-sq-helper new old (<span class="op">-</span> index <span class="dv">1</span>)))))</a></code></pre></div>
+<p>In the list version, the intermediate stages of the algorithm deal with lists that are smaller than the original argument. Each recursive invocation “strips off” one element of its argument and “glues on” one extra element in its return value.</p>
+<p>In the vector version, the returned vector is created, at full size, as the first step in the algorithm; its component parts are filled in as the program proceeds.</p>
+<p>This example can plausibly be done with either vectors or lists, so we’ve used it to compare the two techniques. But some algorithms fit most naturally with one kind of aggregate and would be awkward and slow using the other kind. The swapping of pairs of elements in the shuffling algorithm would be much harder using lists, while mergesort would be harder using vectors.</p>
+<p><strong>How to decide if list or vector is more efficient?</strong></p>
+<p>The best way to understand these differences in style is to know the operations that are most efficient for each kind of aggregate. In each case, <em>there are certain operations that can be done in one small unit of time, regardless of the number of elements in the aggregate, while other operations take more time for more elements</em>.</p>
+<ul>
+<li><p>The constant time operations for lists are <code>cons</code>, <code>car</code>, <code>cdr</code>, and <code>null?</code>;</p></li>
+<li><p>the ones for vectors are <code>vector-ref</code>, <code>vector-set!</code>, and <code>vector-length</code>. (And if you reread the squaring programs, you’ll find that these are precisely the operations they use.)</p></li>
+</ul>
+<p>We might have used <code>list-ref</code> in the list version, but we didn’t, and Scheme programmers usually don’t, because we know that it would be slower. Similarly, we could implement something like <code>cdr</code> for vectors, but that would be slow, too, since it would have to make a one-smaller vector and copy the elements one at a time.</p>
+<p>There are two possible morals to this story, and they’re both true:</p>
+<ul>
+<li><p>First, programmers invent and learn the algorithms that make sense for whatever data structure is available. Thus we have well-known programming patterns, such as the <code>filter</code> pattern, appropriate for lists, and different patterns appropriate for vectors.</p></li>
+<li><p>Second, programmers choose which data structure to use depending on what algorithms they need. If you want to shuffle cards, use a vector, but if you want to split the deck into a bunch of variable-size piles, lists might be more appropriate. In general, <em>vectors are good at selecting elements in arbitrary order from a fixed-size collection; lists are good only at selecting elements strictly from left to right, but they can vary in size</em>.</p></li>
+</ul>
+<p><strong>Why <code>(empty? (butfirst sent))</code> is more efficient than <code>(= (count sent) 1)</code>?</strong></p>
+<p>In this book, despite what we’re saying here about efficiency, we’ve generally tried to present algorithms in the way that’s easiest to understand, even when we know that there’s a faster way. For example, we’ve shown several recursive procedures in which the base case test was</p>
+<div class="sourceCode" id="cb113"><pre class="sourceCode scheme"><code class="sourceCode scheme"><a class="sourceLine" id="cb113-1" title="1">(<span class="op">=</span> (count sent) <span class="dv">1</span>)</a></code></pre></div>
+<p>If we were writing the program for practical use, rather than for a book, we would have written</p>
+<div class="sourceCode" id="cb114"><pre class="sourceCode scheme"><code class="sourceCode scheme"><a class="sourceLine" id="cb114-1" title="1">(empty? (butfirst sent))</a></code></pre></div>
+<p>because we know that <code>empty?</code> and <code>butfirst</code> are both constant time operations (because for sentences they’re implemented as <code>null?</code> and <code>cdr</code>), while <code>count</code> takes a long time for large sentences. But the version using <code>count</code> makes the intent clearer.</p>
+<blockquote>
+<p>For words, it turns out, the <code>count</code> version is faster, because words behave more like vectors than like lists.</p>
+</blockquote>
+<hr />
+<h3 id="state-sequence-and-effects">State, Sequence, and Effects</h3>
 </body>
 </html>

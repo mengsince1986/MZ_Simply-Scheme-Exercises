@@ -2133,4 +2133,79 @@ Since lists are naturally processed from left to right (using `car` and `cdr`), 
 
 ---
 
-### Vectors versus Lists 
+### Vectors versus Lists
+
+**What is the most important difference between lists and vectors?**
+
+The most important difference between lists and vectors is that each kind of aggregate lends itself to a different style of programming, because some operations are faster than others in each.
+
+* *List* programming is characterized by two operations: dividing a list into its first element and all the rest, and sticking one new element onto the front of a list.
+
+* *Vector* programming is characterized by selecting elements in any order, from a collection whose size is set permanently when the vector is created.
+
+Here are two procedures, one of which squares every number in a list, and the other of which squares every number in a vector:
+
+```scheme
+(define (list-square numbers)
+  (if (null? numbers)
+      '()
+      (cons (square (car numbers))
+            (list-square (cdr numbers)))))
+
+(define (vector-square numbers)
+  (vec-sq-helper (make-vector (vector-length numbers))
+                 numbers
+                 (- (vector-length numbers) 1)))
+
+(define (vec-sq-helper new old index)
+  (if (< index 0)
+      new
+      (begin (vector-set! new index (square (vector-ref old index)))
+             (vec-sq-helper new old (- index 1)))))
+```
+
+In the list version, the intermediate stages of the algorithm deal with lists that are smaller than the original argument. Each recursive invocation “strips off” one element of its argument and “glues on” one extra element in its return value.
+
+In the vector version, the returned vector is created, at full size, as the first step in the algorithm; its component parts are filled in as the program proceeds.
+
+This example can plausibly be done with either vectors or lists, so we’ve used it to compare the two techniques. But some algorithms fit most naturally with one kind of aggregate and would be awkward and slow using the other kind. The swapping of pairs of elements in the shuffling algorithm would be much harder using lists, while mergesort would be harder using vectors.
+
+**How to decide if list or vector is more efficient?**
+
+The best way to understand these differences in style is to know the operations that are most efficient for each kind of aggregate. In each case, *there are certain operations that can be done in one small unit of time, regardless of the number of elements in the aggregate, while other operations take more time for more elements*.
+
+* The constant time operations for lists are `cons`, `car`, `cdr`, and `null?`;
+
+* the ones for vectors are `vector-ref`, `vector-set!`, and `vector-length`. (And if you reread the squaring programs, you’ll find that these are precisely the operations they use.)
+
+We might have used `list-ref` in the list version, but we didn’t, and Scheme programmers usually don’t, because we know that it would be slower. Similarly, we could implement something like `cdr` for vectors, but that would be slow, too, since it would have to make a one-smaller vector and copy the elements one at a time.
+
+There are two possible morals to this story, and they’re both true:
+
+* First, programmers invent and learn the algorithms that make sense for whatever data structure is available. Thus we have well-known programming patterns, such as the `filter` pattern, appropriate for lists, and different patterns appropriate for vectors.
+
+* Second, programmers choose which data structure to use depending on what algorithms they need. If you want to shuffle cards, use a vector, but if you want to split the deck into a bunch of variable-size piles, lists might be more appropriate. In general, *vectors are good at selecting elements in arbitrary order from a fixed-size collection; lists are good only at selecting elements strictly from left to right, but they can vary in size*.
+
+**Why `(empty? (butfirst sent))` is more efficient than `(= (count sent) 1)`?**
+
+In this book, despite what we’re saying here about efficiency, we’ve generally tried to present algorithms in the way that’s easiest to understand, even when we know that there’s a faster way. For example, we’ve shown several recursive procedures in which the base case test was
+
+```scheme
+(= (count sent) 1)
+```
+
+If we were writing the program for practical use, rather than for a book, we would have written
+
+```scheme
+(empty? (butfirst sent))
+```
+
+because we know that `empty?` and `butfirst` are both constant time operations (because for sentences they’re implemented as `null?` and `cdr`), while `count` takes a long time for large sentences. But the version using `count` makes the intent clearer.
+
+>For words, it turns out, the `count` version is faster, because words behave more like vectors than like lists.
+
+---
+
+### State, Sequence, and Effects
+
+
