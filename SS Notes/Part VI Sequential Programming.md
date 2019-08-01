@@ -1864,7 +1864,7 @@ The arguments to `vector-set!` are the vector, the number of the box (the index)
 
 **How does `vector-ref` work?**
 
-We examine the contents of a box using `vector-ref`, which takes two arguments, the vector and an index. `vector-ref` is similar to `vist-ref`, except that it operates on vectors instead of lists.
+We examine the contents of a box using `vector-ref`, which takes two arguments, the vector and an index. `vector-ref` is similar to `list-ref`, except that it operates on vectors instead of lists.
 
 **How to change the contents of a box that already had something in it?**
 
@@ -2207,5 +2207,76 @@ because we know that `empty?` and `butfirst` are both constant time operations (
 ---
 
 ### State, Sequence, and Effects
+
+*Effects, sequence, and state are three sides of the same coin.*
+
+**What's the connection between effect and sequence?**
+
+In Chapter 20 we explained the connection between effect (printing something on the screen) and sequence:
+
+* It matters what you print first.
+* We also noted that there’s no benefit to a sequence of expressions unless those expressions produce an effect, since the values returned by all but the last expression are discarded.
+
+**What's the connection between effect and state?**
+
+In this chapter we’ve seen another connection. The way our vector programs maintain state information is by carrying out effects, namely, `vector-set!` invocations.
+
+Actually, every effect changes some kind of state; if not in Scheme’s memory, then on the computer screen or in a file.
+
+**What's the connection between state and sequence?**
+
+The final connection to be made is between state and sequence. Once a program maintains state, it matters whether some computation is carried out before or after another computation that changes the state.
+
+The example at the beginning of this chapter in which an expression had different results before and after defining a variable illustrates this point. As another example, if we evaluate (lap 1) 200 times and (lap 2) 200 times, the program’s determination of the winner of the race depends on whether the last evaluation of (lap 1) comes before or after the last invocation of (lap 2) .
+
+**What are the difference between sequential programming, imperative programming and functional programming?**
+
+Because these three ideas are so closely connected, the names `sequential programming` (emphasizing sequence) and `imperative programming` (emphasizing effect) are both used to refer to a style of programming that uses all three. This style is in contrast with `functional programming`, which, as you know, uses none of them.
+
+Although functional and sequential programming are, in a sense, opposites, it’s perfectly possible to use both styles within one program, as we pointed out in the `tic-tac-toe` program of Chapter 20.
+
+---
+
+### Pitfalls
+
+* Don’t forget that the first element of a vector is number zero, and there is no element whose index number is equal to the length of the vector. (Although these points are equally true for lists, it doesn’t often matter, because we rarely select the elements of a list by number.) In particular, in a vector recursion, if zero is the base case, then there’s probably still one element left to process.
+
+* Try the following experiment:
+
+```scheme
+(define dessert (vector 'chocolate 'sundae))
+(define two-desserts (list dessert dessert))
+(vector-set! (car two-desserts) 1 'shake)
+two-desserts
+; (#(CHOCOLATE SHAKE) #(CHOCOLATE SHAKE))
+```
+
+You might have expected that after asking to change one word in two-desserts , the result would be
+
+```scheme
+(#(CHOCOLATE SHAKE) #(CHOCOLATE SUNDAE))
+```
+
+However, because of the way we created `two-desserts`, both of its elements are the same vector. If you think of a list as a collection of things, it’s strange to imagine the very same thing in two different places, but that’s the situation. If you want to have two separate vectors that happen to have the same values in their elements, but are individually mutable, you’d have to say
+
+```scheme
+(define two-desserts (list (vector 'chocolate 'sundae)
+                           (vector 'chocolate 'sundae)))
+(vector-set! (car two-desserts) 1 'shake)
+two-desserts
+; (#(CHOCOLATE SHAKE) #(CHOCOLATE SUNDAE))
+```
+
+Each invocation of `vector` or `make-vector` creates a new, independent vector.
+
+---
+
+### Exercises 23.1-23.16
+
+[Solutions]()
+
+---
+
+
 
 

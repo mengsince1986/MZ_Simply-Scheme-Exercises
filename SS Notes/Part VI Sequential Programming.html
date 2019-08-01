@@ -1293,7 +1293,7 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <p>We put things in boxes using the <code>vector-set!</code> procedure. The exclamation point in its name, indicates that this is a <em>mutator</em>—a procedure that changes the value of some previously created data structure. The exclamation point is pronounced “bang,” as in “vector set bang.” Scheme actually has several such mutators, including mutators for lists. A procedure that modifies its argument is also called <em>destructive</em>.</p>
 <p>The arguments to <code>vector-set!</code> are the vector, the number of the box (the index), and the desired new value. Like <code>define</code>, <code>vector-set!</code> returns an unspecified value.</p>
 <p><strong>How does <code>vector-ref</code> work?</strong></p>
-<p>We examine the contents of a box using <code>vector-ref</code>, which takes two arguments, the vector and an index. <code>vector-ref</code> is similar to <code>vist-ref</code>, except that it operates on vectors instead of lists.</p>
+<p>We examine the contents of a box using <code>vector-ref</code>, which takes two arguments, the vector and an index. <code>vector-ref</code> is similar to <code>list-ref</code>, except that it operates on vectors instead of lists.</p>
 <p><strong>How to change the contents of a box that already had something in it?</strong></p>
 <div class="sourceCode" id="cb99"><pre class="sourceCode scheme"><code class="sourceCode scheme"><a class="sourceLine" id="cb99-1" title="1">(<span class="kw">vector-set!</span> v <span class="dv">3</span> &#39;jewel)</a>
 <a class="sourceLine" id="cb99-2" title="2"></a>
@@ -1507,5 +1507,45 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 </blockquote>
 <hr />
 <h3 id="state-sequence-and-effects">State, Sequence, and Effects</h3>
+<p><em>Effects, sequence, and state are three sides of the same coin.</em></p>
+<p><strong>What’s the connection between effect and sequence?</strong></p>
+<p>In Chapter 20 we explained the connection between effect (printing something on the screen) and sequence:</p>
+<ul>
+<li>It matters what you print first.</li>
+<li>We also noted that there’s no benefit to a sequence of expressions unless those expressions produce an effect, since the values returned by all but the last expression are discarded.</li>
+</ul>
+<p><strong>What’s the connection between effect and state?</strong></p>
+<p>In this chapter we’ve seen another connection. The way our vector programs maintain state information is by carrying out effects, namely, <code>vector-set!</code> invocations.</p>
+<p>Actually, every effect changes some kind of state; if not in Scheme’s memory, then on the computer screen or in a file.</p>
+<p><strong>What’s the connection between state and sequence?</strong></p>
+<p>The final connection to be made is between state and sequence. Once a program maintains state, it matters whether some computation is carried out before or after another computation that changes the state.</p>
+<p>The example at the beginning of this chapter in which an expression had different results before and after defining a variable illustrates this point. As another example, if we evaluate (lap 1) 200 times and (lap 2) 200 times, the program’s determination of the winner of the race depends on whether the last evaluation of (lap 1) comes before or after the last invocation of (lap 2) .</p>
+<p><strong>What are the difference between sequential programming, imperative programming and functional programming?</strong></p>
+<p>Because these three ideas are so closely connected, the names <code>sequential programming</code> (emphasizing sequence) and <code>imperative programming</code> (emphasizing effect) are both used to refer to a style of programming that uses all three. This style is in contrast with <code>functional programming</code>, which, as you know, uses none of them.</p>
+<p>Although functional and sequential programming are, in a sense, opposites, it’s perfectly possible to use both styles within one program, as we pointed out in the <code>tic-tac-toe</code> program of Chapter 20.</p>
+<hr />
+<h3 id="pitfalls-2">Pitfalls</h3>
+<ul>
+<li><p>Don’t forget that the first element of a vector is number zero, and there is no element whose index number is equal to the length of the vector. (Although these points are equally true for lists, it doesn’t often matter, because we rarely select the elements of a list by number.) In particular, in a vector recursion, if zero is the base case, then there’s probably still one element left to process.</p></li>
+<li><p>Try the following experiment:</p></li>
+</ul>
+<div class="sourceCode" id="cb115"><pre class="sourceCode scheme"><code class="sourceCode scheme"><a class="sourceLine" id="cb115-1" title="1">(<span class="ex">define</span><span class="fu"> dessert </span>(<span class="kw">vector</span> &#39;chocolate &#39;sundae))</a>
+<a class="sourceLine" id="cb115-2" title="2">(<span class="ex">define</span><span class="fu"> two-desserts </span>(<span class="kw">list</span> dessert dessert))</a>
+<a class="sourceLine" id="cb115-3" title="3">(<span class="kw">vector-set!</span> (<span class="kw">car</span> two-desserts) <span class="dv">1</span> &#39;shake)</a>
+<a class="sourceLine" id="cb115-4" title="4">two-desserts</a>
+<a class="sourceLine" id="cb115-5" title="5"><span class="co">; (#(CHOCOLATE SHAKE) #(CHOCOLATE SHAKE))</span></a></code></pre></div>
+<p>You might have expected that after asking to change one word in two-desserts , the result would be</p>
+<div class="sourceCode" id="cb116"><pre class="sourceCode scheme"><code class="sourceCode scheme"><a class="sourceLine" id="cb116-1" title="1">(#(CHOCOLATE SHAKE) #(CHOCOLATE SUNDAE))</a></code></pre></div>
+<p>However, because of the way we created <code>two-desserts</code>, both of its elements are the same vector. If you think of a list as a collection of things, it’s strange to imagine the very same thing in two different places, but that’s the situation. If you want to have two separate vectors that happen to have the same values in their elements, but are individually mutable, you’d have to say</p>
+<div class="sourceCode" id="cb117"><pre class="sourceCode scheme"><code class="sourceCode scheme"><a class="sourceLine" id="cb117-1" title="1">(<span class="ex">define</span><span class="fu"> two-desserts </span>(<span class="kw">list</span> (<span class="kw">vector</span> &#39;chocolate &#39;sundae)</a>
+<a class="sourceLine" id="cb117-2" title="2">                           (<span class="kw">vector</span> &#39;chocolate &#39;sundae)))</a>
+<a class="sourceLine" id="cb117-3" title="3">(<span class="kw">vector-set!</span> (<span class="kw">car</span> two-desserts) <span class="dv">1</span> &#39;shake)</a>
+<a class="sourceLine" id="cb117-4" title="4">two-desserts</a>
+<a class="sourceLine" id="cb117-5" title="5"><span class="co">; (#(CHOCOLATE SHAKE) #(CHOCOLATE SUNDAE))</span></a></code></pre></div>
+<p>Each invocation of <code>vector</code> or <code>make-vector</code> creates a new, independent vector.</p>
+<hr />
+<h3 id="exercises-23.1-23.16">Exercises 23.1-23.16</h3>
+<p><a href="">Solutions</a></p>
+<hr />
 </body>
 </html>
