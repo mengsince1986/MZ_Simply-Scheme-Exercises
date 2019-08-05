@@ -77,4 +77,98 @@ vec
              (copy-vec vec-out (- start 1)
                        vec-in (- index-in 1)))))
 
+; **********************************************************
+
+; 23.4 Write vector->list.
+
+; solution:
+
+(define (vector->list vec)
+ (vec->lst-helper vec 0 (- (vector-length vec) 1)))
+
+(define (vec->lst-helper vec index end)
+  (if (= index end)
+      (list (vector-ref vec index))
+      (cons (vector-ref vec index)
+            (vec->lst-helper vec (+ index 1) end))))
+
+; **********************************************************
+
+; 23.5 Write a procedure vector-map that takes two arguments, a function and a vector, and returns a new vector in which each box contains the result of applying the function to the corresponding element of the argument vector.
+
+; solution:
+
+(define (vector-map fun vec)
+  (let ((vec-length (vector-length vec)))
+    (vec-map-helper fun vec (make-vector vec-length) (- vec-length 1))))
+
+(define (vec-map-helper fun vec new-vec index)
+  (if (< index 0)
+      new-vec
+      (begin (vector-set! new-vec index
+                          (fun (vector-ref vec index)))
+             (vec-map-helper fun vec new-vec (- index 1)))))
+
+; **********************************************************
+
+; 23.6 Write a procedure vector-map! that takes two arguments, a function and a vector, and modifies the argument vector by replacing each element with the result of applying the function to that element. Your procedure should return the same vector.
+
+; solution:
+
+(define (vector-map! fun vec)
+  (vec-map!-helper fun vec (- (vector-length vec) 1))
+  vec)
+
+(define (vec-map!-helper fun vec index)
+  (if (< index 0)
+      'done
+      (begin (vector-set! vec index
+                          (fun (vector-ref vec index)))
+             (vec-map!-helper fun vec (- index 1)))))
+
+; **********************************************************
+
+; 23.7 Could you write vector-filter? How about vector-filter!? Explain the issues involved.
+
+; answer:
+
+; It's attainable to write vector-filter. Theoretically, We can filter the values of a vector and copy the filtered values into a new vecor. But it will be tricky to define the new vector since at first we don't know how many value containers we need when make-vector the new vecor. One possible strategy is copy the filtered values of the vector to a list and then convert the list to vector.
+
+; It's not attainable to write vector-fiter! because a vector has a fixed number of boxes containing values. Instead of removing a value box from a vector, we can only change the value itself.
+
+; **********************************************************
+
+; 23.8 Modify the lap procedure to print “Car 34 wins!” when car 34 completes its 200th lap. (A harder but more correct modification is to print the message only if no other car has completed 200 laps.)
+
+; ----------------------------------------------------------
+(define *lap-vector* (make-vector 100))
+
+(define (initialize-lap-vector index)
+  (if (< index 0)
+      'done
+      (begin (vector-set! *lap-vector* index 0)
+             (initialize-lap-vector (- index 1)))))
+
+(define (lap car-number)
+  (vector-set! *lap-vector*
+               car-number
+               (+ (vector-ref *lap-vector* car-number) 1))
+  (vector-ref *lap-vector* car-number)) 
+; ----------------------------------------------------------
+
+; solution:
+
+
+
+; **********************************************************
+
+
+
+
+
+
+
+
+
+
 
