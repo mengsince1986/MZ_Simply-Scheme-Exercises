@@ -153,14 +153,93 @@ vec
   (vector-set! *lap-vector*
                car-number
                (+ (vector-ref *lap-vector* car-number) 1))
-  (vector-ref *lap-vector* car-number)) 
+  (vector-ref *lap-vector* car-number))
 ; ----------------------------------------------------------
 
 ; solution:
 
+(define (lap car-number)
+  (vector-set! *lap-vector*
+               car-number
+               (+ (vector-ref *lap-vector* car-number) 1))
+  (let ((current-lap (vector-ref *lap-vector* car-number)))
+    (if (= current-lap 200)
+        (begin (display "Car ")
+               (display car-number)
+               (show " wins!"))
+        (vector-ref *lap-vector* car-number))))
 
+; extra:
+
+(define (lap-v2 car-number)
+  (vector-set! *lap-vector*
+               car-number
+               (+ (vector-ref *lap-vector* car-number) 1))
+  (let ((current-lap (vector-ref *lap-vector* car-number)))
+    (if (and (= current-lap 200)
+             (if-first-complete? car-number *lap-vector* (- (vector-length *lap-vector*) 1)))
+        (begin (display "Car ")
+               (display car-number)
+               (show " wins!"))
+        (vector-ref *lap-vector* car-number))))
+
+(define (if-first-complete? car-number recorder index)
+  (if (< index 0)
+      car-number
+      (if (or (= index car-number)
+              (< (vector-ref recorder index) 200))
+          (if-first-complete? car-number recorder (- index 1))
+          #f)))
 
 ; **********************************************************
+
+; 23.9 Write a procedure leader that says which car is in the lead right now.
+
+; solution:
+
+(define (leader recorder)
+  (leader-helper recorder (- (vector-length recorder) 2) (- (vector-length recorder) 1)))
+
+(define (leader-helper recorder rest lead-car)
+  (if (< rest 0)
+      lead-car
+      (if (> (vector-ref recorder rest) (vector-ref recorder lead-car))
+          (leader-helper recorder (- rest 1) rest)
+          (leader-helper recorder (- rest 1) lead-car))))
+
+; **********************************************************
+
+; 23.10 Why doesn’t this solution to Exercise 23.9 work?
+
+; (define (leader)
+;   (leader-helper 0 1))
+
+; (define (leader-helper leader index)
+;   (cond ((= index 100) leader)
+;         ((> (lap index) (lap leader))
+;          (leader-helper index (+ index 1)))
+;         (else (leader-helper leader (+ index 1)))))
+
+; answer: The leader defined above doesn't work because the leader-helper may repeadly apply procedure lap on leader car and make it bigger than other cars. Procedure lap should be replaced by procedure vector-ref to check the cars's current laps instead of changing its current laps.
+
+; **********************************************************
+
+; 23.11 In some restaurants, the servers use computer terminals to keep track of what each table has ordered. Every time you order more food, the server enters your order into the computer. When you’re ready for the check, the computer prints your bill.
+
+; You’re going to write two procedures, order and bill. Order takes a table number and an item as arguments and adds the cost of that item to that table’s bill. Bill takes a table number as its argument, returns the amount owed by that table, and resets the table for the next customers. (Your order procedure can examine a global variable *menu* to find the price of each item.)
+
+(order 3 'potstickers)
+(order 3 'wor-won-ton)
+(order 5 'egg-rolls)
+(order 3 'shin-shin-special-prawns)
+
+(bill 3)
+; 13.85
+
+(bill 5)
+; 2.75
+
+; solution:
 
 
 
