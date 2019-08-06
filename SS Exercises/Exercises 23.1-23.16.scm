@@ -241,6 +241,34 @@ vec
 
 ; solution:
 
+(define *menu* (list '(egg-rolls 2.75) '(potstickers 5) '(wor-won-ton 3)             ; create *menu* a-list
+                     '(shin-shin-special-prawns 5.85) '(fish-n-chips 4.5)
+                     '(beef-pie 1.2) '(newyorker-pizza 9.9) '(fried-dumplings 12)))
+
+(define *table-bills* (make-vector 10))    ; create ten-table *table-bills* vector
+
+(define (initialize-table-bills index)     ; define initialize-table-bills to initialize the whole *table-bills* vector with 0
+  (if (< index 0)
+      'done
+      (begin (vector-set! *table-bills* index 0)
+             (initialize-table-bills (- index 1)))))
+
+(initialize-table-bills 9)                 ; Initialize the 10 table bills, here the table numbers are from 0 to 9
+
+(define (order table dish)                 ; define procedure order
+  (vector-set! *table-bills* table
+               (+ (vector-ref *table-bills* table)
+                  (cadr (assoc dish *menu*))))
+  (show "Order is registered"))
+
+; define procedure bill
+
+(define (bill table)
+  (show (vector-ref *table-bills* table))
+  (vector-set! *table-bills* table 0))
+
+; **********************************************************
+
 
 
 
