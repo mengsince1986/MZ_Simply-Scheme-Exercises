@@ -261,21 +261,86 @@ vec
                   (cadr (assoc dish *menu*))))
   (show "Order is registered"))
 
-; define procedure bill
-
-(define (bill table)
+(define (bill table)                       ; define procedure bill
   (show (vector-ref *table-bills* table))
   (vector-set! *table-bills* table 0))
 
 ; **********************************************************
 
+; 23.12 Rewrite selection sort (from Chapter 15) to sort a vector. This can be done in a way similar to the procedure for shuffling a deck: Find the smallest element of the vector and exchange it (using vector-swap! ) with the value in the first box. Then find the smallest element not including the first box, and exchange that with the second box, and so on. For example, suppose we have a vector of numbers:
 
+#(23 4 18 7 95 60)
 
+; Your program should transform the vector through these intermediate stages:
 
+#(4 23 18 7 95 60)   ; exchange 4 with 23
+#(4 7 18 23 95 60)   ; exchange 7 with 23
+#(4 7 18 23 95 60)   ; exchange 18 with itself
+#(4 7 18 23 95 60)   ; exchange 23 with itself
+#(4 7 18 23 60 95)   ; exchange 60 with 95
 
+; solution:
 
+(define (vector-sort! vec)
+  (vec-sort!-helper vec 0))
 
+(define (vec-sort!-helper vec index)
+  (if (= index (- (vector-length vec) 1))
+      vec
+      (begin (vector-swap! vec (earliest-ele vec (+ index 1) index) index)
+             (vec-sort!-helper vec (+ index 1)))))
 
+(define (vector-swap! vector index1 index2)
+  (let ((temp (vector-ref vector index1)))
+    (vector-set! vector index1 (vector-ref vector index2))
+    (vector-set! vector index2 temp)))
+
+(define (earliest-ele vec start earliest)
+  (if (> start (- (vector-length vec) 1))
+      earliest
+      (if (< (vector-ref vec start) (vector-ref vec earliest))
+          (earliest-ele vec (+ start 1) start)
+          (earliest-ele vec (+ start 1) earliest))))
+
+; **********************************************************
+
+; 23.13 Why doesn’t this work?
+
+; (define (vector-swap! vector index1 index2)
+;   (vector-set! vector index1 (vector-ref vector index2))
+;   (vector-set! vector index2 (vector-ref vector index1)))
+
+; answer: The procedure above doesn't work because the value at index1 has already been replaced with the value at index2 before we try to replace the value at index2 with the value of index1. As a result index1 and index2 will have the same value--the original index2 value.
+
+; **********************************************************
+
+; 23.14 Implement a two-dimensional version of vectors. (We’ll call one of these structures a matrix.) The implementation will use a vector of vectors. For example, a three-by-five matrix will be a three-element vector, in which each of the elements is a five-element vector. Here’s how it should work:
+
+(define m (make-matrix 3 5))
+
+(matrix-set! m 2 1 '(her majesty))
+
+(matrix-ref m 2 1)
+; (HER MAJESTY)
+
+; solution:
+
+(define (make-matrix x y)
+  (make-matrix-helper (make-vector x) (- x 1) y))
+
+(define (make-matrix-helper vec index y)
+  (if (< index 0)
+      vec
+      (begin (vector-set! vec index (make-vector y))
+             (make-matrix-helper vec (- index 1) y))))
+
+(define (matrix-set! mtrix index-x index-y value)
+  (vector-set! (vector-ref mtrix index-x) index-y value))
+
+(define (matrix-ref mtrix index-x index-y)
+  (vector-ref (vector-ref mtrix index-x) index-y))
+
+; **********************************************************
 
 
 
