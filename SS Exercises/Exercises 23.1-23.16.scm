@@ -32,7 +32,7 @@ vec
 vec
 ; #(yeah yeah yeah yeah)
 
-; Write vector-fill! . (It doesn’t matter what value it returns.)
+; Write vector-fill! . (It doesn't matter what value it returns.)
 
 ; solution:
 
@@ -341,6 +341,23 @@ vec
   (vector-ref (vector-ref mtrix index-x) index-y))
 
 ; **********************************************************
+
+; 23.15 Generalize Exercise 23.14 by implementing an array structure that can have any number of dimensions. Instead of taking two numbers as index arguments, as the matrix procedures do, the array procedures will take one argument, a list of numbers. The number of numbers is the number of dimensions, and it will be constant for any particular array. For example, here is a three-dimensional array (4 × 5 × 6):
+
+(define a1 (make-array '(4 5 6)))
+
+(array-set! a1 '(3 2 3) '(the end))
+
+; solution:
+
+(define (make-array lst)
+  (make-array-helper (make-vector (car lst)) (cdr lst)))
+
+(define (make-array-helper array lst)
+  (if (null? lst)
+      array
+      (begin (make-deep-array array (- (vector-length array) 1) (car lst))
+             (make-array-helper array (cdr lst)))))
 
 
 
