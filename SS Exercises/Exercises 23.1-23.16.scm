@@ -169,7 +169,7 @@ vec
                (show " wins!"))
         (vector-ref *lap-vector* car-number))))
 
-; extra:
+; better-solution:
 
 (define (lap-v2 car-number)
   (vector-set! *lap-vector*
@@ -351,13 +351,56 @@ vec
 ; solution:
 
 (define (make-array lst)
-  (make-array-helper (make-vector (car lst)) (cdr lst)))
+  (let ((vec (make-vector (car lst))))
+    (make-array-helper vec (- (vector-length vec) 1) (cdr lst))))
 
-(define (make-array-helper array lst)
+(define (make-array-helper array index lst)
   (if (null? lst)
       array
-      (begin (make-deep-array array (- (vector-length array) 1) (car lst))
-             (make-array-helper array (cdr lst)))))
+      (begin (forest-array array index (car lst))
+             (make-array-helper array index (cdr lst)))))
+
+(define (forest-array array index end-vec-num)
+  (cond ((< index 0) array)
+        ((unspecified-child? array index) (begin (vector-set! array index
+                                                           (make-vector end-vec-num))
+                                              (forest-array array (- index 1) end-vec-num)))
+        (else (begin (let ((deep-array (vector-ref array index)))
+                       (forest-array deep-array (- (vector-length deep-array) 1) end-vec-num))
+                     (forest-array array (- index 1) end-vec-num)))))
+
+(define (unspecified-child? vec index)
+  (if (vector? (vector-ref vec index))
+      #f
+      #t))
+
+
+(define (array-ref array index-lst)
+  (array-ref-helper array (reverse index-lst)))
+
+(define (array-ref-helper array reverse-index-lst)
+  (if (null? (cdr reverse-index-lst))
+      (vector-ref array (car reverse-index-lst))
+      (vector-ref (array-ref-helper array (cdr reverse-index-lst)) (car reverse-index-lst))))
+
+
+(define (array-set! array index-list value)
+  (vector-set! (array-ref array (but-lst-last index-list))
+               (lst-last index-list) value))
+
+(define (lst-last lst)
+  (if (null? (cdr lst))
+      (car lst)
+      (lst-last (cdr lst))))
+
+(define (but-lst-last lst)
+  (if (null? (cdr lst))
+      '()
+      (cons (car lst) (but-lst-last (cdr lst)))))
+
+; **********************************************************
+
+
 
 
 
