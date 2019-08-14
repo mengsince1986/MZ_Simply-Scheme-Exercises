@@ -400,7 +400,135 @@ vec
 
 ; **********************************************************
 
+; 23.16 We want to reimplement sentences as vectors instead of lists.
+
+; (a) Write versions of sentence, empty?, first, butfirst, last, and butlast that use vectors. Your selectors need only work for sentences, not for words.
+
+(sentence 'a 'b 'c)
+; #(A B C)
+
+(butfirst (sentence 'a 'b 'c))
+; #(B C)
+
+; (You don’t have to make these procedures work on lists as well as vectors!)
+
+; solution:
+
+(define (sentence . wds)
+  (apply vector wds))
 
 
+(define (empty? vec-sent)
+  (empty?-helper vec-sent (- (vector-length vec-sent) 1)))
+
+(define (empty?-helper vec-sent index)
+  (cond ((< index 0) #t)
+        ((not (word? (vector-ref vec-sent index)))
+         (empty?-helper vec-sent (- index 1)))
+        (else #f)))
 
 
+(define (first vec-sent)
+  (vector-ref vec-sent 0))
+
+
+(define (butfirst vec-sent)
+  (let ((index (- (vector-length vec-sent) 1)))
+    (butfirst-helper vec-sent index
+                     (make-vector index) (- index 1))))
+
+(define (butfirst-helper vec-sent index new-vec-sent new-index)
+  (if (= index 0)
+      new-vec-sent
+      (begin (vector-set! new-vec-sent new-index (vector-ref vec-sent index))
+             (butfirst-helper vec-sent (- index 1) new-vec-sent (- new-index 1)))))
+
+(define (last vec-sent)
+  (vector-ref vec-sent (- (vector-length vec-sent) 1)))
+
+
+(define (butlast vec-sent)
+  (let ((index (- (vector-length vec-sent) 2)))
+    (butlast-helper  vec-sent index
+                     (make-vector (+ index 1)) index)))
+
+(define (butlast-helper vec-sent index new-vec-sent new-index)
+  (if (< index 0)
+      new-vec-sent
+      (begin (vector-set! new-vec-sent new-index (vector-ref vec-sent index))
+             (butlast-helper vec-sent (- index 1) new-vec-sent (- new-index 1)))))
+
+; **********************************************************
+
+; (b) Does the following program still work with the new implementation of sentences? If not, fix the program.
+
+(define (praise stuff)
+  (sentence stuff '(is good)))
+
+; solution:
+
+(define (sentence . stuff)
+  (apply vector (filter-to-wd stuff)))
+
+(define (filter-to-wd lst)
+  (cond ((null? lst) '())
+        ((list? (car lst)) (append (car lst) (filter-to-wd (cdr lst))))
+        (else (cons (car lst) (filter-to-wd (cdr lst))))))
+
+; **********************************************************
+
+; (c) Does the following program still work with the new implementation of sentences? If not, fix the program.
+
+(define (praise stuff)
+  (sentence stuff 'rules!))
+
+; answer: it works.
+
+; **********************************************************
+
+; (d) Does the following program still work with the new implementation of sentences? If not, fix the program. If so, is there some optional rewriting that would improve its performance?
+
+(define (item n sent)
+  (if (= n 1)
+      (first sent)
+      (item (- n 1) (butfirst sent))))
+
+; answer: It works.
+; Since procedure butfirst includes make-vector which is not a cosntant operation and sent is essentially a vector, we can improve item's performance with constant operation vector-ref.
+
+; solution:
+
+(define (item n sent)
+  (vector-ref sent (- n 1)))
+
+; **********************************************************
+
+; (e) Does the following program still work with the new implementation of sentences? If not, fix the program. If so, is there some optional rewriting that would improve its performance?
+
+(define (every fn sent)
+  (if (empty? sent)
+      sent
+      (sentence (fn (first sent))
+                (every fn (butfirst sent)))))
+
+; answer: The program doesn't work because the new sentence procedure only accepts words and list sentences as its arguments, not including vectors.
+
+; solution:
+
+(define (every fn sent)
+  (let ((sent-length (vector-length sent)))
+    (every-helper fn sent (make-vector sent-length) (- sent-length 1))))
+
+(define (every-helper fn sent new-sent index)
+  (if (< index 0)
+      new-sent
+      (begin (vector-set! new-sent index (fn (vector-ref sent index)))
+             (every-helper fn sent new-sent (- index 1)))))
+
+; **********************************************************
+
+; (f) In what ways does using vectors to implement sentences affect the speed of the selectors and constructor? Why do you think we chose to use lists?
+
+; answer: By using vectors to implement sentences, only selectos like first, last and item are cosntant operations since they only use constant vector operations. Other vector sentence selectors and constructors all take more time for more elements.
+
+; The reason to use lists to implement sentencs in the book may be it's more flexible and efficient to edit a list sentence with cons, car, cdr and null? while to edit a vector sentence is more likely to use non-constant operation make-vector.
