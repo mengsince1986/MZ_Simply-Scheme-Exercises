@@ -1,0 +1,6 @@
+(put "Name" a1)
+(put "Number" b1)
+(put "Price" c1)
+(put "Gross" d1)
+(put "Widget" a2)
+

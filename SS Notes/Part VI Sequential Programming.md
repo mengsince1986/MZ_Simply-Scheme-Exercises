@@ -2273,10 +2273,217 @@ Each invocation of `vector` or `make-vector` creates a new, independent vector.
 
 ### Exercises 23.1-23.16
 
-[Solutions]()
+[Solutions](https://github.com/mengsince1986/Simply-Scheme-exercises/blob/master/SS%20Exercises/Exercises%2023.1-23.16.scm)
 
 ---
 
+## Chapter 24 Example: A Spreadsheet Program
 
+**How to load spreadsheet into scheme?**
 
+```scheme
+(load "spread.scm")
+```
 
+To start the program, invoke the procedure `spreadsheet` with no arguments; to quit the spreadsheet program, type `exit`.
+
+**What is a spreadsheet program?**
+
+A spreadsheet is a program that displays information in two dimensions on the screen. It can also compute some of the information automatically.
+
+---
+
+### Spreadsheet Commands
+
+In our program we use a notation that looks very much like that of a Scheme program: A command consists of a name and some arguments, all enclosed in parentheses. However, *the spreadsheet commands are not Scheme expressions*.
+
+### Moving the Selection
+
+**How to move with one-letter command in a spreadsheet?**
+
+`f`: move Forward (right)
+`b`: move Back (left)
+`n`: move to Next line (down)
+`p`: move to Previous (up)
+
+If you want to move one step, you can just type the letter `f`, `b`, `n`, or `p` on a line by itself.
+
+If you want to move farther, you can invoke the same commands in Scheme notation, with the distance to move as an argument:
+
+```scheme
+?? (f 4)
+```
+
+**How to choose a paticular cell by name with command `select` in a spreadsheet?**
+
+Another way to move the selection is to choose a particular cell by name. The command for this is called select :
+
+```scheme
+(select e12)
+```
+
+**How big is the spreadsheet grid?**
+
+The spreadsheet grid includes columns a through z and rows 1 through 30. Not all
+of it can fit on the screen at once. If you select a cell that’s not shown on the screen, then the program will shift the entire screen display so that the rows and columns shown will include the newly selected cell.
+
+### Putting Values in Cells
+
+**How does `put` command work?**
+
+As we’ve already seen, the `put` command is used to put a value in a particular cell. It can be used with either one or two arguments. The first (or only) argument is a value.  If there is a second argument, it is the (unquoted) name of the desired cell. If not, the currently selected cell will be used.
+
+**What kind of values can be used as values in `put` command?**
+
+A value can be a number or a quoted word. (As in Scheme programming, most words can be quoted using the single-quote notation 'word , but words that include spaces, mixed-case letters, or some punctuation characters must be quoted using the double-quote string notation "Widget" .) However, non-numeric words are used only as labels; they can’t provide values for formulas that compute values in other cells.
+
+The program displays numbers differently from labels. If the value in a cell is a number, it is displayed at the right edge of its cell, and it is shown with two digits following the decimal point. (Look again at the screen samples earlier in this chapter.) If the value is a non-numeric word, it is displayed at the left edge of its cell.
+
+If the value is too wide to fit in the cell (that is, more than ten characters wide), then the program prints the first nine characters followed by a plus sign ( + ) to indicate that there is more information than is visible. (If you want to see the full value in such a cell, select it and look at the bottom of the screen.)
+
+**How to erase the value from a cell?**
+
+To erase the value from a cell, you can put an empty list `()` in it. With this one exception, lists are not allowed as cell values.
+
+**How to put a value in an entire row of column?**
+
+It’s possible to put a value in an entire row or column, instead of just one cell. To do this, use the row number or the column letter as the second argument to put . Here’s an example:
+
+```scheme
+(put 'peter d)
+```
+
+This command will put the word `peter` into all the cells in column `d`. (Remember that not all the cells are visible at once, but even the invisible ones are affected. Cells `d1` through `d30` are given values by this command.)
+
+**What happens if you ask to fill an entire row or column at once, but some of the cells already have values?**
+
+In this case, only the vacant cells will be affected. The only exception is that if the value you are using is the empty list, indicating that you want to erase old values, then the entire row or column is affected. (So if you put a formula in an entire row or column and then change your mind, you must erase the old one before you can install a new one.)
+
+---
+
+### Formulas
+
+**How to put a formula in a cell?**
+
+We mentioned earlier that the value of one cell can be made to depend on the values of other cells. This, too, is done using the `put` command. The difference is that instead of putting a *constant* value into a cell, you can put a *formula* in the cell. Here’s an example:
+
+```scheme
+(put (+ b3 c5) d6)
+```
+
+This command says that the value in cell d6 should be the sum of the values in b3 and c5 . The command may or may not have any immediately visible effect; it depends on whether those two cells already have values. If so, a value will immediately appear in d6 ; if not, nothing happens until you put values into b3 and c5 .
+
+*If you erase the value in a cell, then any cells that depend on it are also erased*. For example, if you erase the value in b3 , then the value in d6 will disappear also.
+
+**What are "atomic" formulas?**
+
+Formulas, like Scheme expressions, can include invocations of functions with sub-formulas as the arguments.
+
+```scheme
+(put (* d6 (+ b4 92)) a3)
+```
+
+The “atomic” formulas are constants (numbers or quoted words) and cell references (such as b4 in our example).
+
+**Can every Scheme function be used in a formula?**
+
+Not every Scheme function can be used in a formula. Most important, there is no `lambda` in the spreadsheet language, so you can’t invent your own functions. Also, since formulas can be based only on numbers, *only the numeric functions can be used*.
+
+**What is the difference between a formula and a value in a cell?**
+
+Although we’ve presented the idea of putting a formula in a cell separately from the idea of putting a value in a cell, *a value is really just a particularly simple formula.  The program makes no distinction internally between these two cases. (Since a constant formula doesn’t depend on any other cells, its value is always displayed right away.)*
+
+**How to put a formula into an entire row or column?**
+
+The typical situation is that each cell in the row or column should be computed using the same algorithm, but based on different values.
+
+For example, in the spreadsheet at the beginning of the chapter, every cell in column d is the product of a cell in column b and a cell in column c , but not the same cell for every row.
+
+The spreadsheet program meets this need by providing a notation for cells that indicates position relative to the cell being computed, rather than by name. In our case we could say
+
+```scheme
+(put (* (cell b) (cell c)) d)
+```
+
+**How does `cell` work with one argument?**
+
+Cell can take one or two arguments. In this example we’ve used the one-argument version. The argument must be either a letter, to indicate a column, or a number between 1 and 30, to indicate a row. *Whichever dimension (row or column) is not specified by the argument will be the same as that of the cell being computed*. So, for example, if we are computing a value for cell d5 , then (cell b) refers to cell b5 , but (cell 12) would refer to cell d12 .
+
+**How does `cell` work with two arguments?**
+
+The one-argument form of cell is adequate for many situations, but not if you want a cell to depend on one that’s both in a different row and in a different column.  For example, suppose you wanted to compute the change of a number across various columns, like this:
+
+![](images/cell-2-arguments.png)
+
+The value of cell d3, for example, is a function of the values of cells d2 and c2 .
+
+To create this spreadsheet, we said
+
+```scheme
+(put (- (cell 2) (cell <1 2)) 3)
+```
+
+In the two-argument version, the first argument determines the column and the second determines the row. Each argument can take any of several forms. It can be a letter (for the column) or number (for the row), to indicate a specific column or row. It can be an asterisk `(*)` to indicate the same column or row as the cell being calculated.  Finally, either argument can take the form `<3` to indicate a cell three before the one being calculated (above or to the left, depending on whether this is the row or column argument) or `>5` to indicate a cell five after this one (below or to the right).
+
+So any of the following formulas would have let us calculate the change in this example:
+
+```scheme
+(put (- (cell 2) (cell <1 2)) 3)
+(put (- (cell 2) (cell <1 <1)) 3)
+(put (- (cell * 2) (cell <1 2)) 3)
+(put (- (cell * <1) (cell <1 2)) 3)
+(put (- (cell <0 <1) (cell <1 <1)) 3)
+```
+
+When a formula is put into every cell in a particular row or column, it may not be immediately computable for all those cells. The value for each cell will depend on the values of the cells to which the formula refers, and some of those cells may not have values. (If a cell has a non-numeric value, that’s the same as not having a value at all for this purpose.) New values are computed only for those cells for which the formula is computable.
+
+---
+
+### Displaying Formula Values
+
+Formulas can be used in two ways. We’ve seen that
+
+* a formula can be associated with a cell, so that changes to one cell can automatically recompute the value of another.
+* You can also type a formula directly to the spreadsheet prompt, in which case the value of the formula will be shown at the bottom of the screen. In a formula used in this way, cell references relative to “the cell being computed” refer instead to the selected cell.
+
+---
+
+### Loading Spreadsheet Commands from a File
+
+Sometimes you use a series of several spreadsheet commands to set up some computation.
+
+If you want to avoid retyping such a series of commands, you can put the commands in a file using a text editor. Then, in the spreadsheet program, use the command
+
+```scheme
+(load "filename")
+```
+
+This looks just like Scheme’s load (on purpose), but it’s not the same thing; the file that it loads must contain spreadsheet commands, not Scheme expressions. It will list the commands from the file as it carries them out.
+
+---
+
+### Application Programs and Abstraction
+
+**What is the relationship between writing an application program and abstraction?**
+
+Writing an application program can be seen as the ultimate in abstraction.
+
+The user of the program is encouraged to think in a vocabulary that reflects the tasks for which the program is used, rather than the steps by which the program does its work. Some of these names are explicitly used to control the program, either by typing commands or by selecting named choices from a menu. Our spreadsheet program, for example, uses the name `put` for the task of putting a formula into a cell. The algorithm used by the `put` command is quite complicated, but the user’s picture of the command is simple.
+
+Other names are not explicitly used to control the program; instead, they give the user a metaphor with which to think about the work of the program. For example, in describing the operation of our spreadsheet program, we’ve talked about rows, columns, cells, and formulas. Introducing this vocabulary in our program documentation is just as much an abstraction as introducing new procedures in the program itself.
+
+**How to make an application program more general?**
+
+An application program doesn’t have to be less general than a programming language. The best application programs are *extensible*. Broadly speaking, this means that the programmer has made it possible for the user to add capabilities to the program, or modify existing capabilities. This broad idea of extensibility can take many forms in practice. Some kinds of extensibility are more flexible than others; some are easier to use than others.
+
+**What is the ultimate form of extesibility?**
+
+We started by saying that the abstraction in an application program runs the risk of limiting the program’s generality, but that this risk can be countered by paying attention to the goal of *extensibility*. The ultimate form of extensibility is to provide the full capabilities of a programming language to the user of the application program. This can be done by inventing a special-purpose language for one particular application, such as the Hypertalk language that’s used only in the Hypercard application program. Alternatively, the application programmer can take advantage of an existing general-purpose language by making it available within the program.
+
+---
+
+### Exercises 24.1-24.3
+
+[Solutions]()
+
+---
