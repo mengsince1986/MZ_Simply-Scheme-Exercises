@@ -1,0 +1,17 @@
+(put "PRE-TAX" a1)
+(put  50 a2)
+
+(put "5% TAX" b1)
+(put "15% TIP" c1)
+(put "TOTAL" d1)
+(put "PAYMENT" e1)
+
+(put (+ (cell a <1) 50) a)
+
+(put (* (cell a) 0.05) b)
+
+(put (* (cell a) 0.15) c)
+
+(put (+ (cell a) (cell b) (cell c)) d)
+
+(put (ceiling (* (cell d) 0.01)) e)
