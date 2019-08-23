@@ -2489,3 +2489,130 @@ We started by saying that the abstraction in an application program runs the ris
 [Solution 24.3](https://github.com/mengsince1986/Simply-Scheme-exercises/blob/master/SS%20Exercises/Exercise%2024.3)
 
 ---
+
+## Chapter 25 Implementing the Spreadsheet Program
+
+**How many parts does the spreadsheet program include?**
+
+Our division of the program includes these parts:
+
+* The command processor, which reads user commands and oversees their execution.
+* The specific commands: cell selection commands, `load`, and `put`.
+* The formula translator, which turns a formula into an *expression* by translating relative cell positions to specific cells.
+* The dependency manager, which keeps track of which cells’ expressions depend on which other cells.
+* The expression evaluator.
+* The screen printer.
+* The cell management procedures, which store and retrieve cell information for the rest of the program.
+
+![](images/spreadsheet-diagram.png)
+
+---
+
+### Cells, Cell Names, and Cell IDs
+
+**How are each cells stored in the program?**
+
+Each cell is a data structure that contains various pieces of information, including its value and other things. Just as these cells are arranged in a two-dimensional pattern on the screen, they are kept within the program in a two-dimensional data structure: a vector of vectors.
+
+**What are the three abstract data types that have to do with cells?**
+
+There are three different abstract data types in the program that have to do with cells:
+
+* cell names, such as `c5`;
+* cell IDs;
+* and cells themselves.
+
+We’ve chosen to represent cell IDs as three-element lists like this one:
+
+```scheme
+(id 3 5)
+```
+
+**How do cell IDs work?**
+
+The representation includes the word `id` because one facility that the program needs is the ability to determine whether some datum is or is not a cell `ID`. The predicate `cell-id?` looks for a list whose first element is `id`.
+
+The selectors for cell IDs are `id-row` and `id-col`; both take a cell `ID` as argument and return a number.
+
+The constructor, `make-id`, takes a column number (not a letter) and a row number as arguments.
+
+When the program recognizes a cell name typed by the user, it calls `cell-name->id` to translate the name to an `ID`, and only the `ID` is stored for later use.
+
+---
+
+### The Command Processor
+
+**How does the core of command processor work?**
+
+```scheme
+(define (command-loop)
+  (print-screen)
+  (let ((command-or-formula (read)))
+    (if (equal? command-or-formula ’exit)
+        "Bye!"
+        (begin (process-command command-or-formula)
+               (command-loop)))))
+```
+
+This short program runs until the user types `exit`, because it invokes itself as its last step. During each invocation, it prints the current spreadsheet display, uses `read` to read a command, and carries out whatever actions that command requires. Those actions probably change something in the spreadsheet data, so the next cycle has to redisplay the modified data before accepting another command.
+
+**How does `process-command` work?**
+
+It looks for the command name (a word such as `put` ) in its list of known commands. The commands are kept in an association list, like this:
+
+```
+((p . . . ) (n . . . ) (b . . . ) (f . . . ) (select . . . ) (put . . . ) (load . . . ))
+```
+
+Each of these sublists contains two elements: the name and the procedure that carries out the command.
+
+Looking for the command name is a little tricky because in the spreadsheet language a command can be invoked either by typing its name inside parentheses with arguments, as in Scheme, or by typing the name alone, without parentheses, which Scheme wouldn’t interpret as a request to invoke a procedure. For example, the argument to `process-command` might be
+
+* a list, such as `(f 3)`,
+* or just a word, such as `f`.
+* A third case is that the argument might not be one of these commands at all, but instead might be a formula, just like one that could be used to determine the value in a cell. `process-command` must recognize these three cases:
+
+```scheme
+(define (process-command command-or-formula)
+  (cond ((and (list? command-or-formula)
+              (command? (car command-or-formula)))
+         (execute-command command-or-formula))
+        ((command? command-or-formula)
+         (execute-command (list command-or-formula 1)))
+        (else (exhibit (ss-eval (pin-down command-or-formula
+                                          (selection-cell-id)))))))
+```
+
+**How does `command?` work?**
+
+The `command?` predicate tells whether its argument is one of the command names in the list. As you can see, if a command name is used without parentheses, `process-command` pretends that it was given an argument of 1 .
+
+**How does `execute-command` work?**
+
+`execute-command` looks up the command name in the list of commands, then applies the associated procedure to the arguments, if any:
+
+```scheme
+(define (execute-command command)
+  (apply (get-command (car command))
+         (cdr command)))
+```
+
+**How does `exhibit` work?**
+
+```scheme
+(define (exhibit val)
+  (show val)
+  (show "Type RETURN to redraw screen")
+  (read-line)
+  (read-line))
+```
+
+This prints a value on the screen, gives the user a chance to read it, and then, when the user is ready, returns to processing commands. (This will entail redrawing the spreadsheet display; that’s why we have to wait for the user to hit return.)
+
+The reason that we invoke `read-line` twice is that the call to read from `command-loop` reads the spreadsheet formula you typed but doesn’t advance to the next line. Therefore, the first read-line invocation gobbles that empty line; the second call to `read-line` reads the (probably empty) line that the user typed in response to the prompting message.
+
+> Not every version of Scheme has this behavior. If you find that you have to hit return twice after exhibiting the value of a formula, take out one of the read -line invocations.
+
+---
+
+### Cell Selection Commands

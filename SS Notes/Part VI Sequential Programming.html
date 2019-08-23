@@ -1645,5 +1645,85 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <h3 id="exercises-24.1-24.3">Exercises 24.1-24.3</h3>
 <p><a href="https://github.com/mengsince1986/Simply-Scheme-exercises/blob/master/SS%20Exercises/Exercise%2024.1">Solution 24.1</a> <a href="https://github.com/mengsince1986/Simply-Scheme-exercises/blob/master/SS%20Exercises/Exercise%2024.2">Solution 24.2</a> <a href="https://github.com/mengsince1986/Simply-Scheme-exercises/blob/master/SS%20Exercises/Exercise%2024.3">Solution 24.3</a></p>
 <hr />
+<h2 id="chapter-25-implementing-the-spreadsheet-program">Chapter 25 Implementing the Spreadsheet Program</h2>
+<p><strong>How many parts does the spreadsheet program include?</strong></p>
+<p>Our division of the program includes these parts:</p>
+<ul>
+<li>The command processor, which reads user commands and oversees their execution.</li>
+<li>The specific commands: cell selection commands, <code>load</code>, and <code>put</code>.</li>
+<li>The formula translator, which turns a formula into an <em>expression</em> by translating relative cell positions to specific cells.</li>
+<li>The dependency manager, which keeps track of which cells’ expressions depend on which other cells.</li>
+<li>The expression evaluator.</li>
+<li>The screen printer.</li>
+<li>The cell management procedures, which store and retrieve cell information for the rest of the program.</li>
+</ul>
+<p><img src="images/spreadsheet-diagram.png" /></p>
+<hr />
+<h3 id="cells-cell-names-and-cell-ids">Cells, Cell Names, and Cell IDs</h3>
+<p><strong>How are each cells stored in the program?</strong></p>
+<p>Each cell is a data structure that contains various pieces of information, including its value and other things. Just as these cells are arranged in a two-dimensional pattern on the screen, they are kept within the program in a two-dimensional data structure: a vector of vectors.</p>
+<p><strong>What are the three abstract data types that have to do with cells?</strong></p>
+<p>There are three different abstract data types in the program that have to do with cells:</p>
+<ul>
+<li>cell names, such as <code>c5</code>;</li>
+<li>cell IDs;</li>
+<li>and cells themselves.</li>
+</ul>
+<p>We’ve chosen to represent cell IDs as three-element lists like this one:</p>
+<div class="sourceCode" id="cb128"><pre class="sourceCode scheme"><code class="sourceCode scheme"><a class="sourceLine" id="cb128-1" title="1">(id <span class="dv">3</span> <span class="dv">5</span>)</a></code></pre></div>
+<p><strong>How do cell IDs work?</strong></p>
+<p>The representation includes the word <code>id</code> because one facility that the program needs is the ability to determine whether some datum is or is not a cell <code>ID</code>. The predicate <code>cell-id?</code> looks for a list whose first element is <code>id</code>.</p>
+<p>The selectors for cell IDs are <code>id-row</code> and <code>id-col</code>; both take a cell <code>ID</code> as argument and return a number.</p>
+<p>The constructor, <code>make-id</code>, takes a column number (not a letter) and a row number as arguments.</p>
+<p>When the program recognizes a cell name typed by the user, it calls <code>cell-name-&gt;id</code> to translate the name to an <code>ID</code>, and only the <code>ID</code> is stored for later use.</p>
+<hr />
+<h3 id="the-command-processor">The Command Processor</h3>
+<p><strong>How does the core of command processor work?</strong></p>
+<div class="sourceCode" id="cb129"><pre class="sourceCode scheme"><code class="sourceCode scheme"><a class="sourceLine" id="cb129-1" title="1">(<span class="ex">define</span><span class="fu"> </span>(command-loop)</a>
+<a class="sourceLine" id="cb129-2" title="2">  (print-screen)</a>
+<a class="sourceLine" id="cb129-3" title="3">  (<span class="kw">let</span> ((command-or-formula (<span class="kw">read</span>)))</a>
+<a class="sourceLine" id="cb129-4" title="4">    (<span class="kw">if</span> (<span class="kw">equal?</span> command-or-formula ’exit)</a>
+<a class="sourceLine" id="cb129-5" title="5">        <span class="st">&quot;Bye!&quot;</span></a>
+<a class="sourceLine" id="cb129-6" title="6">        (<span class="kw">begin</span> (process-command command-or-formula)</a>
+<a class="sourceLine" id="cb129-7" title="7">               (command-loop)))))</a></code></pre></div>
+<p>This short program runs until the user types <code>exit</code>, because it invokes itself as its last step. During each invocation, it prints the current spreadsheet display, uses <code>read</code> to read a command, and carries out whatever actions that command requires. Those actions probably change something in the spreadsheet data, so the next cycle has to redisplay the modified data before accepting another command.</p>
+<p><strong>How does <code>process-command</code> work?</strong></p>
+<p>It looks for the command name (a word such as <code>put</code> ) in its list of known commands. The commands are kept in an association list, like this:</p>
+<pre><code>((p . . . ) (n . . . ) (b . . . ) (f . . . ) (select . . . ) (put . . . ) (load . . . ))</code></pre>
+<p>Each of these sublists contains two elements: the name and the procedure that carries out the command.</p>
+<p>Looking for the command name is a little tricky because in the spreadsheet language a command can be invoked either by typing its name inside parentheses with arguments, as in Scheme, or by typing the name alone, without parentheses, which Scheme wouldn’t interpret as a request to invoke a procedure. For example, the argument to <code>process-command</code> might be</p>
+<ul>
+<li>a list, such as <code>(f 3)</code>,</li>
+<li>or just a word, such as <code>f</code>.</li>
+<li>A third case is that the argument might not be one of these commands at all, but instead might be a formula, just like one that could be used to determine the value in a cell. <code>process-command</code> must recognize these three cases:</li>
+</ul>
+<div class="sourceCode" id="cb131"><pre class="sourceCode scheme"><code class="sourceCode scheme"><a class="sourceLine" id="cb131-1" title="1">(<span class="ex">define</span><span class="fu"> </span>(process-command command-or-formula)</a>
+<a class="sourceLine" id="cb131-2" title="2">  (<span class="kw">cond</span> ((<span class="kw">and</span> (<span class="kw">list?</span> command-or-formula)</a>
+<a class="sourceLine" id="cb131-3" title="3">              (command? (<span class="kw">car</span> command-or-formula)))</a>
+<a class="sourceLine" id="cb131-4" title="4">         (execute-command command-or-formula))</a>
+<a class="sourceLine" id="cb131-5" title="5">        ((command? command-or-formula)</a>
+<a class="sourceLine" id="cb131-6" title="6">         (execute-command (<span class="kw">list</span> command-or-formula <span class="dv">1</span>)))</a>
+<a class="sourceLine" id="cb131-7" title="7">        (<span class="kw">else</span> (exhibit (ss-eval (pin-down command-or-formula</a>
+<a class="sourceLine" id="cb131-8" title="8">                                          (selection-cell-id)))))))</a></code></pre></div>
+<p><strong>How does <code>command?</code> work?</strong></p>
+<p>The <code>command?</code> predicate tells whether its argument is one of the command names in the list. As you can see, if a command name is used without parentheses, <code>process-command</code> pretends that it was given an argument of 1 .</p>
+<p><strong>How does <code>execute-command</code> work?</strong></p>
+<p><code>execute-command</code> looks up the command name in the list of commands, then applies the associated procedure to the arguments, if any:</p>
+<div class="sourceCode" id="cb132"><pre class="sourceCode scheme"><code class="sourceCode scheme"><a class="sourceLine" id="cb132-1" title="1">(<span class="ex">define</span><span class="fu"> </span>(execute-command command)</a>
+<a class="sourceLine" id="cb132-2" title="2">  (apply (get-command (<span class="kw">car</span> command))</a>
+<a class="sourceLine" id="cb132-3" title="3">         (<span class="kw">cdr</span> command)))</a></code></pre></div>
+<p><strong>How does <code>exhibit</code> work?</strong></p>
+<div class="sourceCode" id="cb133"><pre class="sourceCode scheme"><code class="sourceCode scheme"><a class="sourceLine" id="cb133-1" title="1">(<span class="ex">define</span><span class="fu"> </span>(exhibit val)</a>
+<a class="sourceLine" id="cb133-2" title="2">  (show val)</a>
+<a class="sourceLine" id="cb133-3" title="3">  (show <span class="st">&quot;Type RETURN to redraw screen&quot;</span>)</a>
+<a class="sourceLine" id="cb133-4" title="4">  (read-line)</a>
+<a class="sourceLine" id="cb133-5" title="5">  (read-line))</a></code></pre></div>
+<p>This prints a value on the screen, gives the user a chance to read it, and then, when the user is ready, returns to processing commands. (This will entail redrawing the spreadsheet display; that’s why we have to wait for the user to hit return.)</p>
+<p>The reason that we invoke <code>read-line</code> twice is that the call to read from <code>command-loop</code> reads the spreadsheet formula you typed but doesn’t advance to the next line. Therefore, the first read-line invocation gobbles that empty line; the second call to <code>read-line</code> reads the (probably empty) line that the user typed in response to the prompting message.</p>
+<blockquote>
+<p>Not every version of Scheme has this behavior. If you find that you have to hit return twice after exhibiting the value of a formula, take out one of the read -line invocations.</p>
+</blockquote>
+<hr />
+<h3 id="cell-selection-commands">Cell Selection Commands</h3>
 </body>
 </html>
