@@ -2484,6 +2484,8 @@ We started by saying that the abstraction in an application program runs the ris
 
 ### Exercises 24.1-24.3
 
-[Solutions]()
+[Solution 24.1](https://github.com/mengsince1986/Simply-Scheme-exercises/blob/master/SS%20Exercises/Exercise%2024.1)
+[Solution 24.2](https://github.com/mengsince1986/Simply-Scheme-exercises/blob/master/SS%20Exercises/Exercise%2024.2)
+[Solution 24.3](https://github.com/mengsince1986/Simply-Scheme-exercises/blob/master/SS%20Exercises/Exercise%2024.3)
 
 ---
