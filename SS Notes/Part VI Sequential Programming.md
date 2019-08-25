@@ -1,6 +1,4 @@
----
-title: "Part VI Sequential Programming"
----
+# Part VI Sequential Programming
 
 The three big ideas in this part are *effect*, *sequence*, and *state*.
 

@@ -1,6 +1,4 @@
----
-title: "Part V Abstraction"
----
+# Part V Abstraction
 
 **What are the two kinds of abstraction specified in this part?**
 
@@ -9,7 +7,7 @@ title: "Part V Abstraction"
 
 ## Chapter 17 Lists
 
-**How to use list to define an icecream menu?**
+**How to use list to define an ice cream menu?**
 
 ```scheme
 (vanilla (ultra chocolate) (heath bar crunch) ginger (cherry garcia))
@@ -19,12 +17,12 @@ This is meant to represent five flavors, two of which are named by single words,
 
 The data structure we’re using in this example is called a **_list_**.
 
-**What are the differnces between a sentence and a list?**
+**What are the differences between a sentence and a list?**
 
 |                |      lists       |      sentences       |
-|----------------|:----------------:|:--------------------:|
+| -------------- | :--------------: | :------------------: |
 | **elements**   |     anything     |        words         |
-| **definition** | sefl-referential | non-self-referential |
+| **definition** | self-referential | non-self-referential |
 
 A list that’s an element of another list is called a **_sublist_**. We’ll use the name **_structured_** list for a list that includes sublists.
 
@@ -146,7 +144,7 @@ And wrap `a` and `d` between `c` and `r`.
 (car (cdr (car dictionary)))
 ```
 
-can be writtern in
+can be written in
 
 ```scheme
 (cadar dictionary)
