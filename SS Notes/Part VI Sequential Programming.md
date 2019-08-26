@@ -838,13 +838,12 @@ The `functions` program is an infinite loop similar to Scheme’s read-eval-prin
 
 The `functions` program keeps asking you for arguments until it has enough. This means that the `read` portion of the loop has to read a function name, figure out how many arguments that procedure takes, and then ask for the right number of arguments. On the other hand, each argument is an implicitly quoted datum rather than an expression to be evaluated; the `functions` evaluator avoids the recursive complexity of arbitrary subexpressions within expressions.  (That’s why we wrote it: to focus attention on one function invocation at a time, rather than on the composition of functions.)
 
-
 **How to define the main loop for `functions` program?**
 
 ```scheme
 (define (functions-loop)
   (let ((fn-name (get-fn)))
-    (if (equal? fn-name ’exit)
+    (if (equal? fn-name 'exit)
         "Thanks for using FUNCTIONS!"
         (let ((args (get-args (arg-count fn-name))))
           (if (not (in-domain? args fn-name))
@@ -2312,7 +2311,7 @@ If you want to move farther, you can invoke the same commands in Scheme notation
 ?? (f 4)
 ```
 
-**How to choose a paticular cell by name with command `select` in a spreadsheet?**
+**How to choose a particular cell by name with command `select` in a spreadsheet?**
 
 Another way to move the selection is to choose a particular cell by name. The command for this is called select :
 
@@ -2614,3 +2613,125 @@ The reason that we invoke `read-line` twice is that the call to read from `comma
 ---
 
 ### Cell Selection Commands
+
+**How does `p` command work?**
+
+```scheme
+(define (prev-row delta)
+  (let ((row (id-row (selection-cell-id))))
+    (if (< (- row delta) 1)
+        (error "Already at top.")
+        (set-selected-row! (- row delta)))))
+
+(define (set-selected-row! new-row)
+  (select-id! (make-id (id-column (selection-cell-id)) new-row)))
+
+(define (select-id! id)
+  (set-selection-cell-id! id)
+  (adjust-screen-boundaries))
+```
+
+`prev-row` must ensure that the selected cell is within the legal boundaries. Since `prev-row` only moves upward, it has to check only that we don’t go beyond row 1.  (`next-row` will instead check that we don’t go beyond row 30 in the other direction.)
+
+`adjust-screen-boundaries` checks for the situation in which the newly selected cell, although within the bounds of the spreadsheet, is not within the portion currently visible on the screen. In that case the visible portion is shifted to include the selected cell.
+
+`selection-cell-id` is a procedure that returns the cell ID of the cell that’s currently selected.  Similarly, `set-selection-cell-id!` sets the current selection. There are comparable procedures `screen-corner-cell-id` and `set-screen-corner-cell-id!` to keep track of which cell should be in the upper left corner of the screen display. There is a vector named `*special-cells*` that holds these two cell IDs.
+
+---
+
+### The `load` Command
+
+**How does `load` command work?**
+
+The `command-loop` procedure, which carries out commands from the keyboard, repeatedly reads a command with `read` and invokes `process-command` to carry it out. To load commands from a file, we want to do exactly the same thing, except that we read from a file instead of from the keyboard:
+
+```scheme
+(define (spreadsheet-load filename)
+  (let ((port (open-input-file filename)))
+    (sl-helper port)
+    (close-input-port port)))
+
+(define (sl-helper port)
+  (let ((command (read port)))
+    (if (eof-object? command)
+        'done
+        (begin (show command)
+               (process-command command)
+               (sl-helper port)))))
+```
+
+---
+
+### The `put` Command
+
+**How does `put` command work?**
+
+The `put` command takes two arguments, a formula and a place to put it. The second of these can specify either a single cell or an entire row or column. (If there is no second argument, then a single cell, namely the selected cell, is implied.)
+
+`put` invokes `put-formula-in-cell` either once or several times, as needed. If only a single cell is involved, then `put` calls `put-formula-in-cell` directly. If a row or column is specified, then `put` uses the auxiliary procedure `put-all-cells-in-row` or `put-all-cells-in-col` as an intermediary.
+
+```scheme
+(define (put formula . where)
+  (cond ((null? where)
+          (put-formula-in-cell formula (selection-cell-id)))
+        ((cell-name? (car where))
+          (put-formula-in-cell formula (cell-name->id (car where))))
+        ((number? (car where))
+          (put-all-cells-in-row formula (car where)))
+        ((letter? (car where))
+          (put-all-cells-in-col formula (letter->number (car where))))
+        (else (error "Put it where?"))))
+```
+
+**Why is dot notation used in the `put` command?**
+
+`put` can be invoked with either one or two arguments. Therefore, the dot notation is used to allow a variable number of arguments; the parameter where will have as its value not the second argument itself, but a list that either contains the second argument or is empty. Thus, if there is a second argument, `put` refers to it as `(car where)`.
+
+**How do `put-all-cells-in-row` and `put-all-cells-in-col`work?**
+
+```scheme
+(define (put-all-cells-in-row formula row)
+  (put-all-helper formula (lambda (col) (make-id col row)) 1 26))
+
+(define (put-all-cells-in-col formula col)
+  (put-all-helper formula (lambda (row) (make-id col row)) 1 30))
+
+(define (put-all-helper formula id-maker this max)
+  (if (> this max)
+      'done
+      (begin (try-putting formula (id-maker this))
+             (put-all-helper formula id-maker (+ 1 this) max))))
+
+(define (try-putting formula id)
+  (if (or (null? (cell-value id)) (null? formula))
+      (put-formula-in-cell formula id)
+      'do-nothing))
+```
+
+`Put-all-cells-in-row` and `put-all-cells-in-col` invoke `put-all-helper`, which repeatedly puts the formula into a cell. `put-all-helper` is a typical sequential recursion: Do something for this element, and recur for the remaining elements. The difference is that “this element” means a cell ID that combines one constant index with one index that varies with each recursive call. What differs between filling a row and filling a column is the function used to compute each cell ID.
+
+**How do the `lambda` expressions work in `Put-all-cells-in-row` and `put-all-cells-in-col`?**
+
+The substitution model explains how the `lambda` expressions used as arguments to `put-all-helper` implement this idea. Suppose we are putting a formula into every cell in row 4. Then `put-all-cells-in-row` will be invoked with the value `4` substituted for the parameter `row`. After this substitution, the body is
+
+```scheme
+(put-all-helper formula (lambda (col) (make-id col 4)) 1 26)
+```
+
+The `lambda` expression creates a procedure that takes a column number as argument and returns a cell ID for the cell in row `4` and that column. This is just what `put-all-helper` needs. It invokes the procedure with the varying column number as its argument to get the proper cell ID.
+
+**Why is that `put-all-helper` doesn't directly invoke `put-formula-in-cell`?**
+
+The reason is that if a particular cell already has a value, then the new formula isn’t used for that particular cell, unless the formula is empty. That is, you can erase an entire row or column at once, but a non-empty formula affects only cells that were empty before this command. `try-putting` decides whether or not to put the formula into each possible cell. (In `try-putting`, the third argument to `if` could be anything; we’re interested only in what happens if the condition is true.)
+
+**How does `put-formula-in-cell` work?**
+
+```scheme
+(define (put-formula-in-cell formula id)
+  (put-expr (pin-down formula id) id))
+```
+
+---
+
+
+
