@@ -2733,5 +2733,31 @@ The reason is that if a particular cell already has a value, then the new formul
 
 ---
 
+### The Formula Translator
+
+
+```scheme
+(pin-down '(* (cell b) (cell c)) 'd4)
+```
+
+```scheme
+(* (id 2 4) (id 3 4))
+```
+
+```scheme
+(put (+ (* (cell b) (cell c)) (- (cell 2< 3>) 6)) f)
+```
+
+```scheme
+(define (pin-down formula id)
+  (cond ((cell-name? formula) (cell-name->id formula))
+        ((word? formula) formula)
+        ((null? formula) '())
+        ((equal? (car formula) 'cell)
+         (pin-down-cell (cdr formula) id))
+        (else (bound-check
+               (map (lambda (subformula) (pin-down subformula id))
+                    formula)))))
+```
 
 
