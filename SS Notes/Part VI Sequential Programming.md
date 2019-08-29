@@ -2683,6 +2683,31 @@ The `put` command takes two arguments, a formula and a place to put it. The seco
         (else (error "Put it where?"))))
 ```
 
+```mermaid
+graph TB
+	st((start))--formula . where-->put[put]
+	  put-->cond1{"(null? where)"}
+	  		  cond1-->|"formula (selection-cell-id)"| put-fm-cell1[put-formula-in-cell]
+	  		  cond1-->|N| cond2
+	  		cond2{"(cell-name? (car where))"}
+	  		  cond2-->|"formula (cell-name->id (car where))"| put-fm-cell2[put-formula-in-cell]
+	  		  cond2-->|N| cond3
+	  		cond3{"(number? (car where))"}
+	  		  cond3-->|"formula (car where)"| put-all-row[put-all-cells-in-row]
+	  		  cond3-->|N| cond4
+	  		cond4{"(letter? (car where))"}
+	  		  cond4-->|"formula (letter->number (car where))"| put-all-col[put-all-cells-in-col]
+	  		  cond4-->|N| error
+	  		error-->en
+	en((end))
+	
+classDef st-en fill:#f56642;
+class st,en st-en;
+
+classDef subroutine fill:#69cc18
+class put-fm-cell1,put-fm-cell2,put-all-row,put-all-col,error subroutine
+```
+
 **Why is dot notation used in the `put` command?**
 
 `put` can be invoked with either one or two arguments. Therefore, the dot notation is used to allow a variable number of arguments; the parameter where will have as its value not the second argument itself, but a list that either contains the second argument or is empty. Thus, if there is a second argument, `put` refers to it as `(car where)`.
@@ -2708,6 +2733,52 @@ The `put` command takes two arguments, a formula and a place to put it. The seco
       'do-nothing))
 ```
 
+```mermaid
+graph TB
+  st1((start))--"formula row"-->put-all-row[put-all-cells-in-row]
+    put-all-row--"formula (lambda (col) (make-id col row)) 1 26"-->put-all-helper-args
+ 
+  st2((start))--"formula col"-->put-all-col[put-all-cells-in-col]
+    put-all-col--"formula (lambda (row) (make-id col row)) 1 30"-->put-all-helper-args
+    
+  put-all-helper-args(formula id-maker this max)-->put-all-helper
+    
+  put-all-helper-->if{this > max}
+    if-->|Y| done(('done))
+    if-->|N| begin
+  begin--"formula (id-maker this)"-->try-putting
+  try-putting--"formula id-maker (+ 1 this) max"-->put-all-helper
+    
+  done-->en
+  en((end))
+  
+classDef st-en fill:#f56642;
+class st1,st2,en st-en;
+
+classDef args fill:#fff,stroke:#fff;
+class put-all-helper-args args;
+
+classDef subroutine fill:#69cc18;
+class try-putting subroutine;
+```
+
+```mermaid
+graph TB
+  st((start))--"formula id"-->try-putting
+    try-putting-->if{"or (null? (cell-value id)) (null? formula)"}
+      if--"formula id"-->put-fm-cell[put-formula-in-cell]
+      if-->|N| nothing(('do-nothing))
+      put-fm-cell-->en
+      nothing-->en
+  en((end))
+  
+classDef st-en fill:#f56642;
+class st,en st-en;
+
+classDef subroutine fill:#69cc18
+class put-fm-cell subroutine
+```
+
 `Put-all-cells-in-row` and `put-all-cells-in-col` invoke `put-all-helper`, which repeatedly puts the formula into a cell. `put-all-helper` is a typical sequential recursion: Do something for this element, and recur for the remaining elements. The difference is that “this element” means a cell ID that combines one constant index with one index that varies with each recursive call. What differs between filling a row and filling a column is the function used to compute each cell ID.
 
 **How do the `lambda` expressions work in `Put-all-cells-in-row` and `put-all-cells-in-col`?**
@@ -2731,18 +2802,75 @@ The reason is that if a particular cell already has a value, then the new formul
   (put-expr (pin-down formula id) id))
 ```
 
+```mermaid
+graph TB
+  st((start))--"formula id"-->put-fm-cell[put-formula-in-cell]
+    put-fm-cell-->pin-down["(pin-down formula id)"]
+      pin-down-->put-expr
+    put-fm-cell-->id
+      id-->put-expr  
+    put-expr-->en
+  en((end))
+  
+classDef st-en fill:#f56642;
+class st,en st-en;
+
+classDef args fill:#fff,stroke:#fff;
+class pin-down,id args;
+
+classDef subroutine fill:#69cc18;
+class pin-down,put-expr subroutine;
+```
+
 ---
 
 ### The Formula Translator
 
+**How to `put` a formula into a cell?**
+
+Suppose the user has said
+
+```scheme
+(put (* (cell b) (cell c)) d)
+```
+
+The `put` procedure puts this formula into each cell of column `d` by repeatedly calling `put-formula-in-cell`; as an example, let’s concentrate on cell `d4`.
+
+We’ll use the term “expression” for a formula whose cell references have been replaced by specific cell IDs.
+
+We started with the idea that we wanted to put a formula into a cell; we’ve refined that idea so that we now want to put an expression into the cell. This goal has two parts:
+
+* We must translate the formula (as given to us by the user in the put command) to an expression,
+* and we must store that expression in the cell data structure.
+
+These two subtasks are handled by `pin-down`, and by `put-expr`. `pin-down` is entirely functional; the only modification to the spreadsheet program’s state in this process is carried out by `put-expr`.
+
+**How does `pin-down` work?**
+
+We’ll refer to the process of translating a formula to an expression as “pinning down” the formula; the procedure `pin-down` carries out this process. It’s called “pinning down” because we start with a general formula and end up with a specific expression.
+
+`pin-down` takes two arguments:
+
+* The first is a formula;
+* the second is the ID of the cell that will be used as the *reference point* for relative cell positions.
+
+In the context of the `put` command, the reference point is the cell into which we’ll put the expression. But `pin-down` doesn’t think about putting anything anywhere; its job is to *translate a formula (containing relative cell locations) into an expression (containing only absolute cell IDs)*. `pin-down` needs a reference point as a way to understand the notation `<3`, which means “three cells before the reference point.”
+
+> In fact, `process-command` also invokes `pin-down` when the user types a formula in place of a command. In that situation, the result doesn’t go into a cell but is immediately evaluated and printed.
+
+`put-formula-in-cell` will invoke
 
 ```scheme
 (pin-down '(* (cell b) (cell c)) 'd4)
 ```
 
+and `pin-down` will return the expression
+
 ```scheme
 (* (id 2 4) (id 3 4))
 ```
+
+The overall structure of this problem is *tree recursive*. That’s because a formula can be arbitrarily complicated, with sublists of sublists, just like a Scheme expression:
 
 ```scheme
 (put (+ (* (cell b) (cell c)) (- (cell 2< 3>) 6)) f)
@@ -2760,4 +2888,141 @@ The reason is that if a particular cell already has a value, then the new formul
                     formula)))))
 ```
 
+```mermaid
+graph TB
+  st((start))--"formula id"-->pin-down[pin-down]
+    pin-down-->cond1{"(cell-name? formula)"}
+      	         cond1--formula-->name-id[cell-name->id]
+                 cond1-->|N| cond2
+    		   cond2{"(word? formula)"}
+    		     cond2-->|Y| formula1[formula]
+    		     cond2-->|N| cond3
+    		   cond3{"(null? formula)"}
+    		     cond3-->|Y| null["'()"]
+    		     cond3-->|N| cond4
+    		   cond4{"(equal? (car formula) 'cell)"}
+    		     cond4--"(cdr formula) id"-->pin-down-cell[pin-down-cell]
+    		     cond4-->|N| else
+    		   else{else}
+    		     else-->lambda["(lambda (subformula) (pin-down subformula id))"]
+    		     else-->formula2[formula]
+    		   lambda-->map
+    		   formula2-->map
+    		   map-->bound-check
+    		   bound-check[bound-check]-->en
+  en((end))
 
+classDef st-en fill:#f56642;
+class st,en st-en;
+
+classDef element fill:#fff,stroke:#fff;
+class formula1,null,lambda,formula2 element;
+
+classDef subroutine fill:#69cc18;
+class name-id,pin-down-cell,bound-check subroutine;
+```
+
+The base cases of the tree recursion are specific cell names, such as `c3`; other words, such as numbers and procedure names, which are unaffected by pin-down ; null formulas, which indicate that the user is erasing the contents of a cell; and sublists that start with the word cell . The first three of these are trivial; the fourth, which we will describe shortly, is the important case. If a formula is not one of these four base cases, then it’s a compound expression. In that case, we have to pin down all of the subexpressions individually. (We basically map pin-down over the formula. That’s what makes this process tree recursive.)
+
+```scheme
+(define (bound-check form)
+  (if (member 'out-of-bounds form)
+      'out-of-bounds
+      form))
+```
+
+```scheme
+(define (pin-down-cell args reference-id)
+  (cond ((null? args)
+         (error "Bad cell specification: (cell)"))
+        ((null? (cdr args))
+         (cond ((number? (car args))               ; they chose a row
+                (make-id (id-column reference-id) (car args)))
+               ((letter? (car args))               ; they chose a column
+                (make-id (letter->number (car args))
+                         (id-row reference-id)))
+               (else (error "Bad cell specification:"
+                            (cons 'cell args)))))
+        (else
+         (let ((col (pin-down-col (car args) (id-column reference-id)))
+               (row (pin-down-row (cadr args) (id-row reference-id))))
+           (if (and (>= col 1) (<= col 26) (>= row 1) (<= row 30))
+               (make-id col row)
+               'out-of-bounds)))))
+```
+
+```mermaid
+graph TB
+  st((start))--"args reference-id"-->pin-down-cell[pin-down-cell]
+    pin-down-cell-->cond1{"(null? args)"}
+      			      cond1-->|Y| error1[error message]
+                      cond1-->|N| cond2
+                    cond2{"(null? (cdr args))"}
+                      cond2-->|Y|cond2-1{"(number? (car args))"}
+                                   cond2-1--"(id-column reference-id) (car args)"-->make-id1[make-id]
+                                   cond2-1-->|N| cond2-2
+                                 cond2-2{"(letter? (car args))"}
+                                   cond2-2--"(letter->number (car args)) (id-row reference-id)"-->make-id2[make-id]
+                                   cond2-2-->|N| else1
+                                 else1{else}
+                                   else1--"error-message: (cons 'cell args)"-->error2[error]
+                      cond2-->|N| else2
+                    else2{else}
+                      else2-->let
+                                let-->col["col=(pin-down-col (car args) (id-column reference-id))"]
+                                col-->row["row=(pin-down-row (cadr args) (id-row reference-id))"]
+     			                row-->if{"and (>= col 1) (<= col 26) (>=row 1) (<= row 30)"}
+     			                        if--"col row"-->make-id[make-id]
+     			                        if--N--> out-of-bounds["'out-of-bounds"]
+     			                       
+
+classDef st-en fill:#f56642;
+class st,en st-en;
+
+classDef element fill:#fff,stroke:#fff;
+class error1,col,row,out-of-bounds element;
+
+classDef subroutine fill:#69cc18;
+class make-id1,make-id2 subroutine;
+```
+
+```scheme
+(define (pin-down-col new old)
+  (cond ((equal? new '*) old)
+        ((equal? (first new) '>) (+ old (bf new)))
+        ((equal? (first new) '<) (- old (bf new)))
+        ((letter? new) (letter->number new))
+        (else (error "What column?"))))
+
+(define (pin-down-row new old)
+  (cond ((number? new) new)
+        ((equal? new '*) old)
+        ((equal? (first new) '>) (+ old (bf new)))
+        ((equal? (first new) '<) (- old (bf new)))
+        (else (error "What row?"))))
+```
+
+```mermaid
+graph TB
+  st((start))--new old-->pin-down-col[pin-down-col]
+    pin-down-col-->cond1{"(equal? new '*)"}
+    			     cond1-->|Y| old[old]
+    			     cond1-->|N| cond2
+    			   cond2{"(equal? (first new) '>)"}
+    			     cond2-->|Y| col+["(+ old (bf new))"]
+    			     cond2-->|N| cond3
+    			   cond3{"(equal? (first new) '<)"}
+    			     cond3-->|Y| col-["(- old (bf new))"]
+                     cond3-->|N| cond4
+                   cond4{"(letter? new)"}
+                     cond4-->|Y| col-num["(letter->number new)"]
+    			     cond4-->|N| error[error message]
+classDef st-en fill:#f56642;
+class st,en st-en;
+
+classDef element fill:#fff,stroke:#fff;
+class old,col+,col-,col-num,error element;
+
+classDef subroutine fill:#69cc18;
+class # subroutine;
+```
