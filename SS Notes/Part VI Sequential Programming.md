@@ -2700,7 +2700,7 @@ graph TB
 	  		  cond4-->|N| error
 	  		error-->en
 	en((end))
-	
+
 classDef st-en fill:#f56642;
 class st,en st-en;
 
@@ -2737,21 +2737,21 @@ class put-fm-cell1,put-fm-cell2,put-all-row,put-all-col,error subroutine
 graph TB
   st1((start))--"formula row"-->put-all-row[put-all-cells-in-row]
     put-all-row--"formula (lambda (col) (make-id col row)) 1 26"-->put-all-helper-args
- 
+
   st2((start))--"formula col"-->put-all-col[put-all-cells-in-col]
     put-all-col--"formula (lambda (row) (make-id col row)) 1 30"-->put-all-helper-args
-    
+
   put-all-helper-args(formula id-maker this max)-->put-all-helper
-    
+
   put-all-helper-->if{this > max}
     if-->|Y| done(('done))
     if-->|N| begin
   begin--"formula (id-maker this)"-->try-putting
   try-putting--"formula id-maker (+ 1 this) max"-->put-all-helper
-    
+
   done-->en
   en((end))
-  
+
 classDef st-en fill:#f56642;
 class st1,st2,en st-en;
 
@@ -2771,7 +2771,7 @@ graph TB
       put-fm-cell-->en
       nothing-->en
   en((end))
-  
+
 classDef st-en fill:#f56642;
 class st,en st-en;
 
@@ -2808,10 +2808,10 @@ graph TB
     put-fm-cell-->pin-down["(pin-down formula id)"]
       pin-down-->put-expr
     put-fm-cell-->id
-      id-->put-expr  
+      id-->put-expr
     put-expr-->en
   en((end))
-  
+
 classDef st-en fill:#f56642;
 class st,en st-en;
 
@@ -2974,7 +2974,7 @@ graph TB
      			                row-->if{"and (>= col 1) (<= col 26) (>=row 1) (<= row 30)"}
      			                        if--"col row"-->make-id[make-id]
      			                        if--N--> out-of-bounds["'out-of-bounds"]
-     			                       
+
 
 classDef st-en fill:#f56642;
 class st,en st-en;
@@ -3026,3 +3026,149 @@ class old,col+,col-,col-num,error element;
 classDef subroutine fill:#69cc18;
 class # subroutine;
 ```
+
+---
+
+### The Dependency Manager
+
+**How are cells represented in spreadsheet?**
+
+*Our program represents each cell as a four-element vector*. Each cell includes
+
+* a value,
+* an expression,
+* a list of parents (the cells that it depends on), and
+* a list of children (the cells that depend on it).
+
+The latter two lists contain cell IDs. So our example cell c4 might look like this:
+
+```scheme
+#(12
+(+ (id 1 3) (id 2 2))
+((id 1 3) (id 2 2))
+((id 2 5)))
+```
+
+In a simpler case, suppose we put a value into a cell that nothing depends on, by saying, for example,
+
+```scheme
+(put 6 a1)
+```
+
+Then cell `a1` would contain
+
+```scheme
+#(6 6 () ())
+```
+
+(Remember that a value is just a very simple formula.)
+
+**What are the selectors, mutators and constructors for cell?**
+
+There are selectors `cell-value` and so on that take a cell ID as argument, and mutators `set-cell-value!` and so on that take a cell ID and a new value as arguments.There’s also the constructor `make-cell`, but it’s called only at the beginning of the program, when the 780 cells in the spreadsheet are created at once.
+
+**What need to be considered when a cell is given a new expression?**
+
+* The new expression becomes the cell’s expression, of course.
+* The cells mentioned in the expression become the parents of this cell.
+* This cell becomes a child of the cells mentioned in the expression.
+* If all the parents have values, the value of this cell is computed.
+
+Some of these changes are simple, but others are complicated. For example, it’s not enough to tell the cell’s new parents that the cell is now their child (the third task). First we have to tell the cell’s old parents that this cell isn’t their child any more. That has to be done before we forget the cell’s old parents.
+
+**How does `put-expr` work?**
+
+```scheme
+(define (put-expr expr-or-out-of-bounds id)
+  (let ((expr (if (equal? expr-or-out-of-bounds 'out-of-bounds)
+                  '()
+                  expr-or-out-of-bounds)))
+    (for-each (lambda (old-parent)
+                (set-cell-children!
+                 old-parent
+                 (remove id (cell-children old-parent))))
+              (cell-parents id))
+    (set-cell-expr! id expr)
+    (set-cell-parents! id (remdup (extract-ids expr)))
+    (for-each (lambda (new-parent)
+                (set-cell-children!
+                 new-parent
+                 (cons id (cell-children new-parent))))
+              (cell-parents id))
+    (figure id)))
+```
+
+Remember that `put-expr`’s first argument is the return value from `pin-down`, so it might be the word `out-of-bounds` instead of an expression. In this case, we store an empty list as the expression, indicating that there is no active expression for this cell.
+
+Within the body of the `let` there are five Scheme expressions, each of which carries out one of the tasks we’ve listed. The first expression tells the cell’s former parents that the cell is no longer their child. The second expression stores the expression in the cell.
+
+The third Scheme expression invokes `extract-ids` to find all the cell ids used in `expr`, removes any duplicates, and establishes those identified cells as the argument cell’s parents.For example, if the `expr` is
+
+```scheme
+(+ (id 4 2) (* (id 1 3) (id 1 3)))
+```
+
+then `extract-ids` will return the list
+
+```scheme
+((id 4 2) (id 1 3) (id 1 3))
+```
+
+and `remdup` of that will be
+
+```scheme
+((id 4 2) (id 1 3))
+```
+
+The fourth expression in the let tells each of the new parents to consider the argument cell as its child. The fifth expression may or may not compute a new value for this cell.
+
+**How does `extract-ids` work?**
+
+```scheme
+(define (extract-ids expr)
+  (cond ((id? expr) (list expr))
+        ((word? expr) '())
+        ((null? expr) '())
+        (else (append (extract-ids (car expr))
+                      (extract-ids (cdr expr))))))
+```
+
+This is a tree recursion. The first three `cond` clauses are base cases:
+
+* cell IDs are included in the returned list, while
+* other words are ignored.
+
+For compound expressions, we use the trick of making recursive calls on the `car` and `cdr` of the list. We combine the results with append because `extract-ids` must return a flat list of cell IDs, not a cheap tree.
+
+**How does `figure` work?**
+
+The fifth step in `put-expr` is complicated because, as we saw in the example, changing the value of one cell may require us to recompute the value of other cells:
+
+```scheme
+(define (figure id)
+  (cond ((null? (cell-expr id)) (setvalue id '()))
+        ((all-evaluated? (cell-parents id))
+         (setvalue id (ss-eval (cell-expr id))))
+        (else (setvalue id '()))))
+
+(define (all-evaluated? ids)
+  (cond ((null? ids) #t)
+        ((not (number? (cell-value (car ids)))) #f)
+        (else (all-evaluated? (cdr ids)))))
+
+(define (setvalue id value)
+  (let ((old (cell-value id)))
+    (set-cell-value! id value)
+    (if (not (equal? old value))
+        (for-each figure (cell-children id))
+        'do-nothing)))
+```
+
+`figure` is invoked for the cell whose expression we’ve just changed. If there is no expression (that is, if we’ve changed it to an empty expression or to an `out-of-bounds` one), then `figure` will remove any old value that might be left over from a previous expression. If there is an expression, then `figure` will compute and save a new value, but only if all of this cell’s parents have numeric values. If any parent doesn’t have a value, or if its value is a non-numeric label, then figure has to remove the value from this cell.
+
+`setvalue` actually puts the new value in the cell. It first looks up the old value. If the new and old values are different, then all of the children of this cell must be re- `figured`. This, too, is a tree recursion because there might be several children, and each of them might have several children.
+
+---
+
+### The Expression Evaluator
+
