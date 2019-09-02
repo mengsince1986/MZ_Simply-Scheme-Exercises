@@ -3166,9 +3166,60 @@ The fifth step in `put-expr` is complicated because, as we saw in the example, c
 
 `figure` is invoked for the cell whose expression we’ve just changed. If there is no expression (that is, if we’ve changed it to an empty expression or to an `out-of-bounds` one), then `figure` will remove any old value that might be left over from a previous expression. If there is an expression, then `figure` will compute and save a new value, but only if all of this cell’s parents have numeric values. If any parent doesn’t have a value, or if its value is a non-numeric label, then figure has to remove the value from this cell.
 
-`setvalue` actually puts the new value in the cell. It first looks up the old value. If the new and old values are different, then all of the children of this cell must be re- `figured`. This, too, is a tree recursion because there might be several children, and each of them might have several children.
+`setvalue` actually puts the new value in the cell. It first looks up the old value. If the new and old values are different, then all of the children of this cell must be re-`figured`. This, too, is a tree recursion because there might be several children, and each of them might have several children.
 
 ---
 
 ### The Expression Evaluator
 
+**What can expressions be in the spreadsheet language?**
+
+In the spreadsheet language, as in Scheme, an expression can be one of three things:
+
+* a constant expression (a number or quoted word), whose value is itself.
+* a variable (a cell ID, in the case of the spreadsheet language).
+* a procedure invocation enclosed in parentheses.
+
+**How does `ss-eval` work?**
+
+The structure of `ss-eval` is a `cond` whose clauses handle the three types of expressions. Constants and variables are easy; invocations require recursively evaluating the arguments before the procedure can be invoked.
+
+```scheme
+(define (ss-eval expr)
+  (cond ((number? expr) expr)
+        ((quoted? expr) (quoted-value expr))
+        ((id? expr) (cell-value expr))
+        ((invocation? expr)
+         (apply (get-function (car expr))
+                (map ss-eval (cdr expr))))
+        (else (error "Invalid expression:" expr))))
+```
+
+The value of a number is itself; the value of a quoted word is the word without the quotation mark. (Actually, by the time `ss-eval` sees a quoted word, Scheme has translated the `'abc` notation into `(quote abc)` and that’s what we deal with here. Also, double-quoted strings look different to the program from single-quoted words.)
+
+```scheme
+(define (quoted? expr)
+  (or (string? expr)
+      (and (list? expr) (equal? (car expr) ’quote))))
+
+(define (quoted-value expr)
+  (if (string? expr)
+      expr
+      (cadr expr)))
+```
+
+The third clause checks for a cell ID; the value of such an expression is the value stored in the corresponding cell.
+
+If an expression is none of those things, it had better be a function invocation, that is, a list. In that case, `ss-eval` has to do three things:
+
+* It looks up the function name in a table (as we did earlier for spreadsheet commands);
+* it recursively evaluates all the argument subexpressions; and then
+* it can invoke apply to apply the procedure to the argument values.
+
+`get-function` looks up a function name in the `name-to-function` association list and returns the corresponding Scheme procedure. Thus, only the functions included in the list can be used in spreadsheet formulas.
+
+The entire expression evaluator, including `ss-eval` and its helper procedures, is functional. Like the formula translator, it doesn’t change the state of the spreadsheet.
+
+---
+
+### The Screen Printer
