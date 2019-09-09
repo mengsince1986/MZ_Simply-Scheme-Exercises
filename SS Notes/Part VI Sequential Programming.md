@@ -2683,31 +2683,6 @@ The `put` command takes two arguments, a formula and a place to put it. The seco
         (else (error "Put it where?"))))
 ```
 
-```mermaid
-graph TB
-	st((start))--formula . where-->put[put]
-	  put-->cond1{"(null? where)"}
-	  		  cond1-->|"formula (selection-cell-id)"| put-fm-cell1[put-formula-in-cell]
-	  		  cond1-->|N| cond2
-	  		cond2{"(cell-name? (car where))"}
-	  		  cond2-->|"formula (cell-name->id (car where))"| put-fm-cell2[put-formula-in-cell]
-	  		  cond2-->|N| cond3
-	  		cond3{"(number? (car where))"}
-	  		  cond3-->|"formula (car where)"| put-all-row[put-all-cells-in-row]
-	  		  cond3-->|N| cond4
-	  		cond4{"(letter? (car where))"}
-	  		  cond4-->|"formula (letter->number (car where))"| put-all-col[put-all-cells-in-col]
-	  		  cond4-->|N| error
-	  		error-->en
-	en((end))
-
-classDef st-en fill:#f56642;
-class st,en st-en;
-
-classDef subroutine fill:#69cc18
-class put-fm-cell1,put-fm-cell2,put-all-row,put-all-col,error subroutine
-```
-
 **Why is dot notation used in the `put` command?**
 
 `put` can be invoked with either one or two arguments. Therefore, the dot notation is used to allow a variable number of arguments; the parameter where will have as its value not the second argument itself, but a list that either contains the second argument or is empty. Thus, if there is a second argument, `put` refers to it as `(car where)`.
@@ -2733,52 +2708,6 @@ class put-fm-cell1,put-fm-cell2,put-all-row,put-all-col,error subroutine
       'do-nothing))
 ```
 
-```mermaid
-graph TB
-  st1((start))--"formula row"-->put-all-row[put-all-cells-in-row]
-    put-all-row--"formula (lambda (col) (make-id col row)) 1 26"-->put-all-helper-args
-
-  st2((start))--"formula col"-->put-all-col[put-all-cells-in-col]
-    put-all-col--"formula (lambda (row) (make-id col row)) 1 30"-->put-all-helper-args
-
-  put-all-helper-args(formula id-maker this max)-->put-all-helper
-
-  put-all-helper-->if{this > max}
-    if-->|Y| done(('done))
-    if-->|N| begin
-  begin--"formula (id-maker this)"-->try-putting
-  try-putting--"formula id-maker (+ 1 this) max"-->put-all-helper
-
-  done-->en
-  en((end))
-
-classDef st-en fill:#f56642;
-class st1,st2,en st-en;
-
-classDef args fill:#fff,stroke:#fff;
-class put-all-helper-args args;
-
-classDef subroutine fill:#69cc18;
-class try-putting subroutine;
-```
-
-```mermaid
-graph TB
-  st((start))--"formula id"-->try-putting
-    try-putting-->if{"or (null? (cell-value id)) (null? formula)"}
-      if--"formula id"-->put-fm-cell[put-formula-in-cell]
-      if-->|N| nothing(('do-nothing))
-      put-fm-cell-->en
-      nothing-->en
-  en((end))
-
-classDef st-en fill:#f56642;
-class st,en st-en;
-
-classDef subroutine fill:#69cc18
-class put-fm-cell subroutine
-```
-
 `Put-all-cells-in-row` and `put-all-cells-in-col` invoke `put-all-helper`, which repeatedly puts the formula into a cell. `put-all-helper` is a typical sequential recursion: Do something for this element, and recur for the remaining elements. The difference is that “this element” means a cell ID that combines one constant index with one index that varies with each recursive call. What differs between filling a row and filling a column is the function used to compute each cell ID.
 
 **How do the `lambda` expressions work in `Put-all-cells-in-row` and `put-all-cells-in-col`?**
@@ -2800,26 +2729,6 @@ The reason is that if a particular cell already has a value, then the new formul
 ```scheme
 (define (put-formula-in-cell formula id)
   (put-expr (pin-down formula id) id))
-```
-
-```mermaid
-graph TB
-  st((start))--"formula id"-->put-fm-cell[put-formula-in-cell]
-    put-fm-cell-->pin-down["(pin-down formula id)"]
-      pin-down-->put-expr
-    put-fm-cell-->id
-      id-->put-expr
-    put-expr-->en
-  en((end))
-
-classDef st-en fill:#f56642;
-class st,en st-en;
-
-classDef args fill:#fff,stroke:#fff;
-class pin-down,id args;
-
-classDef subroutine fill:#69cc18;
-class pin-down,put-expr subroutine;
 ```
 
 ---
@@ -2888,40 +2797,6 @@ The overall structure of this problem is *tree recursive*. That’s because a fo
                     formula)))))
 ```
 
-```mermaid
-graph TB
-  st((start))--"formula id"-->pin-down[pin-down]
-    pin-down-->cond1{"(cell-name? formula)"}
-      	         cond1--formula-->name-id[cell-name->id]
-                 cond1-->|N| cond2
-    		   cond2{"(word? formula)"}
-    		     cond2-->|Y| formula1[formula]
-    		     cond2-->|N| cond3
-    		   cond3{"(null? formula)"}
-    		     cond3-->|Y| null["'()"]
-    		     cond3-->|N| cond4
-    		   cond4{"(equal? (car formula) 'cell)"}
-    		     cond4--"(cdr formula) id"-->pin-down-cell[pin-down-cell]
-    		     cond4-->|N| else
-    		   else{else}
-    		     else-->lambda["(lambda (subformula) (pin-down subformula id))"]
-    		     else-->formula2[formula]
-    		   lambda-->map
-    		   formula2-->map
-    		   map-->bound-check
-    		   bound-check[bound-check]-->en
-  en((end))
-
-classDef st-en fill:#f56642;
-class st,en st-en;
-
-classDef element fill:#fff,stroke:#fff;
-class formula1,null,lambda,formula2 element;
-
-classDef subroutine fill:#69cc18;
-class name-id,pin-down-cell,bound-check subroutine;
-```
-
 The base cases of the tree recursion are specific cell names, such as `c3`; other words, such as numbers and procedure names, which are unaffected by pin-down ; null formulas, which indicate that the user is erasing the contents of a cell; and sublists that start with the word cell . The first three of these are trivial; the fourth, which we will describe shortly, is the important case. If a formula is not one of these four base cases, then it’s a compound expression. In that case, we have to pin down all of the subexpressions individually. (We basically map pin-down over the formula. That’s what makes this process tree recursive.)
 
 ```scheme
@@ -2951,41 +2826,6 @@ The base cases of the tree recursion are specific cell names, such as `c3`; othe
                'out-of-bounds)))))
 ```
 
-```mermaid
-graph TB
-  st((start))--"args reference-id"-->pin-down-cell[pin-down-cell]
-    pin-down-cell-->cond1{"(null? args)"}
-      			      cond1-->|Y| error1[error message]
-                      cond1-->|N| cond2
-                    cond2{"(null? (cdr args))"}
-                      cond2-->|Y|cond2-1{"(number? (car args))"}
-                                   cond2-1--"(id-column reference-id) (car args)"-->make-id1[make-id]
-                                   cond2-1-->|N| cond2-2
-                                 cond2-2{"(letter? (car args))"}
-                                   cond2-2--"(letter->number (car args)) (id-row reference-id)"-->make-id2[make-id]
-                                   cond2-2-->|N| else1
-                                 else1{else}
-                                   else1--"error-message: (cons 'cell args)"-->error2[error]
-                      cond2-->|N| else2
-                    else2{else}
-                      else2-->let
-                                let-->col["col=(pin-down-col (car args) (id-column reference-id))"]
-                                col-->row["row=(pin-down-row (cadr args) (id-row reference-id))"]
-     			                row-->if{"and (>= col 1) (<= col 26) (>=row 1) (<= row 30)"}
-     			                        if--"col row"-->make-id[make-id]
-     			                        if--N--> out-of-bounds["'out-of-bounds"]
-
-
-classDef st-en fill:#f56642;
-class st,en st-en;
-
-classDef element fill:#fff,stroke:#fff;
-class error1,col,row,out-of-bounds element;
-
-classDef subroutine fill:#69cc18;
-class make-id1,make-id2 subroutine;
-```
-
 ```scheme
 (define (pin-down-col new old)
   (cond ((equal? new '*) old)
@@ -3000,31 +2840,6 @@ class make-id1,make-id2 subroutine;
         ((equal? (first new) '>) (+ old (bf new)))
         ((equal? (first new) '<) (- old (bf new)))
         (else (error "What row?"))))
-```
-
-```mermaid
-graph TB
-  st((start))--new old-->pin-down-col[pin-down-col]
-    pin-down-col-->cond1{"(equal? new '*)"}
-    			     cond1-->|Y| old[old]
-    			     cond1-->|N| cond2
-    			   cond2{"(equal? (first new) '>)"}
-    			     cond2-->|Y| col+["(+ old (bf new))"]
-    			     cond2-->|N| cond3
-    			   cond3{"(equal? (first new) '<)"}
-    			     cond3-->|Y| col-["(- old (bf new))"]
-                     cond3-->|N| cond4
-                   cond4{"(letter? new)"}
-                     cond4-->|Y| col-num["(letter->number new)"]
-    			     cond4-->|N| error[error message]
-classDef st-en fill:#f56642;
-class st,en st-en;
-
-classDef element fill:#fff,stroke:#fff;
-class old,col+,col-,col-num,error element;
-
-classDef subroutine fill:#69cc18;
-class # subroutine;
 ```
 
 ---
@@ -3223,3 +3038,188 @@ The entire expression evaluator, including `ss-eval` and its helper procedures, 
 ---
 
 ### The Screen Printer
+
+**How does `print-screen` work?**
+
+```scheme
+(define (print-screen)
+  (newline)
+  (newline)
+  (newline)
+  (show-column-labels (id-column (screen-corner-cell-id)))
+  (show-rows 20
+             (id-column (screen-corner-cell-id))
+             (id-row (screen-corner-cell-id)))
+  (display-cell-name (selection-cell-id))
+  (show (cell-value (selection-cell-id)))
+  (display-expression (cell-expr (selection-cell-id)))
+  (newline)
+  (display "?? "))
+```
+
+`screen-corner-cell-id` returns the ID of the cell that should be shown in the top left corner of the display; `selection-cell-id` returns the ID of the selected cell.
+
+`show-column-labels` prints the first row of the display, the one with the column letters. `show-rows` is a sequential recursion that prints the actual rows of the spreadsheet, starting with the row number of the `screen-corner` cell and continuing for 20 rows.  (There are 30 rows in the entire spreadsheet, but they don’t all fit on the screen at once.) The rest of the procedure displays the value and expression of the selected cell at the bottom of the screen and prompts for the next command.
+
+**Why isn't `display-expression` just display?**
+
+Because the spreadsheet stores expressions in a form like
+
+```scheme
+(+ (id 2 5) (id 6 3))
+```
+
+but the user wants to see
+
+```scheme
+(+ b5 f3)
+```
+
+`display-expression` is yet another tree recursion over expressions. Just as `pin-down` translates cell names into cell IDs, `display-expression` translates IDs back into names. (But display-expression prints as it goes along, instead of reconstructing and returning a list.)
+
+**How does `show-rows` work?**
+
+`show-rows` is a sequential recursion in which each invocation prints an entire row. It does so by invoking `show-row`, another sequential recursion, in which each invocation prints a single cell value.
+
+```scheme
+(define (show-rows to-go col row)
+  (cond ((= to-go 0) 'done)
+        (else
+          (display (align row 2 0))
+          (display " ")
+          (show-row 6 col row)
+          (newline)
+          (show-rows (- to-go 1) col (+ row 1)))))
+
+(define (show-row to-go col row)
+  (cond ((= to-go 0) 'done)
+        (else
+           (display (if (selected-indices? col row) ">" " "))
+           (display-value (cell-value-from-indices col row))
+           (display (if (selected-indices? col row) "<" " "))
+           (show-row (- to-go 1) (+ 1 col) row))))
+
+(define (selected-indices? col row)
+  (and (= col (id-column (selection-cell-id)))
+       (= row (id-row (selection-cell-id)))))
+```
+
+**Why didn’t we write `show-row` in the following way?**
+
+```scheme
+(define (show-row to-go col row)   ;; alternate version
+  (cond ((= to-go 0) 'done)
+        (else
+         (let ((id (make-id col row)))
+         (display (if (equal? id (selection-cell-id)) ">" " "))
+         (display-value (cell-value id))
+         (display (if (equal? id (selection-cell-id)) "<" " "))
+         (show-row (- to-go 1) (+ 1 col) row)))))
+```
+
+That would have worked fine and would have been a little clearer. In fact, we did write `show-row` this way originally. But it’s a little time-consuming to construct an ID, and `show-row` is called 120 times whenever `print-screen` is used. Since printing the screen was annoyingly slow, we sped things up as much as we could, even at the cost of this kludge.
+
+---
+
+### The Cell Manager
+
+**How does the spreadsheet program keep information about the current status of the spreadsheet cells?**
+
+The program keeps information about the current status of the spreadsheet cells in a vector called `*the-spreadsheet-array*`. It contains all of the 780 cells that make up the spreadsheet (30 rows of 26 columns). It’s not a vector of length 780; rather, it’s a vector of length 30, each of whose elements is itself a vector of length 26. In other words, each element of the spreadsheet array is a vector representing one row of the spreadsheet. (Each element of those vectors is one cell, which, as you recall, is represented as a vector of length four. So the spreadsheet array is a vector of vectors of vectors!)
+
+**How does the cell selector `cell-structure` work?**
+
+The selectors for the parts of a cell take the cell’s ID as argument and return one of the four elements of the cell vector. Each must therefore be implemented as two steps:
+
+* We must find the cell vector, given its ID;
+* and we must then select an element from the cell vector.
+
+The first step is handled by the selector `cell-structure` that takes a cell ID as argument:
+
+```scheme
+(define (cell-structure id)
+  (global-array-lookup (id-column id)
+                       (id-row id)))
+
+(define (global-array-lookup col row)
+  (if (and (<= row 30) (<= col 26))
+      (vector-ref (vector-ref *the-spreadsheet-array* (- row 1))
+                  (- col 1))
+      (error "Out of bounds")))
+```
+
+`global-array-lookup` makes sure the desired cell exists. It also compensates for the fact that Scheme vectors begin with element number zero, while our spreadsheet begins with row and column number one. Two invocations of `vector-ref` are needed, one to select an entire row and the next to select a cell within that row.
+
+**How do cell selectors, mutators and constructor work?**
+
+Selectors and mutators for the parts of a cell are written using `cell-structure`:
+
+```scheme
+(define (cell-value id)
+  (vector-ref (cell-structure id) 0))
+
+(define (set-cell-value! id val)
+  (vector-set! (cell-structure id) 0 val))
+
+(define (cell-expr id)
+  (vector-ref (cell-structure id) 1))
+
+(define (set-cell-expr! id val)
+  (vector-set! (cell-structure id) 1 val))
+
+(define (cell-parents id)
+  (vector-ref (cell-structure id) 2))
+
+(define (set-cell-parents! id val)
+  (vector-set! (cell-structure id) 2 val))
+
+(define (cell-children id)
+  (vector-ref (cell-structure id) 3))
+
+(define (set-cell-children! id val)
+  (vector-set! (cell-structure id) 3 val))
+```
+
+The constructor is:
+
+```scheme
+(define (make-cell)
+  (vector '() '() '() '()))
+```
+
+**How does the spreadsheet program create the initial cell array?**
+
+The spreadsheet program begins by invoking `init-array` to set up this large array.  (Also, it sets the initial values of the selected cell and the screen corner.)
+
+```scheme
+(define (spreadsheet)
+  (init-array)
+  (set-selection-cell-id! (make-id 1 1))
+  (set-screen-corner-cell-id! (make-id 1 1))
+  (command-loop))
+
+(define *the-spreadsheet-array* (make-vector 30))    ; initialize 30 rows
+
+(define (init-array)
+  (fill-array-with-rows 29))                         ; initialize cols for each row
+
+(define (fill-array-with-rows n)
+  (if (< n 0)
+      'done
+      (begin (vector-set! *the-spreadsheet-array* n (make-vector 26))  ; create a 26-element vector for row n
+             (fill-row-with-cells
+              (vector-ref *the-spreadsheet-array* n) 25)               ; create a cell vecor for each elemet for row n
+             (fill-array-with-rows (- n 1)))))
+
+(define (fill-row-with-cells vec n)
+  (if (< n 0)
+      'done
+      (begin (vector-set! vec n (make-cell))
+             (fill-row-with-cells vec (- n 1)))))
+```
+
+---
+
+### Exercises 25.1-25.12
+
+[Solution]()

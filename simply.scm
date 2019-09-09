@@ -1,3 +1,5 @@
+(require (planet dyoo/simply-scheme:2:2))
+
 ;;; simply.scm version 3.13 (8/11/98)
 ;;; (Numbered to agree with berkeley.scm version.)
 
