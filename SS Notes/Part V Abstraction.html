@@ -1,0 +1,897 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>Part V Abstraction</title>
+  <style>
+      code{white-space: pre-wrap;}
+      span.smallcaps{font-variant: small-caps;}
+      span.underline{text-decoration: underline;}
+      div.column{display: inline-block; vertical-align: top; width: 50%;}
+  </style>
+  <style>
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+    color: #aaaaaa;
+  }
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+code span.at { color: #7d9029; } /* Attribute */
+code span.bn { color: #40a070; } /* BaseN */
+code span.bu { } /* BuiltIn */
+code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+code span.ch { color: #4070a0; } /* Char */
+code span.cn { color: #880000; } /* Constant */
+code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+code span.dt { color: #902000; } /* DataType */
+code span.dv { color: #40a070; } /* DecVal */
+code span.er { color: #ff0000; font-weight: bold; } /* Error */
+code span.ex { } /* Extension */
+code span.fl { color: #40a070; } /* Float */
+code span.fu { color: #06287e; } /* Function */
+code span.im { } /* Import */
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+code span.op { color: #666666; } /* Operator */
+code span.ot { color: #007020; } /* Other */
+code span.pp { color: #bc7a00; } /* Preprocessor */
+code span.sc { color: #4070a0; } /* SpecialChar */
+code span.ss { color: #bb6688; } /* SpecialString */
+code span.st { color: #4070a0; } /* String */
+code span.va { color: #19177c; } /* Variable */
+code span.vs { color: #4070a0; } /* VerbatimString */
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+  </style>
+  <link rel="stylesheet" href="gh-pandoc.css" />
+  <!--[if lt IE 9]>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv-printshiv.min.js"></script>
+  <![endif]-->
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">Part V Abstraction</h1>
+</header>
+<p><strong>What are the two kinds of abstraction specified in this part?</strong></p>
+<ul>
+<li>data abstraction</li>
+<li>the implementation of higher-order functions</li>
+</ul>
+<h2 id="chapter-17-lists">Chapter 17 Lists</h2>
+<p><strong>How to use list to define an ice cream menu?</strong></p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode scheme"><code class="sourceCode scheme"><span id="cb1-1"><a href="#cb1-1"></a>(vanilla (ultra chocolate) (heath bar crunch) ginger (cherry garcia))</span></code></pre></div>
+<p>This is meant to represent five flavors, two of which are named by single words, and the other three of which are named by sentences.</p>
+<p>The data structure we’re using in this example is called a <strong><em>list</em></strong>.</p>
+<p><strong>What are the differences between a sentence and a list?</strong></p>
+<table>
+<thead>
+<tr class="header">
+<th></th>
+<th style="text-align: center;">lists</th>
+<th style="text-align: center;">sentences</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong>elements</strong></td>
+<td style="text-align: center;">anything</td>
+<td style="text-align: center;">words</td>
+</tr>
+<tr class="even">
+<td><strong>definition</strong></td>
+<td style="text-align: center;">self-referential</td>
+<td style="text-align: center;">non-self-referential</td>
+</tr>
+</tbody>
+</table>
+<p>A list that’s an element of another list is called a <strong><em>sublist</em></strong>. We’ll use the name <strong><em>structured</em></strong> list for a list that includes sublists.</p>
+<p><strong>How to use lists in pattern matcher?</strong></p>
+<p>We used list structure to hold known-values databases, such as</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode scheme"><code class="sourceCode scheme"><span id="cb2-1"><a href="#cb2-1"></a>((FRONT (YOUR MOTHER)) (BACK (SHOULD KNOW)))</span></code></pre></div>
+<p><em>Lists are at the core of what Lisp has been about from its beginning. (In fact the name “Lisp” stands for “LISt Processing.”)</em></p>
+<hr />
+<h3 id="selectors-and-constructors">Selectors and Constructors</h3>
+<p><strong>What are the <em>selectors</em> of lists?</strong></p>
+<ul>
+<li><code>car</code> – to select the first element of a list.</li>
+<li><code>cdr</code> – to select the portion of a list containing all but the first element.</li>
+</ul>
+<p><strong>What is the <em>predicate</em> function to check for an empty list?</strong></p>
+<ul>
+<li><code>null?</code> – returns <code>#t</code> for the empty list, <code>#f</code> for anything else.</li>
+</ul>
+<p><strong>What are the <em>constructors</em> for lists?</strong></p>
+<ul>
+<li><code>list</code> – takes any number of arguments and returns a list with those arguments as its elements.</li>
+</ul>
+<div class="sourceCode" id="cb3"><pre class="sourceCode scheme"><code class="sourceCode scheme"><span id="cb3-1"><a href="#cb3-1"></a>(<span class="kw">list</span> (<span class="op">+</span> <span class="dv">2</span> <span class="dv">3</span>) &#39;squash (<span class="op">=</span> <span class="dv">2</span> <span class="dv">2</span>) (<span class="kw">list</span> <span class="dv">4</span> <span class="dv">5</span>) <span class="kw">remainder</span> &#39;zucchini)</span>
+<span id="cb3-2"><a href="#cb3-2"></a><span class="co">;(5 SQUASH #T (4 5) #&lt;PROCEDURE&gt; ZUCCHINI)</span></span></code></pre></div>
+<p><img src="images/list.png" width="400"></p>
+<ul>
+<li><code>cons</code> – takes two arguments, an element and a list and returns a new list whose <code>car</code> is the first argument and whose <code>cdr</code> is the second.</li>
+</ul>
+<div class="sourceCode" id="cb4"><pre class="sourceCode scheme"><code class="sourceCode scheme"><span id="cb4-1"><a href="#cb4-1"></a>(<span class="kw">cons</span> &#39;for &#39;(no one))</span>
+<span id="cb4-2"><a href="#cb4-2"></a><span class="co">; (FOR NO ONE)</span></span></code></pre></div>
+<p><img src="images/cons.png" width="400"></p>
+<ul>
+<li><code>append</code> – combines the elements of two or more lists into a larger list.</li>
+</ul>
+<div class="sourceCode" id="cb5"><pre class="sourceCode scheme"><code class="sourceCode scheme"><span id="cb5-1"><a href="#cb5-1"></a>(<span class="kw">append</span> &#39;(get back) &#39;(the word))</span>
+<span id="cb5-2"><a href="#cb5-2"></a><span class="co">; (GET BACK THE WORD)</span></span></code></pre></div>
+<p><img src="images/append.png" width="400"></p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode scheme"><code class="sourceCode scheme"><span id="cb6-1"><a href="#cb6-1"></a>(<span class="kw">list</span> &#39;(i am) &#39;(the walrus))</span>
+<span id="cb6-2"><a href="#cb6-2"></a><span class="co">; ((I AM) (THE WALRUS))</span></span>
+<span id="cb6-3"><a href="#cb6-3"></a></span>
+<span id="cb6-4"><a href="#cb6-4"></a>(<span class="kw">cons</span> &#39;(i am) &#39;(the walrus))</span>
+<span id="cb6-5"><a href="#cb6-5"></a><span class="co">; ((I AM) THE WALRUS)</span></span>
+<span id="cb6-6"><a href="#cb6-6"></a></span>
+<span id="cb6-7"><a href="#cb6-7"></a>(<span class="kw">append</span> &#39;(i am) &#39;(the walrus))</span>
+<span id="cb6-8"><a href="#cb6-8"></a><span class="co">; (I AM THE WALRUS)</span></span></code></pre></div>
+<hr />
+<h3 id="programming-with-lists">Programming with Lists</h3>
+<p><strong>How to define <code>praise</code> flavors function with <code>cons</code>?</strong></p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode scheme"><code class="sourceCode scheme"><span id="cb7-1"><a href="#cb7-1"></a>(<span class="ex">define</span><span class="fu"> </span>(praise flavors)</span>
+<span id="cb7-2"><a href="#cb7-2"></a>  (<span class="kw">if</span> (<span class="kw">null?</span> flavors)                         <span class="co">; if flavors is empty</span></span>
+<span id="cb7-3"><a href="#cb7-3"></a>      &#39;()                                       <span class="co">; return &#39;()</span></span>
+<span id="cb7-4"><a href="#cb7-4"></a>      (<span class="kw">cons</span> (se (<span class="kw">car</span> flavors) &#39;(is delicious))  <span class="co">; or invoke recursive calls</span></span>
+<span id="cb7-5"><a href="#cb7-5"></a>            (praise (<span class="kw">cdr</span> flavors)))))</span>
+<span id="cb7-6"><a href="#cb7-6"></a></span>
+<span id="cb7-7"><a href="#cb7-7"></a>(praise &#39;(ginger (ultra chocolate) lychee (rum raisin)))</span>
+<span id="cb7-8"><a href="#cb7-8"></a><span class="co">; ((GINGER IS DELICIOUS) (ULTRA CHOCOLATE IS DELICIOUS)</span></span>
+<span id="cb7-9"><a href="#cb7-9"></a><span class="co">;  (LYCHEE IS DELICIOUS) (RUM RAISIN IS DELICIOUS))</span></span></code></pre></div>
+<p><strong>How to define a En-Fr <code>translate</code> function with <code>car</code> and <code>cdr</code>?</strong></p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode scheme"><code class="sourceCode scheme"><span id="cb8-1"><a href="#cb8-1"></a></span>
+<span id="cb8-2"><a href="#cb8-2"></a>(<span class="ex">define</span><span class="fu"> </span>(translate wd)</span>
+<span id="cb8-3"><a href="#cb8-3"></a>  (lookup wd &#39;((window fenetre) (book livre) (computer ordinateur) <span class="co">; Invoke function lookup</span></span>
+<span id="cb8-4"><a href="#cb8-4"></a>              (house maison) (closed ferme) (pate pate) (liver foie) <span class="co">; define dictionary</span></span>
+<span id="cb8-5"><a href="#cb8-5"></a>              (faith foi) (weekend (fin de semaine))</span>
+<span id="cb8-6"><a href="#cb8-6"></a>              ((practical joke) attrape) (pal copain))))</span>
+<span id="cb8-7"><a href="#cb8-7"></a></span>
+<span id="cb8-8"><a href="#cb8-8"></a>(<span class="ex">define</span><span class="fu"> </span>(lookup wd dictionary)</span>
+<span id="cb8-9"><a href="#cb8-9"></a>  (<span class="kw">cond</span> ((<span class="kw">null?</span> dictionary) &#39;(parlez-vous anglais?)) <span class="co">; when dic is empty, return a sentence</span></span>
+<span id="cb8-10"><a href="#cb8-10"></a>        ((<span class="kw">equal?</span> wd (<span class="kw">car</span> (<span class="kw">car</span> dictionary))) <span class="co">; when wd is equal to the car of car of dic</span></span>
+<span id="cb8-11"><a href="#cb8-11"></a>         (<span class="kw">car</span> (<span class="kw">cdr</span> (<span class="kw">car</span> dictionary)))) <span class="co">; return car of cdr of car of dic</span></span>
+<span id="cb8-12"><a href="#cb8-12"></a>        (<span class="kw">else</span> (lookup wd (<span class="kw">cdr</span> dictionary))))) <span class="co">; else invoke recursive call with cdr of dic</span></span>
+<span id="cb8-13"><a href="#cb8-13"></a></span>
+<span id="cb8-14"><a href="#cb8-14"></a>(translate &#39;computer)</span>
+<span id="cb8-15"><a href="#cb8-15"></a><span class="co">; ORDINATEUR</span></span>
+<span id="cb8-16"><a href="#cb8-16"></a></span>
+<span id="cb8-17"><a href="#cb8-17"></a>(translate &#39;(practical joke))</span>
+<span id="cb8-18"><a href="#cb8-18"></a><span class="co">; ATTRAPE</span></span>
+<span id="cb8-19"><a href="#cb8-19"></a></span>
+<span id="cb8-20"><a href="#cb8-20"></a>(translate &#39;recursion)</span>
+<span id="cb8-21"><a href="#cb8-21"></a><span class="co">; (PARLEZ-VOUS ANGLAIS?)</span></span></code></pre></div>
+<p><strong>What is the shorthand for <code>car</code> and <code>cdr</code> in scheme?</strong></p>
+<p><code>car</code> = <code>a</code> <code>cdr</code> = <code>d</code></p>
+<p>And wrap <code>a</code> and <code>d</code> between <code>c</code> and <code>r</code>.</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode scheme"><code class="sourceCode scheme"><span id="cb9-1"><a href="#cb9-1"></a>(<span class="kw">car</span> (<span class="kw">cdr</span> (<span class="kw">car</span> dictionary)))</span></code></pre></div>
+<p>can be written in</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode scheme"><code class="sourceCode scheme"><span id="cb10-1"><a href="#cb10-1"></a>(<span class="kw">cadar</span> dictionary)</span></code></pre></div>
+<p>The most commonly used of these abbreviations are <code>cadr</code> , which selects the second element of a list; <code>caddr</code> , which selects the third element; and <code>cadddr</code> , which selects the fourth.</p>
+<hr />
+<h3 id="the-truth-about-sentences">The Truth about Sentences</h3>
+<p><strong>What are sentences?</strong></p>
+<p><em>Sentences are lists.</em> Sentences are an abstract data type represented by lists. We created the sentence ADT by writing special selectors and constructors that provide a different way of using the same underlying machinery—a different interface, a different metaphor, a different point of view.</p>
+<p><strong>What are the three differences between sentences and lists?</strong></p>
+<ul>
+<li>A sentence can contain only words, not sublists.</li>
+<li>Sentence selectors are symmetrical front-to-back.</li>
+<li>Sentences and words have the same selectors.</li>
+</ul>
+<p>From Scheme’s ordinary point of view, an English sentence is just one particular case of a much more general data structure, whereas a <em>symbol</em> is something entirely different.</p>
+<blockquote>
+<p>As we said in Chapter 5, “symbol” is the official name for words that are neither strings nor numbers.</p>
+</blockquote>
+<p><strong>How to define <code>first</code> <code>last</code> <code>butfirst</code> <code>butlast</code> for sentences with Scheme list selectors?</strong></p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode scheme"><code class="sourceCode scheme"><span id="cb11-1"><a href="#cb11-1"></a>(<span class="ex">define</span><span class="fu"> </span>(first sent)</span>
+<span id="cb11-2"><a href="#cb11-2"></a>  (<span class="kw">car</span> sent))</span>
+<span id="cb11-3"><a href="#cb11-3"></a></span>
+<span id="cb11-4"><a href="#cb11-4"></a>(<span class="ex">define</span><span class="fu"> </span>(last sent)</span>
+<span id="cb11-5"><a href="#cb11-5"></a>  (<span class="kw">if</span> (<span class="kw">null?</span> (<span class="kw">cdr</span> sent))  <span class="co">; if the sent is null but the first element</span></span>
+<span id="cb11-6"><a href="#cb11-6"></a>      (<span class="kw">car</span> sent)          <span class="co">; return the first element of the sent</span></span>
+<span id="cb11-7"><a href="#cb11-7"></a>      (last (<span class="kw">cdr</span> sent)))) <span class="co">; or invoke the recursive call</span></span>
+<span id="cb11-8"><a href="#cb11-8"></a></span>
+<span id="cb11-9"><a href="#cb11-9"></a>(<span class="ex">define</span><span class="fu"> </span>(butfirst sent)</span>
+<span id="cb11-10"><a href="#cb11-10"></a>  (<span class="kw">cdr</span> sent))</span>
+<span id="cb11-11"><a href="#cb11-11"></a></span>
+<span id="cb11-12"><a href="#cb11-12"></a>(<span class="ex">define</span><span class="fu"> </span>(butlast sent)</span>
+<span id="cb11-13"><a href="#cb11-13"></a>  (<span class="kw">if</span> (<span class="kw">null?</span> (<span class="kw">cdr</span> sent))  <span class="co">; if the sent is null but the first element</span></span>
+<span id="cb11-14"><a href="#cb11-14"></a>      &#39;()                 <span class="co">; return &#39;()</span></span>
+<span id="cb11-15"><a href="#cb11-15"></a>      (<span class="kw">cons</span> (<span class="kw">car</span> sent) (butlast (<span class="kw">cdr</span> sent))))) <span class="co">; or add the first element to result</span></span></code></pre></div>
+<hr />
+<h3 id="higher-order-functions">Higher-Order Functions</h3>
+<p><strong>What are the official list versions of <code>every</code> <code>keep</code> and <code>accumulate</code>?</strong></p>
+<p><code>map</code> <code>filter</code> and <code>reduce</code></p>
+<p><strong>How does <code>map</code> work?</strong></p>
+<p><code>map</code> takes two arguments, a function and a list, and returns a list containing the result of applying the function to each element of the list.</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode scheme"><code class="sourceCode scheme"><span id="cb12-1"><a href="#cb12-1"></a>(map square &#39;(<span class="dv">9</span> <span class="dv">8</span> <span class="dv">7</span> <span class="dv">6</span>))</span>
+<span id="cb12-2"><a href="#cb12-2"></a><span class="co">; (81 64 49 36)</span></span>
+<span id="cb12-3"><a href="#cb12-3"></a></span>
+<span id="cb12-4"><a href="#cb12-4"></a>(map (<span class="kw">lambda</span> (x) (se x x)) &#39;(rocky raccoon))</span>
+<span id="cb12-5"><a href="#cb12-5"></a><span class="co">; ((ROCKY ROCKY) (RACCOON RACCOON))</span></span>
+<span id="cb12-6"><a href="#cb12-6"></a></span>
+<span id="cb12-7"><a href="#cb12-7"></a>(every (<span class="kw">lambda</span> (x) (se x x)) &#39;(rocky raccoon))</span>
+<span id="cb12-8"><a href="#cb12-8"></a><span class="co">; (ROCKY ROCKY RACCOON RACCOON)</span></span>
+<span id="cb12-9"><a href="#cb12-9"></a></span>
+<span id="cb12-10"><a href="#cb12-10"></a>(map <span class="kw">car</span> &#39;((john lennon) (paul mccartney)</span>
+<span id="cb12-11"><a href="#cb12-11"></a>           (george harrison) (ringo starr)))</span>
+<span id="cb12-12"><a href="#cb12-12"></a><span class="co">; (JOHN PAUL GEORGE RINGO)</span></span>
+<span id="cb12-13"><a href="#cb12-13"></a></span>
+<span id="cb12-14"><a href="#cb12-14"></a>(map <span class="kw">even?</span> &#39;(<span class="dv">9</span> <span class="dv">8</span> <span class="dv">7</span> <span class="dv">6</span>))</span>
+<span id="cb12-15"><a href="#cb12-15"></a><span class="co">; (#F #T #F #T)</span></span>
+<span id="cb12-16"><a href="#cb12-16"></a></span>
+<span id="cb12-17"><a href="#cb12-17"></a>(map (<span class="kw">lambda</span> (x) (word x x)) &#39;rain)     <span class="co">; &#39;rain is not a list</span></span>
+<span id="cb12-18"><a href="#cb12-18"></a><span class="co">; ERROR -- INVALID ARGUMENT TO MAP: RAIN</span></span></code></pre></div>
+<blockquote>
+<p><strong>Where is the name <code>map</code> from?</strong></p>
+</blockquote>
+<blockquote>
+<p>The word “map” may seem strange for this function, but it comes from the mathematical study of functions, in which they talk about a mapping of the domain into the range. In this terminology, one talks about “mapping a function over a set” (a set of argument values, that is), and Lispians have taken over the same vocabulary, except that we talk about mapping over lists instead of mapping over sets.</p>
+</blockquote>
+<p><strong>How does <code>filter</code> work?</strong></p>
+<p><code>filter</code> also takes a function and a list as arguments; it returns a list containing only those elements of the argument list for which the function returns a true value. This is the same as <code>keep</code>, except that the elements of the argument list may be sublists, and their structure is preserved in the result.</p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode scheme"><code class="sourceCode scheme"><span id="cb13-1"><a href="#cb13-1"></a>(filter (<span class="kw">lambda</span> (flavor) (member? &#39;swirl flavor))</span>
+<span id="cb13-2"><a href="#cb13-2"></a>        &#39;((rum raisin) (root beer swirl) (rocky road) (fudge swirl)))</span>
+<span id="cb13-3"><a href="#cb13-3"></a><span class="co">; ((ROOT BEER SWIRL) (FUDGE SWIRL))</span></span>
+<span id="cb13-4"><a href="#cb13-4"></a></span>
+<span id="cb13-5"><a href="#cb13-5"></a>(filter word? &#39;((ultra chocolate) ginger lychee (raspberry sherbet)))</span>
+<span id="cb13-6"><a href="#cb13-6"></a><span class="co">; (GINGER LYCHEE)</span></span>
+<span id="cb13-7"><a href="#cb13-7"></a></span>
+<span id="cb13-8"><a href="#cb13-8"></a>(filter (<span class="kw">lambda</span> (nums) (<span class="op">=</span> (<span class="kw">car</span> nums) (<span class="kw">cadr</span> nums)))</span>
+<span id="cb13-9"><a href="#cb13-9"></a>        &#39;((<span class="dv">2</span> <span class="dv">3</span>) (<span class="dv">4</span> <span class="dv">4</span>) (<span class="dv">5</span> <span class="dv">6</span>) (<span class="dv">7</span> <span class="dv">8</span>) (<span class="dv">9</span> <span class="dv">9</span>)))</span>
+<span id="cb13-10"><a href="#cb13-10"></a><span class="co">; ((4 4) (9 9))</span></span></code></pre></div>
+<p><code>filter</code> is not a standard Scheme primitive, but it’s a universal convention; everyone defines it the same way we do.</p>
+<p><strong>How does <code>reduce</code> work?</strong></p>
+<p><code>reduce</code> is just like <code>accumulate</code> except that it works only on lists, not on words. Neither is a built-in Scheme primitive; both names are seen in the literature. (The name “reduce” is official in the languages APL and Common Lisp, which do include this higher-order function as a primitive.)</p>
+<div class="sourceCode" id="cb14"><pre class="sourceCode scheme"><code class="sourceCode scheme"><span id="cb14-1"><a href="#cb14-1"></a>(reduce * &#39;(<span class="dv">4</span> <span class="dv">5</span> <span class="dv">6</span>))</span>
+<span id="cb14-2"><a href="#cb14-2"></a><span class="co">; 120</span></span>
+<span id="cb14-3"><a href="#cb14-3"></a></span>
+<span id="cb14-4"><a href="#cb14-4"></a>(reduce (<span class="kw">lambda</span> (list1 list2) (<span class="kw">list</span> (<span class="op">+</span> (<span class="kw">car</span> list1) (<span class="kw">car</span> list2))</span>
+<span id="cb14-5"><a href="#cb14-5"></a>                                    (<span class="op">+</span> (<span class="kw">cadr</span> list1) (<span class="kw">cadr</span> list2))))</span>
+<span id="cb14-6"><a href="#cb14-6"></a>        &#39;((<span class="dv">1</span> <span class="dv">2</span>) (<span class="dv">30</span> <span class="dv">40</span>) (<span class="dv">500</span> <span class="dv">600</span>)))</span>
+<span id="cb14-7"><a href="#cb14-7"></a><span class="co">; (531 642)</span></span></code></pre></div>
+<hr />
+<h3 id="other-primitives-for-lists">Other Primitives for Lists</h3>
+<ul>
+<li><code>list?</code> – returns <code>#t</code> if its argument is a list, <code>#f</code> otherwise.</li>
+<li><code>equal?</code></li>
+<li><code>member</code> – like <code>member?</code> except for two differences: Its second argument must be a list (but can be a structured list); and instead of returning #t it returns the portion of the argument list starting with the element equal to the first argument.</li>
+</ul>
+<div class="sourceCode" id="cb15"><pre class="sourceCode scheme"><code class="sourceCode scheme"><span id="cb15-1"><a href="#cb15-1"></a>(<span class="kw">member</span> &#39;d &#39;(a b c d e f g))</span>
+<span id="cb15-2"><a href="#cb15-2"></a><span class="co">; (D E F G)</span></span>
+<span id="cb15-3"><a href="#cb15-3"></a></span>
+<span id="cb15-4"><a href="#cb15-4"></a>(<span class="kw">member</span> &#39;h &#39;(a b c d e f g))</span>
+<span id="cb15-5"><a href="#cb15-5"></a><span class="co">; #F</span></span></code></pre></div>
+<p>This is the main example in Scheme of the <em>semipredicate</em> idea that we mentioned earlier in passing. It doesn’t have a question mark in its name because it returns values other than #t and #f , but it works as a predicate because any non-<code>#f</code> value is considered true.</p>
+<ul>
+<li><code>list-ref</code> – like <code>item</code> execpt it counts items from zero instead of from one and takes its arguments in the other order:</li>
+</ul>
+<div class="sourceCode" id="cb16"><pre class="sourceCode scheme"><code class="sourceCode scheme"><span id="cb16-1"><a href="#cb16-1"></a>(<span class="kw">list-ref</span> &#39;(happiness is a warm gun) <span class="dv">3</span>)</span>
+<span id="cb16-2"><a href="#cb16-2"></a><span class="co">; WARM</span></span></code></pre></div>
+<ul>
+<li><code>length</code> – the same with <code>count</code> except that it doesn’t work on words.</li>
+</ul>
+<hr />
+<h3 id="association-lists">Association Lists</h3>
+<p><strong>What is an association list?</strong></p>
+<p>A list of names and corresponding values is called an <em>association list</em>, or an <em>a-list</em>.</p>
+<p><strong>How to look up a name in an a-list?</strong></p>
+<p>The Scheme primitive <code>assoc</code></p>
+<div class="sourceCode" id="cb17"><pre class="sourceCode scheme"><code class="sourceCode scheme"><span id="cb17-1"><a href="#cb17-1"></a>(<span class="kw">assoc</span> &#39;george</span>
+<span id="cb17-2"><a href="#cb17-2"></a>       &#39;((john lennon) (paul mccartney)</span>
+<span id="cb17-3"><a href="#cb17-3"></a>         (george harrison) (ringo starr)))</span>
+<span id="cb17-4"><a href="#cb17-4"></a><span class="co">; (GEORGE HARRISON)</span></span>
+<span id="cb17-5"><a href="#cb17-5"></a></span>
+<span id="cb17-6"><a href="#cb17-6"></a>(<span class="kw">assoc</span> &#39;x &#39;((i <span class="dv">1</span>) (v <span class="dv">5</span>) (x <span class="dv">10</span>) (l <span class="dv">50</span>) (c <span class="dv">100</span>) (d <span class="dv">500</span>) (m <span class="dv">1000</span>)))</span>
+<span id="cb17-7"><a href="#cb17-7"></a><span class="co">; (X 10)</span></span>
+<span id="cb17-8"><a href="#cb17-8"></a></span>
+<span id="cb17-9"><a href="#cb17-9"></a>(<span class="kw">assoc</span> &#39;ringo &#39;((mick jagger) (keith richards) (brian jones)</span>
+<span id="cb17-10"><a href="#cb17-10"></a>                (charlie watts) (bill wyman)))</span>
+<span id="cb17-11"><a href="#cb17-11"></a><span class="co">; #F</span></span></code></pre></div>
+<div class="sourceCode" id="cb18"><pre class="sourceCode scheme"><code class="sourceCode scheme"><span id="cb18-1"><a href="#cb18-1"></a>(<span class="ex">define</span><span class="fu"> dictionary</span></span>
+<span id="cb18-2"><a href="#cb18-2"></a>&#39;((window fenetre) (book livre) (computer ordinateur)</span>
+<span id="cb18-3"><a href="#cb18-3"></a>  (house maison) (closed ferme) (pate pate) (liver foie)</span>
+<span id="cb18-4"><a href="#cb18-4"></a>  (faith foi) (weekend (fin de semaine))</span>
+<span id="cb18-5"><a href="#cb18-5"></a>  ((practical joke) attrape) (pal copain)))</span>
+<span id="cb18-6"><a href="#cb18-6"></a></span>
+<span id="cb18-7"><a href="#cb18-7"></a>(<span class="ex">define</span><span class="fu"> </span>(translate wd)</span>
+<span id="cb18-8"><a href="#cb18-8"></a>  (<span class="kw">let</span> ((record (<span class="kw">assoc</span> wd dictionary)))</span>
+<span id="cb18-9"><a href="#cb18-9"></a>    (<span class="kw">if</span> record</span>
+<span id="cb18-10"><a href="#cb18-10"></a>        (<span class="kw">cadr</span> record)</span>
+<span id="cb18-11"><a href="#cb18-11"></a>        &#39;(parlez-vous anglais?))))</span></code></pre></div>
+<p><code>assoc</code> returns <code>#f</code> if it can’t find the entry you’re looking for in your association list.</p>
+<hr />
+<h3 id="functions-that-take-variable-numbers-of-arguments">Functions That Take Variable Numbers of Arguments</h3>
+<p><strong>How to use dot <code>.</code> to represent any number of arguments?</strong></p>
+<div class="sourceCode" id="cb19"><pre class="sourceCode scheme"><code class="sourceCode scheme"><span id="cb19-1"><a href="#cb19-1"></a>(<span class="ex">define</span><span class="fu"> </span>(increasing? number . rest-of-numbers)</span>
+<span id="cb19-2"><a href="#cb19-2"></a>  (<span class="kw">cond</span> ((<span class="kw">null?</span> rest-of-numbers) <span class="dv">#t</span>)</span>
+<span id="cb19-3"><a href="#cb19-3"></a>        ((<span class="op">&gt;</span> (<span class="kw">car</span> rest-of-numbers) number)</span>
+<span id="cb19-4"><a href="#cb19-4"></a>         (apply increasing? rest-of-numbers))</span>
+<span id="cb19-5"><a href="#cb19-5"></a>        (<span class="kw">else</span> <span class="dv">#f</span>)))</span>
+<span id="cb19-6"><a href="#cb19-6"></a></span>
+<span id="cb19-7"><a href="#cb19-7"></a>(increasing? <span class="dv">4</span> <span class="dv">12</span> <span class="dv">82</span>)</span>
+<span id="cb19-8"><a href="#cb19-8"></a><span class="co">; #T</span></span>
+<span id="cb19-9"><a href="#cb19-9"></a></span>
+<span id="cb19-10"><a href="#cb19-10"></a>(increasing? <span class="dv">12</span> <span class="dv">4</span> <span class="dv">82</span> <span class="dv">107</span>)</span>
+<span id="cb19-11"><a href="#cb19-11"></a><span class="co">; #F</span></span></code></pre></div>
+<p>In listing the formal parameters of a procedure, you can <em>use a dot just before the last parameter to mean that that parameter ( rest-of-numbers in this case) represents any number of arguments, including zero. The value that will be associated with this parameter when the procedure is invoked will be a list whose elements are the actual argument values.</em></p>
+<p><em>The number of formal parameters before the dot determines the minimum number of arguments that must be used when your procedure is invoked. There can be only one formal parameter after the dot.</em></p>
+<p><strong>How does procedure <code>apply</code> work?</strong></p>
+<p><code>apply</code> takes two arguments, a procedure and a list. Apply invokes the given procedure with the elements of the given list as its arguments, and returns whatever value the procedure returns. Therefore, the following two expressions are equivalent:</p>
+<div class="sourceCode" id="cb20"><pre class="sourceCode scheme"><code class="sourceCode scheme"><span id="cb20-1"><a href="#cb20-1"></a>(<span class="op">+</span> <span class="dv">3</span> <span class="dv">4</span> <span class="dv">5</span>)</span>
+<span id="cb20-2"><a href="#cb20-2"></a></span>
+<span id="cb20-3"><a href="#cb20-3"></a>(apply <span class="op">+</span> &#39;(<span class="dv">3</span> <span class="dv">4</span> <span class="dv">5</span>))</span></code></pre></div>
+<p><strong>What is a rest parameter?</strong></p>
+<p>A parameter that follows a dot and therefore represents a variable number of arguments is called a <em>rest parameter</em>.</p>
+<hr />
+<h3 id="recursion-on-arbitrary-structured-lists">Recursion on Arbitrary Structured Lists</h3>
+<p><strong>If the entire book is stored in a list structure. How to define a function to lookup how many times a word apears in the book?</strong></p>
+<div class="sourceCode" id="cb21"><pre class="sourceCode scheme"><code class="sourceCode scheme"><span id="cb21-1"><a href="#cb21-1"></a>(<span class="ex">define</span><span class="fu"> </span>(deep-appearances wd structure)     <span class="co">; higher-order version</span></span>
+<span id="cb21-2"><a href="#cb21-2"></a>  (<span class="kw">if</span> (word? structure)</span>
+<span id="cb21-3"><a href="#cb21-3"></a>      (<span class="kw">if</span> (<span class="kw">equal?</span> structure wd) <span class="dv">1</span> <span class="dv">0</span>)</span>
+<span id="cb21-4"><a href="#cb21-4"></a>      (reduce <span class="op">+</span></span>
+<span id="cb21-5"><a href="#cb21-5"></a>              (map (<span class="kw">lambda</span> (sublist) (deep-appearances wd sublist))</span>
+<span id="cb21-6"><a href="#cb21-6"></a>                    structure))))</span></code></pre></div>
+<p><strong>How to define <code>deep-appearances</code> without higher-order procedures?</strong></p>
+<p>We deal with the base case—words—just as before. But for lists we do what we often do in trying to simplify a list problem: We divide the list into its first element (its <code>car</code>) and all the rest of its elements (its <code>cdr</code>).</p>
+<div class="sourceCode" id="cb22"><pre class="sourceCode scheme"><code class="sourceCode scheme"><span id="cb22-1"><a href="#cb22-1"></a>(<span class="ex">define</span><span class="fu"> </span>(deep-appearances wd structure)    <span class="co">; compact-version</span></span>
+<span id="cb22-2"><a href="#cb22-2"></a>  (<span class="kw">cond</span> ((<span class="kw">equal?</span> wd structure) <span class="dv">1</span>)          <span class="co">; base case: desired word</span></span>
+<span id="cb22-3"><a href="#cb22-3"></a>        ((word? structure) <span class="dv">0</span>)              <span class="co">; base case: other word</span></span>
+<span id="cb22-4"><a href="#cb22-4"></a>        ((<span class="kw">null?</span> structure) <span class="dv">0</span>)              <span class="co">; base case: empty list</span></span>
+<span id="cb22-5"><a href="#cb22-5"></a>        (<span class="kw">else</span> (<span class="op">+</span> (deep-appearances wd (<span class="kw">car</span> structure))</span>
+<span id="cb22-6"><a href="#cb22-6"></a>                 (deep-appearances wd (<span class="kw">cdr</span> structure))))))</span></code></pre></div>
+<p><strong>In <code>deep-appearances</code> the desired result is a single number. What if we want to build a new list-of-lists structure? Having used <code>car</code> and <code>cdr</code> to disassemble a structure, we can use <code>cons</code> to build a new one.</strong></p>
+<p>For example, we’ll translate our entire book into Pig Latin:</p>
+<div class="sourceCode" id="cb23"><pre class="sourceCode scheme"><code class="sourceCode scheme"><span id="cb23-1"><a href="#cb23-1"></a>(<span class="ex">define</span><span class="fu"> </span>(deep-pigl structure)</span>
+<span id="cb23-2"><a href="#cb23-2"></a>  (<span class="kw">cond</span> ((word? structure) (pigl structure))</span>
+<span id="cb23-3"><a href="#cb23-3"></a>        ((<span class="kw">null?</span> structure) &#39;())</span>
+<span id="cb23-4"><a href="#cb23-4"></a>        (<span class="kw">else</span> (<span class="kw">cons</span> (deep-pigl (<span class="kw">car</span> structure))</span>
+<span id="cb23-5"><a href="#cb23-5"></a>                    (deep-pigl (<span class="kw">cdr</span> structure))))))</span></code></pre></div>
+<p>Compare <code>deep-pigl</code> with an every-pattern list recursion such as <code>praise</code> on page 285. Both look like</p>
+<p><code>(cons ( something (car argument)) ( something (cdr argument)))</code></p>
+<p>And yet these procedures are profoundly different. <code>praise</code> is a simple left-to-right walk through the elements of a sequence; <code>deep-pigl</code> dives in and out of sublists. The difference is a result of the fact that <code>praise</code> does one recursive call, for the <code>cdr</code> , while <code>deep-pigl</code> does two, for the <code>car</code> as well as the <code>cdr</code>. The pattern exhibited by <code>deep-pigl</code> is called <code>car-cdr</code> recursion. (Another name for it is “tree recursion,” for a reason we’ll see in the next chapter.)</p>
+<hr />
+<h3 id="pitfalls">Pitfalls</h3>
+<ul>
+<li><p>Just as we mentioned about the names <code>word</code> and <code>sentence</code> , resist the temptation to use <code>list</code> as a formal parameter. We use <code>lst</code> instead, but other alternatives are capital <code>L</code> or <code>seq</code> (for “sequence”).</p></li>
+<li><p>The list constructor <code>cons</code> does not treat its two arguments equivalently. The second one must be the list you’re trying to extend. There is no equally easy way to extend a list on the right (although you can put the new element into a one-element list and use <code>append</code> ). If you get the arguments backward, you’re likely to get funny-looking results that aren’t lists, such as</p></li>
+</ul>
+<div class="sourceCode" id="cb24"><pre class="sourceCode scheme"><code class="sourceCode scheme"><span id="cb24-1"><a href="#cb24-1"></a>((<span class="dv">3</span> . <span class="dv">2</span>) . <span class="dv">1</span>)</span></code></pre></div>
+<p>The result you get when you <code>cons</code> onto something that isn’t a list is called a <em>pair</em>. It’s sometimes called a “dotted pair” because of what it looks like when printed:</p>
+<div class="sourceCode" id="cb25"><pre class="sourceCode scheme"><code class="sourceCode scheme"><span id="cb25-1"><a href="#cb25-1"></a>(<span class="kw">cons</span> &#39;a &#39;b)</span>
+<span id="cb25-2"><a href="#cb25-2"></a><span class="co">; (A . B)</span></span></code></pre></div>
+<p>It’s just the printed representation that’s dotted, however; the dot isn’t part of the pair any more than the parentheses around a list are elements of the list. Lists are made of pairs; that’s why <code>cons</code> can construct lists. But we’re not going to talk about any pairs that aren’t part of lists, so you don’t have to think about them at all, except to know that if dots appear in your results you’re consing backward.</p>
+<ul>
+<li><p>Don’t get confused between lists and sentences. Sentences have no internal structure; the good aspect of this is that it’s hard to make mistakes about building the structure, but the bad aspect is that you might need such a structure. You can have lists whose elements are sentences, but it’s confusing if you think of the same structure sometimes as a list and sometimes as a sentence.</p></li>
+<li><p>In reading someone else’s program, it’s easy not to notice that a procedure is making two recursive calls instead of just one. If you notice only the recursive call for the <code>cdr</code>, you might think you’re looking at a sequential recursion.</p></li>
+<li><p>If you’re writing a procedure whose argument is a list-of-lists, it may feel funny to let it also accept a word as the argument value. People therefore sometimes insist on a list as the argument, leading to an overly complicated base case. If your base case test says</p></li>
+</ul>
+<div class="sourceCode" id="cb26"><pre class="sourceCode scheme"><code class="sourceCode scheme"><span id="cb26-1"><a href="#cb26-1"></a>(word? (<span class="kw">car</span> structure))</span></code></pre></div>
+<p>then think about whether you’d have a better-organized program if the base case were</p>
+<div class="sourceCode" id="cb27"><pre class="sourceCode scheme"><code class="sourceCode scheme"><span id="cb27-1"><a href="#cb27-1"></a>(word? structure)</span></code></pre></div>
+<ul>
+<li>Remember that in a deep-structure recursion you may need two base cases, one for reaching an element that isn’t a sublist, and the other for an empty list, with no elements at all. (Our <code>deep-appearances</code> procedure is an example.) Don’t forget the empty-list case.</li>
+</ul>
+<hr />
+<h3 id="exercises-17.1-17.3">Exercises 17.1-17.3</h3>
+<p><a href="https://github.com/mengsince1986/Simply-Scheme-exercises/blob/master/SS%20Exercises/Exercises%2017.1-17.3.scm">solutions</a></p>
+<h3 id="exercises-17.4-17.16">Exercises 17.4-17.16</h3>
+<p><a href="https://github.com/mengsince1986/Simply-Scheme-exercises/blob/master/SS%20Exercises/Exercises%2017.4-17.16.scm">solutions</a></p>
+<hr />
+<h2 id="chapter-18-trees">Chapter 18 Trees</h2>
+<p>The kinds of structures we’ll consider are called <strong><em>trees</em></strong> because they resemble trees in nature:</p>
+<p><img src="images/trees.png" width="400"></p>
+<p>We’re going to begin by considering a tree as an abstract data type, without thinking about how lists are used to represent trees. For example, we’ll construct trees using a procedure named <code>make-node</code> , as if that were a Scheme primitive.</p>
+<h3 id="example-the-world">Example: The World</h3>
+<p><img src="images/world-trees.png" width="800"></p>
+<p><strong>What is a node?</strong></p>
+<p>It will be more useful to think of a node as a structure that includes everything below that circle also: <em>the datum and the children</em>. So when we think of the node for Great Britain, we’re thinking not only of the name “Great Britain,” but also of everything in Great Britain. <em>From this perspective, the root node of a tree includes the entire tree.</em> We might as well say that the node is the tree.</p>
+<p><strong>How does the tree constructor work?</strong></p>
+<p>The constructor for a tree is actually the constructor for one node, its root node. Our constructor for trees is therefore called <code>make-node</code> . It takes two arguments: <em>the datum and a (possibly empty) list of children.</em></p>
+<div class="sourceCode" id="cb28"><pre class="sourceCode scheme"><code class="sourceCode scheme"><span id="cb28-1"><a href="#cb28-1"></a>(<span class="ex">define</span><span class="fu"> world-tree                                          </span><span class="co">;; painful -to-type version</span></span>
+<span id="cb28-2"><a href="#cb28-2"></a>  (make-node</span>
+<span id="cb28-3"><a href="#cb28-3"></a>   &#39;world</span>
+<span id="cb28-4"><a href="#cb28-4"></a>   (<span class="kw">list</span> (make-node</span>
+<span id="cb28-5"><a href="#cb28-5"></a>          &#39;italy</span>
+<span id="cb28-6"><a href="#cb28-6"></a>          (<span class="kw">list</span> (make-node &#39;venezia &#39;())</span>
+<span id="cb28-7"><a href="#cb28-7"></a>                (make-node &#39;riomaggiore &#39;())</span>
+<span id="cb28-8"><a href="#cb28-8"></a>                (make-node &#39;firenze &#39;())</span>
+<span id="cb28-9"><a href="#cb28-9"></a>                (make-node &#39;roma &#39;())))</span>
+<span id="cb28-10"><a href="#cb28-10"></a>         (make-node</span>
+<span id="cb28-11"><a href="#cb28-11"></a>          &#39;(united states)</span>
+<span id="cb28-12"><a href="#cb28-12"></a>          (<span class="kw">list</span> (make-node &#39;california</span>
+<span id="cb28-13"><a href="#cb28-13"></a>                           (<span class="kw">list</span> (make-node &#39;berkeley &#39;())</span>
+<span id="cb28-14"><a href="#cb28-14"></a>                                 (make-node &#39;(san francisco) &#39;())</span>
+<span id="cb28-15"><a href="#cb28-15"></a>                                 (make-node &#39;gilroy &#39;())))</span>
+<span id="cb28-16"><a href="#cb28-16"></a>                (make-node &#39;massachusetts</span>
+<span id="cb28-17"><a href="#cb28-17"></a>                           (<span class="kw">list</span> (make-node &#39;cambridge &#39;())</span>
+<span id="cb28-18"><a href="#cb28-18"></a>                                 (make-node &#39;amherst &#39;())</span>
+<span id="cb28-19"><a href="#cb28-19"></a>                                 (make-node &#39;sudbury &#39;()))))))))</span></code></pre></div>
+<p><strong>How do the tree selectors work?</strong></p>
+<div class="sourceCode" id="cb29"><pre class="sourceCode scheme"><code class="sourceCode scheme"><span id="cb29-1"><a href="#cb29-1"></a>(datum world-tree)</span>
+<span id="cb29-2"><a href="#cb29-2"></a><span class="co">; WORLD</span></span>
+<span id="cb29-3"><a href="#cb29-3"></a></span>
+<span id="cb29-4"><a href="#cb29-4"></a>(datum (<span class="kw">car</span> (children world-tree)))</span>
+<span id="cb29-5"><a href="#cb29-5"></a><span class="co">; ITALY</span></span>
+<span id="cb29-6"><a href="#cb29-6"></a></span>
+<span id="cb29-7"><a href="#cb29-7"></a>(datum (<span class="kw">car</span> (children (<span class="kw">cadr</span> (children world-tree)))))</span>
+<span id="cb29-8"><a href="#cb29-8"></a><span class="co">; CALIFORNIA</span></span>
+<span id="cb29-9"><a href="#cb29-9"></a></span>
+<span id="cb29-10"><a href="#cb29-10"></a>(datum (<span class="kw">car</span> (children (<span class="kw">car</span> (children</span>
+<span id="cb29-11"><a href="#cb29-11"></a>                            (<span class="kw">cadr</span> (children world-tree)))))))</span>
+<span id="cb29-12"><a href="#cb29-12"></a><span class="co">; BERKELEY</span></span></code></pre></div>
+<p><code>datum</code> of a tree node returns the datum of that node. <code>children</code> of a node returns a list of the children of the node. (A list of trees is called a <em>forest</em>.)</p>
+<p><strong>How to simplify <code>world-tree</code> with <code>leaf</code> and <code>cities</code>?</strong></p>
+<div class="sourceCode" id="cb30"><pre class="sourceCode scheme"><code class="sourceCode scheme"><span id="cb30-1"><a href="#cb30-1"></a>(<span class="ex">define</span><span class="fu"> </span>(leaf datum)</span>
+<span id="cb30-2"><a href="#cb30-2"></a>  (make-node datum &#39;()))</span>
+<span id="cb30-3"><a href="#cb30-3"></a></span>
+<span id="cb30-4"><a href="#cb30-4"></a>(<span class="ex">define</span><span class="fu"> </span>(cities name-list)</span>
+<span id="cb30-5"><a href="#cb30-5"></a>  (map leaf name-list))</span></code></pre></div>
+<p>With these abbreviations the world tree is somewhat easier to define:</p>
+<div class="sourceCode" id="cb31"><pre class="sourceCode scheme"><code class="sourceCode scheme"><span id="cb31-1"><a href="#cb31-1"></a>(<span class="ex">define</span><span class="fu"> world-tree</span></span>
+<span id="cb31-2"><a href="#cb31-2"></a>  (make-node</span>
+<span id="cb31-3"><a href="#cb31-3"></a>   &#39;world</span>
+<span id="cb31-4"><a href="#cb31-4"></a>   (<span class="kw">list</span> (make-node</span>
+<span id="cb31-5"><a href="#cb31-5"></a>         &#39;italy</span>
+<span id="cb31-6"><a href="#cb31-6"></a>         (cities &#39;(venezia riomaggiore firenze roma)))</span>
+<span id="cb31-7"><a href="#cb31-7"></a>  (make-node</span>
+<span id="cb31-8"><a href="#cb31-8"></a>   &#39;(united states)</span>
+<span id="cb31-9"><a href="#cb31-9"></a>   (<span class="kw">list</span> (make-node</span>
+<span id="cb31-10"><a href="#cb31-10"></a>          &#39;california</span>
+<span id="cb31-11"><a href="#cb31-11"></a>          (cities &#39;(berkeley (san francisco) gilroy)))</span>
+<span id="cb31-12"><a href="#cb31-12"></a>         (make-node</span>
+<span id="cb31-13"><a href="#cb31-13"></a>          &#39;massachusetts</span>
+<span id="cb31-14"><a href="#cb31-14"></a>          (cities &#39;(cambridge amherst sudbury)))</span>
+<span id="cb31-15"><a href="#cb31-15"></a>         (make-node &#39;ohio (cities &#39;(kent)))))</span>
+<span id="cb31-16"><a href="#cb31-16"></a>  (make-node &#39;zimbabwe (cities &#39;(harare hwange)))</span>
+<span id="cb31-17"><a href="#cb31-17"></a>  (make-node &#39;china</span>
+<span id="cb31-18"><a href="#cb31-18"></a>             (cities &#39;(beijing shanghai guangzhou suzhou)))</span>
+<span id="cb31-19"><a href="#cb31-19"></a>  (make-node</span>
+<span id="cb31-20"><a href="#cb31-20"></a>   &#39;(great britain)</span>
+<span id="cb31-21"><a href="#cb31-21"></a>   (<span class="kw">list</span></span>
+<span id="cb31-22"><a href="#cb31-22"></a>    (make-node &#39;england (cities &#39;(liverpool)))</span>
+<span id="cb31-23"><a href="#cb31-23"></a>    (make-node &#39;scotland</span>
+<span id="cb31-24"><a href="#cb31-24"></a>               (cities &#39;(edinburgh glasgow (gretna green))))</span>
+<span id="cb31-25"><a href="#cb31-25"></a>    (make-node &#39;wales (cities &#39;(abergavenny)))))</span>
+<span id="cb31-26"><a href="#cb31-26"></a>  (make-node</span>
+<span id="cb31-27"><a href="#cb31-27"></a>   &#39;australia</span>
+<span id="cb31-28"><a href="#cb31-28"></a>   (<span class="kw">list</span></span>
+<span id="cb31-29"><a href="#cb31-29"></a>    (make-node &#39;victoria (cities &#39;(melbourne)))</span>
+<span id="cb31-30"><a href="#cb31-30"></a>    (make-node &#39;(new south wales) (cities &#39;(sydney)))</span>
+<span id="cb31-31"><a href="#cb31-31"></a>    (make-node &#39;queensland</span>
+<span id="cb31-32"><a href="#cb31-32"></a>               (cities &#39;(cairns (port douglas))))))</span>
+<span id="cb31-33"><a href="#cb31-33"></a>  (make-node &#39;honduras (cities &#39;(tegucigalpa))))))</span></code></pre></div>
+<hr />
+<h3 id="how-big-is-my-tree">How Big Is My Tree?</h3>
+<p><strong>How to count cities in <code>world-tree</code> with <code>count-leaves</code>?</strong></p>
+<div class="sourceCode" id="cb32"><pre class="sourceCode scheme"><code class="sourceCode scheme"><span id="cb32-1"><a href="#cb32-1"></a>(<span class="ex">define</span><span class="fu"> </span>(count-leaves tree)</span>
+<span id="cb32-2"><a href="#cb32-2"></a>  (<span class="kw">if</span> (leaf? tree)</span>
+<span id="cb32-3"><a href="#cb32-3"></a>      <span class="dv">1</span></span>
+<span id="cb32-4"><a href="#cb32-4"></a>      (reduce <span class="op">+</span> (map count-leaves (children tree)))))</span>
+<span id="cb32-5"><a href="#cb32-5"></a></span>
+<span id="cb32-6"><a href="#cb32-6"></a>(<span class="ex">define</span><span class="fu"> </span>(leaf? node)</span>
+<span id="cb32-7"><a href="#cb32-7"></a>  (<span class="kw">null?</span> (children node)))</span>
+<span id="cb32-8"><a href="#cb32-8"></a></span>
+<span id="cb32-9"><a href="#cb32-9"></a>(count-leaves world -tree)</span>
+<span id="cb32-10"><a href="#cb32-10"></a><span class="co">; 27</span></span></code></pre></div>
+<hr />
+<h3 id="mutual-recursion">Mutual Recursion</h3>
+<p><strong>How to write <code>count-leaves</code> by <em>mutual recursion</em>?</strong></p>
+<div class="sourceCode" id="cb33"><pre class="sourceCode scheme"><code class="sourceCode scheme"><span id="cb33-1"><a href="#cb33-1"></a>(<span class="ex">define</span><span class="fu"> </span>(count-leaves tree)</span>
+<span id="cb33-2"><a href="#cb33-2"></a>  (<span class="kw">if</span> (leaf? tree)</span>
+<span id="cb33-3"><a href="#cb33-3"></a>  <span class="dv">1</span></span>
+<span id="cb33-4"><a href="#cb33-4"></a>  (count-leaves-in-forest (children tree))))</span>
+<span id="cb33-5"><a href="#cb33-5"></a></span>
+<span id="cb33-6"><a href="#cb33-6"></a>(<span class="ex">define</span><span class="fu"> </span>(count-leaves-in-forest forest)</span>
+<span id="cb33-7"><a href="#cb33-7"></a>  (<span class="kw">if</span> (<span class="kw">null?</span> forest)</span>
+<span id="cb33-8"><a href="#cb33-8"></a>  <span class="dv">0</span></span>
+<span id="cb33-9"><a href="#cb33-9"></a>  (<span class="op">+</span> (count-leaves (<span class="kw">car</span> forest))</span>
+<span id="cb33-10"><a href="#cb33-10"></a>     (count-leaves-in-forest (<span class="kw">cdr</span> forest)))))</span></code></pre></div>
+<p>Note that <code>count-leaves</code> calls <code>count-leaves-in-forest</code> , and <code>count-leaves-in-forest</code> calls <code>count-leaves</code> . This pattern is called <em>mutual recursion</em>.</p>
+<p><strong>How to understand <em>mutual recursion</em> in three different modes?</strong></p>
+<ul>
+<li>Mode 1</li>
+</ul>
+<p>Initialization procedure: <code>count-leaves</code></p>
+<p>helper procedure: <code>count-leaves-in-forest</code></p>
+<p>The helper procedure follows the usual sequential list pattern: Do something to the <code>car</code> of the list, and recursively handle the <code>cdr</code> of the list. Now, what do we have to do to the <code>car</code>? In the usual sequential recursion, the <code>car</code> of the list is something simple, such as a word. What’s special about trees is that here the <code>car</code> is itself a tree, just like the entire data structure we started with. Therefore, we must invoke a procedure whose domain is trees: <code>count-leaves</code>.</p>
+<p>This model is built on two ideas. One is the idea of <em>the domain of a function</em>; the reason we need two procedures is that we need one that takes a tree as its argument and one that takes a list of trees as its argument. The other idea is <em>the leap of faith</em>; we assume that the invocation of <code>count-leaves</code> within <code>count-leaves-in-forest</code> will correctly handle each child without tracing the exact sequence of events.</p>
+<ul>
+<li>Mode 2</li>
+</ul>
+<p>Because of the <em>two-dimensional</em> nature of trees, in order to visit every node we have to be able to move in two different directions. From a given node we have to be able to move <em>down</em> to its children, but from each child we must be able to move <em>across</em> to its next sibling.</p>
+<p><code>count-leaves-in-forest</code>: move from left to right through a list of children.</p>
+<p><code>count-leaves</code>: move down one level by invoking <code>children</code>.</p>
+<ul>
+<li>Mode 3</li>
+</ul>
+<p>The third model is also based on the two-dimensional nature of trees. Imagine for a moment that each node in the tree has at most one child. In that case, <code>count-leaves</code> could move from the root down to the single leaf with a structure very similar to the actual procedure, but carrying out a sequential recursion:</p>
+<div class="sourceCode" id="cb34"><pre class="sourceCode scheme"><code class="sourceCode scheme"><span id="cb34-1"><a href="#cb34-1"></a>(<span class="ex">define</span><span class="fu"> </span>(count-leaf tree)</span>
+<span id="cb34-2"><a href="#cb34-2"></a>  (<span class="kw">if</span> (leaf? tree)</span>
+<span id="cb34-3"><a href="#cb34-3"></a>  <span class="dv">1</span></span>
+<span id="cb34-4"><a href="#cb34-4"></a>  (count-leaf (child tree))))</span></code></pre></div>
+<p>The trouble with this is that at each downward step there isn’t a single “next” node. Instead of a single path from the root to the leaf, there are multiple paths from the root to many leaves. <em>To make our idea of downward motion through sequential recursion work in a real tree, at each level we must “clone” <code>count-leaves</code> as many times as there are children.</em> <code>Count-leaves-in-forest</code> is the factory that manufactures the clones. It hires one <code>count-leaves</code> little person for each child and accumulates their results.</p>
+<p><em>We use the name <strong>tree recursion</strong> for any situation in which a procedure invocation results in more than one recursive call, even if there isn’t an argument that’s a tree.</em> Any structured list-of-lists has a somewhat tree-like, two-dimensional character even though it doesn’t use the formal mechanisms we’re exploring in this chapter. The <code>cdr</code> recursion is a “horizontal” one, moving from one element to another within the same list; the <code>car</code> recursion is a “vertical” one, exploring a sublist of the given list.</p>
+<hr />
+<h3 id="searching-for-a-datum-in-the-tree">Searching for a Datum in the Tree</h3>
+<p>Many tree problems don’t quite fit our higher-order functions. For example, let’s write a predicate <code>in-tree?</code> that takes the name of a place and a tree as arguments and tells whether or not that place is in the tree. It is possible to make it work with <code>filter</code> :</p>
+<div class="sourceCode" id="cb35"><pre class="sourceCode scheme"><code class="sourceCode scheme"><span id="cb35-1"><a href="#cb35-1"></a>(<span class="ex">define</span><span class="fu"> </span>(in-tree? place tree)</span>
+<span id="cb35-2"><a href="#cb35-2"></a>  (<span class="kw">or</span> (<span class="kw">equal?</span> place (datum tree))</span>
+<span id="cb35-3"><a href="#cb35-3"></a>      (<span class="kw">not</span> (<span class="kw">null?</span> (filter (<span class="kw">lambda</span> (subtree) (in-tree? place subtree))</span>
+<span id="cb35-4"><a href="#cb35-4"></a>                          (children tree))))))</span></code></pre></div>
+<p>This awkward construction also performs unnecessary computation. If the place we’re looking for happens to be in the first child of a node, <code>filter</code> will nevertheless look in all the other children as well. We can do better by replacing the use of <code>filter</code> with a mutual recursion:</p>
+<div class="sourceCode" id="cb36"><pre class="sourceCode scheme"><code class="sourceCode scheme"><span id="cb36-1"><a href="#cb36-1"></a>(<span class="ex">define</span><span class="fu"> </span>(in-tree? place tree)</span>
+<span id="cb36-2"><a href="#cb36-2"></a>  (<span class="kw">or</span> (<span class="kw">equal?</span> place (datum tree))</span>
+<span id="cb36-3"><a href="#cb36-3"></a>      (in-forest? place (children tree))))</span>
+<span id="cb36-4"><a href="#cb36-4"></a></span>
+<span id="cb36-5"><a href="#cb36-5"></a>(<span class="ex">define</span><span class="fu"> </span>(in-forest? place forest)</span>
+<span id="cb36-6"><a href="#cb36-6"></a>  (<span class="kw">if</span> (<span class="kw">null?</span> forest)</span>
+<span id="cb36-7"><a href="#cb36-7"></a>      <span class="dv">#f</span></span>
+<span id="cb36-8"><a href="#cb36-8"></a>      (<span class="kw">or</span> (in-tree? place (<span class="kw">car</span> forest))</span>
+<span id="cb36-9"><a href="#cb36-9"></a>          (in-forest? place (<span class="kw">cdr</span> forest)))))</span>
+<span id="cb36-10"><a href="#cb36-10"></a></span>
+<span id="cb36-11"><a href="#cb36-11"></a>(in-tree? &#39;abergavenny world-tree)</span>
+<span id="cb36-12"><a href="#cb36-12"></a><span class="co">; #T</span></span>
+<span id="cb36-13"><a href="#cb36-13"></a></span>
+<span id="cb36-14"><a href="#cb36-14"></a>(in-tree? &#39;abbenay world-tree)</span>
+<span id="cb36-15"><a href="#cb36-15"></a><span class="co">; #F</span></span>
+<span id="cb36-16"><a href="#cb36-16"></a></span>
+<span id="cb36-17"><a href="#cb36-17"></a>(in-tree? &#39;venezia (<span class="kw">cadr</span> (children world-tree)))</span>
+<span id="cb36-18"><a href="#cb36-18"></a><span class="co">; #F</span></span></code></pre></div>
+<p>A place is in a tree if one of two conditions holds: the place is the datum at the root of the tree, or the place is (recursively) in one of the child trees of this tree. That’s what <code>in-tree?</code> says. As for <code>in-forest?</code>, it says that a place is in one of a group of trees if the place is in the first tree, or if it’s in one of the remaining trees.</p>
+<hr />
+<h3 id="locating-a-datum-in-the-tree">Locating a Datum in the Tree</h3>
+<p>We’d like to be able to locate a city and find out all of the larger regions that enclose the city. For example, we want to say</p>
+<div class="sourceCode" id="cb37"><pre class="sourceCode scheme"><code class="sourceCode scheme"><span id="cb37-1"><a href="#cb37-1"></a>(locate &#39;berkeley world-tree)</span>
+<span id="cb37-2"><a href="#cb37-2"></a><span class="co">; (WORLD (UNITED STATES) CALIFORNIA BERKELEY)</span></span></code></pre></div>
+<div class="sourceCode" id="cb38"><pre class="sourceCode scheme"><code class="sourceCode scheme"><span id="cb38-1"><a href="#cb38-1"></a>(<span class="ex">define</span><span class="fu"> </span>(locate city tree)</span>
+<span id="cb38-2"><a href="#cb38-2"></a>  (<span class="kw">if</span> (<span class="kw">equal?</span> city (datum tree))</span>
+<span id="cb38-3"><a href="#cb38-3"></a>      (<span class="kw">list</span> city)</span>
+<span id="cb38-4"><a href="#cb38-4"></a>      (<span class="kw">let</span> ((subpath (locate-in-forest city (children tree))))</span>
+<span id="cb38-5"><a href="#cb38-5"></a>        (<span class="kw">if</span> subpath</span>
+<span id="cb38-6"><a href="#cb38-6"></a>            (<span class="kw">cons</span> (datum tree) subpath)</span>
+<span id="cb38-7"><a href="#cb38-7"></a>            <span class="dv">#f</span>))))</span>
+<span id="cb38-8"><a href="#cb38-8"></a></span>
+<span id="cb38-9"><a href="#cb38-9"></a>(<span class="ex">define</span><span class="fu"> </span>(locate-in-forest city forest)</span>
+<span id="cb38-10"><a href="#cb38-10"></a>  (<span class="kw">if</span> (<span class="kw">null?</span> forest)</span>
+<span id="cb38-11"><a href="#cb38-11"></a>      <span class="dv">#f</span></span>
+<span id="cb38-12"><a href="#cb38-12"></a>      (<span class="kw">or</span> (locate city (<span class="kw">car</span> forest))</span>
+<span id="cb38-13"><a href="#cb38-13"></a>          (locate-in-forest city (<span class="kw">cdr</span> forest)))))</span></code></pre></div>
+<p>Compare the structure of <code>locate</code> with that of <code>in-tree?</code>. The helper procedures <code>in-forest?</code> and <code>locate-in-forest</code> are almost identical. The main procedures look different, because <code>locate</code> has a harder job, but both of them check for two possibilities: The city might be the datum of the argument node, or it might belong to one of the child trees.</p>
+<hr />
+<h3 id="representing-trees-as-lists">Representing Trees as Lists</h3>
+<p><strong>How do <code>make-node</code> , <code>datum</code> , and <code>children</code> work?</strong></p>
+<div class="sourceCode" id="cb39"><pre class="sourceCode scheme"><code class="sourceCode scheme"><span id="cb39-1"><a href="#cb39-1"></a>(<span class="ex">define</span><span class="fu"> </span>(make-node datum children)</span>
+<span id="cb39-2"><a href="#cb39-2"></a>  (<span class="kw">cons</span> datum children))</span>
+<span id="cb39-3"><a href="#cb39-3"></a></span>
+<span id="cb39-4"><a href="#cb39-4"></a>(<span class="ex">define</span><span class="fu"> </span>(datum node)</span>
+<span id="cb39-5"><a href="#cb39-5"></a>  (<span class="kw">car</span> node))</span>
+<span id="cb39-6"><a href="#cb39-6"></a></span>
+<span id="cb39-7"><a href="#cb39-7"></a>(<span class="ex">define</span><span class="fu"> </span>(children node)</span>
+<span id="cb39-8"><a href="#cb39-8"></a>  (<span class="kw">cdr</span> node))</span></code></pre></div>
+<p>In other words, <strong>a tree is a list whose first element is the datum and whose remaining elements are subtrees.</strong></p>
+<div class="sourceCode" id="cb40"><pre class="sourceCode scheme"><code class="sourceCode scheme"><span id="cb40-1"><a href="#cb40-1"></a>world-tree</span>
+<span id="cb40-2"><a href="#cb40-2"></a></span>
+<span id="cb40-3"><a href="#cb40-3"></a>(WORLD</span>
+<span id="cb40-4"><a href="#cb40-4"></a>   (ITALY (VENEZIA) (RIOMAGGIORE) (FIRENZE) (ROMA))</span>
+<span id="cb40-5"><a href="#cb40-5"></a>   ((UNITED STATES)</span>
+<span id="cb40-6"><a href="#cb40-6"></a>    (CALIFORNIA (BERKELEY) ((SAN FRANCISCO)) (GILROY))</span>
+<span id="cb40-7"><a href="#cb40-7"></a>    (MASSACHUSETTS (CAMBRIDGE) (AMHERST) (SUDBURY))</span>
+<span id="cb40-8"><a href="#cb40-8"></a>    (OHIO (KENT)))</span>
+<span id="cb40-9"><a href="#cb40-9"></a>   (ZIMBABWE (HARARE) (HWANGE))</span>
+<span id="cb40-10"><a href="#cb40-10"></a>   (CHINA (BEIJING) (SHANGHAI) (GUANGSZHOU) (SUZHOW))</span>
+<span id="cb40-11"><a href="#cb40-11"></a>   ((GREAT BRITAIN)</span>
+<span id="cb40-12"><a href="#cb40-12"></a>    (ENGLAND (LIVERPOOL))</span>
+<span id="cb40-13"><a href="#cb40-13"></a>    (SCOTLAND (EDINBURGH) (GLASGOW) ((GRETNA GREEN)))</span>
+<span id="cb40-14"><a href="#cb40-14"></a>    (WALES (ABERGAVENNY)))</span>
+<span id="cb40-15"><a href="#cb40-15"></a>   (AUSTRALIA</span>
+<span id="cb40-16"><a href="#cb40-16"></a>    (VICTORIA (MELBOURNE))</span>
+<span id="cb40-17"><a href="#cb40-17"></a>    ((NEW SOUTH WALES) (SYDNEY))</span>
+<span id="cb40-18"><a href="#cb40-18"></a>    (QUEENSLAND (CAIRNS) ((PORT DOUGLAS))))</span>
+<span id="cb40-19"><a href="#cb40-19"></a>   (HONDURAS (TEGUCIGALPA)))</span></code></pre></div>
+<hr />
+<h3 id="abstract-data-types">Abstract Data Types</h3>
+<p>The procedures <code>make-node</code> , <code>datum</code> , and <code>children</code> define an abstract data type for trees. Using this ADT, we were able to write several useful procedures to manipulate trees before pinning down exactly how a tree is represented as a Scheme list.</p>
+<p><strong>Why using ADT-specific selectors and constructors instead of <code>car</code> and <code>cdr</code> makes programs more readable?</strong></p>
+<p>Consider this example:</p>
+<div class="sourceCode" id="cb41"><pre class="sourceCode scheme"><code class="sourceCode scheme"><span id="cb41-1"><a href="#cb41-1"></a>(in-tree? &#39;venezia (<span class="kw">caddr</span> world-tree))</span></code></pre></div>
+<p>What does <code>caddr</code> mean in this context? Is the <code>caddr</code> of a tree a datum? A child? A forest? Of course you could work it out by careful reasoning, but the form in which we presented this example originally was much clearer:</p>
+<div class="sourceCode" id="cb42"><pre class="sourceCode scheme"><code class="sourceCode scheme"><span id="cb42-1"><a href="#cb42-1"></a>(in-tree? &#39;venezia (<span class="kw">cadr</span> (children world-tree)))</span></code></pre></div>
+<p>Even better would be</p>
+<div class="sourceCode" id="cb43"><pre class="sourceCode scheme"><code class="sourceCode scheme"><span id="cb43-1"><a href="#cb43-1"></a>(in-tree? ’venezia (<span class="kw">list-ref</span> (children world -tree) <span class="dv">1</span>))</span></code></pre></div>
+<p><strong>What do <em>respecting</em> the data abstraction and <em>data abstraction violation</em> mean?</strong></p>
+<p>Using the appropriate selectors and constructors is called <strong><em>respecting</em></strong> the data abstraction. Failing to use the appropriate selectors and constructors is called a <strong><em>data abstraction violation</em></strong>.</p>
+<p>Having defined the selctors and constructors for trees ourselves how do we represent the tree in a different way?</p>
+<div class="sourceCode" id="cb44"><pre class="sourceCode scheme"><code class="sourceCode scheme"><span id="cb44-1"><a href="#cb44-1"></a>(<span class="ex">define</span><span class="fu"> </span>(make-node datum children)</span>
+<span id="cb44-2"><a href="#cb44-2"></a>  (<span class="kw">list</span> &#39;the &#39;node &#39;with &#39;datum datum &#39;and &#39;children children))</span>
+<span id="cb44-3"><a href="#cb44-3"></a></span>
+<span id="cb44-4"><a href="#cb44-4"></a>(<span class="ex">define</span><span class="fu"> </span>(datum node) (<span class="kw">list-ref</span> node <span class="dv">4</span>))</span>
+<span id="cb44-5"><a href="#cb44-5"></a></span>
+<span id="cb44-6"><a href="#cb44-6"></a>(<span class="ex">define</span><span class="fu"> </span>(children node) (<span class="kw">list-ref</span> node <span class="dv">7</span>))</span>
+<span id="cb44-7"><a href="#cb44-7"></a></span>
+<span id="cb44-8"><a href="#cb44-8"></a><span class="op">&gt;</span> (make-node &#39;italy (cities &#39;(venezia riomaggiore firenze roma)))</span>
+<span id="cb44-9"><a href="#cb44-9"></a>(THE NODE WITH DATUM ITALY AND CHILDREN</span>
+<span id="cb44-10"><a href="#cb44-10"></a>     ((THE NODE WITH DATUM VENEZIA AND CHILDREN ())</span>
+<span id="cb44-11"><a href="#cb44-11"></a>      (THE NODE WITH DATUM RIOMAGGIORE AND CHILDREN ())</span>
+<span id="cb44-12"><a href="#cb44-12"></a>      (THE NODE WITH DATUM FIRENZE AND CHILDREN ())</span>
+<span id="cb44-13"><a href="#cb44-13"></a>      (THE NODE WITH DATUM ROMA AND CHILDREN ())))</span></code></pre></div>
+<p>You might expect that this change in the representation would require changes to all the procedures we wrote earlier, such as <code>count-leaves</code>. But in fact, those procedures would continue to work perfectly because they don’t see the representation. (They respect the data abstraction.) As long as <code>datum</code> and <code>children</code> find the right information, it doesn’t matter how the trees are stored. <em>All that matters is that the constructors and selectors have to be compatible with each other.</em></p>
+<hr />
+<h3 id="an-advanced-example-parsing-arithmetic-expressions">An Advanced Example: Parsing Arithmetic Expressions</h3>
+<p><strong>What is the goal for <code>parse</code> function?</strong></p>
+<p>Scheme uses <em>prefix notation</em>: <code>(+ 3 4)</code>. By contrast, people who aren’t Scheme programmers generally represent arithmetic computations using an <em>infix notation</em>, in which the function symbol goes between two arguments: 3 + 4.</p>
+<p>Our goal in this section is to translate an infix arithmetic expression into a tree representing the computation. This translation process is called <em>parsing</em> the expression. For example, we’ll turn the expression</p>
+<pre><code>4 + 3 × 7 − 5/(3 + 4) + 6</code></pre>
+<p>into the tree</p>
+<p><img src="images/computation-tree.png" width="400"></p>
+<p><strong>How to define <code>parse</code> program?</strong></p>
+<div class="sourceCode" id="cb46"><pre class="sourceCode scheme"><code class="sourceCode scheme"><span id="cb46-1"><a href="#cb46-1"></a>(<span class="ex">define</span><span class="fu"> </span>(parse expr)</span>
+<span id="cb46-2"><a href="#cb46-2"></a>  (parse-helper expr &#39;() &#39;()))  <span class="co">; invoke parse-helper and set operators and operands as &#39;()</span></span>
+<span id="cb46-3"><a href="#cb46-3"></a></span>
+<span id="cb46-4"><a href="#cb46-4"></a>(<span class="ex">define</span><span class="fu"> </span>(parse-helper expr operators operands)</span>
+<span id="cb46-5"><a href="#cb46-5"></a>  (<span class="kw">cond</span> ((<span class="kw">null?</span> expr)  <span class="co">; when expr is empty</span></span>
+<span id="cb46-6"><a href="#cb46-6"></a>         (<span class="kw">if</span> (<span class="kw">null?</span> operators)  <span class="co">; if operators is empty</span></span>
+<span id="cb46-7"><a href="#cb46-7"></a>             (<span class="kw">car</span> operands)     <span class="co">; return 1st of operands</span></span>
+<span id="cb46-8"><a href="#cb46-8"></a>             (handle-op &#39;() operators operands)))  <span class="co">; if operators is not empty invoke handle-op</span></span>
+<span id="cb46-9"><a href="#cb46-9"></a>        ((<span class="kw">number?</span> (<span class="kw">car</span> expr))  <span class="co">; when 1st of expr is number</span></span>
+<span id="cb46-10"><a href="#cb46-10"></a>         (parse-helper (<span class="kw">cdr</span> expr)  <span class="co">; invoke parse-helper. delete the 1st of expr</span></span>
+<span id="cb46-11"><a href="#cb46-11"></a>                       operators  <span class="co">; pass the original operator pending list</span></span>
+<span id="cb46-12"><a href="#cb46-12"></a>                       (<span class="kw">cons</span> (make-node (<span class="kw">car</span> expr) &#39;()) operands)))  <span class="co">; make node with the 1st of expr and insert the new node the operands</span></span>
+<span id="cb46-13"><a href="#cb46-13"></a>        ((<span class="kw">list?</span> (<span class="kw">car</span> expr))  <span class="co">; when 1st of expr is a list</span></span>
+<span id="cb46-14"><a href="#cb46-14"></a>         (parse-helper (<span class="kw">cdr</span> expr)  <span class="co">; invoke parse-helper. delete the 1st of expr</span></span>
+<span id="cb46-15"><a href="#cb46-15"></a>                       operators  <span class="co">; pass the original operator pending list</span></span>
+<span id="cb46-16"><a href="#cb46-16"></a>                       (<span class="kw">cons</span> (parse (<span class="kw">car</span> expr)) operands)))  <span class="co">; pass the 1st of expr into operands list</span></span>
+<span id="cb46-17"><a href="#cb46-17"></a>        (<span class="kw">else</span> (<span class="kw">if</span> (<span class="kw">or</span> (<span class="kw">null?</span> operators)  <span class="co">; when the 1st of expr is operator. if operators list is empty</span></span>
+<span id="cb46-18"><a href="#cb46-18"></a>                      (<span class="op">&gt;</span> (precedence (<span class="kw">car</span> expr))  <span class="co">; or the current operator is greater than</span></span>
+<span id="cb46-19"><a href="#cb46-19"></a>                         (precedence (<span class="kw">car</span> operators))))  <span class="co">; the 1st of the operator list (last operator)</span></span>
+<span id="cb46-20"><a href="#cb46-20"></a>                  (parse-helper (<span class="kw">cdr</span> expr)  <span class="co">; invoke parse-helper. delte the 1st of expr</span></span>
+<span id="cb46-21"><a href="#cb46-21"></a>                                (<span class="kw">cons</span> (<span class="kw">car</span> expr) operators)  <span class="co">; add the current operator to the operators list</span></span>
+<span id="cb46-22"><a href="#cb46-22"></a>                                operands)  <span class="co">; pass original operands</span></span>
+<span id="cb46-23"><a href="#cb46-23"></a>                  (handle-op expr operators operands))))) <span class="co">; if the current operator is lower than last operator, invoke handle-op</span></span>
+<span id="cb46-24"><a href="#cb46-24"></a></span>
+<span id="cb46-25"><a href="#cb46-25"></a>(<span class="ex">define</span><span class="fu"> </span>(handle-op expr operators operands)</span>
+<span id="cb46-26"><a href="#cb46-26"></a>  (parse-helper expr  <span class="co">; invoke parse-helper</span></span>
+<span id="cb46-27"><a href="#cb46-27"></a>                (<span class="kw">cdr</span> operators)  <span class="co">; delete the first element of operators</span></span>
+<span id="cb46-28"><a href="#cb46-28"></a>                (<span class="kw">cons</span> (make-node (<span class="kw">car</span> operators)  <span class="co">; get the first of operators and set it as datum</span></span>
+<span id="cb46-29"><a href="#cb46-29"></a>                                 (<span class="kw">list</span> (<span class="kw">cadr</span> operands) (<span class="kw">car</span> operands)))  <span class="co">; make the children with the 2nd and 1st element of operands</span></span>
+<span id="cb46-30"><a href="#cb46-30"></a>                      (<span class="kw">cddr</span> operands)))) <span class="co">; delete the 1st and 2nd element of operands and insert the new list into the operands</span></span>
+<span id="cb46-31"><a href="#cb46-31"></a></span>
+<span id="cb46-32"><a href="#cb46-32"></a>(<span class="ex">define</span><span class="fu"> </span>(precedence oper)</span>
+<span id="cb46-33"><a href="#cb46-33"></a>  (<span class="kw">if</span> (member? oper &#39;(<span class="op">+</span> <span class="op">-</span>)) <span class="dv">1</span> <span class="dv">2</span>))</span></code></pre></div>
+<p>After building the tree it would be easy to compute the value of the expression. Here is the program to do that:</p>
+<div class="sourceCode" id="cb47"><pre class="sourceCode scheme"><code class="sourceCode scheme"><span id="cb47-1"><a href="#cb47-1"></a>(<span class="ex">define</span><span class="fu"> </span>(compute tree)</span>
+<span id="cb47-2"><a href="#cb47-2"></a>  (<span class="kw">if</span> (<span class="kw">number?</span> (datum tree))  <span class="co">; if the datum of the tree is number</span></span>
+<span id="cb47-3"><a href="#cb47-3"></a>      (datum tree)  <span class="co">; return the datum number</span></span>
+<span id="cb47-4"><a href="#cb47-4"></a>      ((function-named-by (datum tree))  <span class="co">; if the datum of the tree is operator, invoke function-named-by with the operator to return the scheme operator</span></span>
+<span id="cb47-5"><a href="#cb47-5"></a>         (compute (<span class="kw">car</span> (children tree)))  <span class="co">; get the first element of children as the first operand</span></span>
+<span id="cb47-6"><a href="#cb47-6"></a>         (compute (<span class="kw">cadr</span> (children tree)))))) <span class="co">; get the rest of the children as another operand</span></span>
+<span id="cb47-7"><a href="#cb47-7"></a></span>
+<span id="cb47-8"><a href="#cb47-8"></a>(<span class="ex">define</span><span class="fu"> </span>(function-named-by oper)</span>
+<span id="cb47-9"><a href="#cb47-9"></a>  (<span class="kw">cond</span> ((<span class="kw">equal?</span> oper &#39;+) <span class="op">+</span>)</span>
+<span id="cb47-10"><a href="#cb47-10"></a>        ((<span class="kw">equal?</span> oper &#39;-) <span class="op">-</span>)</span>
+<span id="cb47-11"><a href="#cb47-11"></a>        ((<span class="kw">equal?</span> oper &#39;*) *)</span>
+<span id="cb47-12"><a href="#cb47-12"></a>        ((<span class="kw">equal?</span> oper &#39;/) <span class="op">/</span>)</span>
+<span id="cb47-13"><a href="#cb47-13"></a>        (<span class="kw">else</span> (error <span class="st">&quot;no such operator as&quot;</span> oper))))</span>
+<span id="cb47-14"><a href="#cb47-14"></a></span>
+<span id="cb47-15"><a href="#cb47-15"></a>(compute (parse &#39;(<span class="dv">4</span> <span class="op">+</span> <span class="dv">3</span> * <span class="dv">7</span> <span class="op">-</span> <span class="dv">5</span> <span class="op">/</span> (<span class="dv">3</span> <span class="op">+</span> <span class="dv">4</span>) <span class="op">+</span> <span class="dv">6</span>)))</span>
+<span id="cb47-16"><a href="#cb47-16"></a><span class="co">; 30.285714285714</span></span></code></pre></div>
+<hr />
+<h3 id="pitfalls-1">Pitfalls</h3>
+<ul>
+<li><p>A leaf node is a perfectly good actual argument to a tree procedure, even though the picture of a leaf node doesn’t look treeish because there aren’t any branches. A common mistake is to make the base case of the recursion be a node whose children are leaves, instead of a node that’s a leaf itself.</p></li>
+<li><p>The value returned by children is not a tree, but a forest. It’s therefore not a suitable actual argument to a procedure that expects a tree.</p></li>
+</ul>
+<hr />
+<h3 id="exercises-18.1-18.6">Exercises 18.1-18.6</h3>
+<p><a href="https://github.com/mengsince1986/Simply-Scheme-exercises/blob/master/SS%20Exercises/Exercises%2018.1-18.6.scm">Solutions</a></p>
+<hr />
+<h2 id="chapter-19-implementing-higher-order-functions">Chapter 19 Implementing Higher-Order Functions</h2>
+<p>This chapter is about writing <em>higher-order procedures</em> — that is, procedures that implement higher-order functions. We are going to study the implementation of <code>every</code>, <code>keep</code>, and so on.</p>
+<p>The truly important point made in this chapter is that you aren’t limited to a fixed set of higher-order functions. If you feel a need for a new one, you can implement it.</p>
+<hr />
+<h3 id="generalizing-patterns">Generalizing Patterns</h3>
+<p><strong>How to generalize a pattern to calculate areas for different kinds of shapes?</strong></p>
+<p>Suppose we want to find out the areas of several different kinds of shapes, given one linear dimension. A straightforward way would be to do it like this:</p>
+<div class="sourceCode" id="cb48"><pre class="sourceCode scheme"><code class="sourceCode scheme"><span id="cb48-1"><a href="#cb48-1"></a>(<span class="ex">define</span><span class="fu"> pi </span><span class="fl">3.141592654</span>)</span>
+<span id="cb48-2"><a href="#cb48-2"></a></span>
+<span id="cb48-3"><a href="#cb48-3"></a>(<span class="ex">define</span><span class="fu"> </span>(square-area r) (* r r))</span>
+<span id="cb48-4"><a href="#cb48-4"></a></span>
+<span id="cb48-5"><a href="#cb48-5"></a>(<span class="ex">define</span><span class="fu"> </span>(circle-area r) (* pi r r))</span>
+<span id="cb48-6"><a href="#cb48-6"></a></span>
+<span id="cb48-7"><a href="#cb48-7"></a>(<span class="ex">define</span><span class="fu"> </span>(sphere-area r) (* <span class="dv">4</span> pi r r))</span>
+<span id="cb48-8"><a href="#cb48-8"></a></span>
+<span id="cb48-9"><a href="#cb48-9"></a>(<span class="ex">define</span><span class="fu"> </span>(hexagon-area r) (* (<span class="kw">sqrt</span> <span class="dv">3</span>) <span class="fl">1.5</span> r r))</span>
+<span id="cb48-10"><a href="#cb48-10"></a></span>
+<span id="cb48-11"><a href="#cb48-11"></a>(square-area <span class="dv">6</span>)</span>
+<span id="cb48-12"><a href="#cb48-12"></a><span class="co">; 36</span></span>
+<span id="cb48-13"><a href="#cb48-13"></a></span>
+<span id="cb48-14"><a href="#cb48-14"></a>(circle-area <span class="dv">5</span>)</span>
+<span id="cb48-15"><a href="#cb48-15"></a><span class="co">; 78.53981635</span></span></code></pre></div>
+<p>We want to generalize the pattern that these four procedures exhibit. Each of these procedures has a particular constant factor built in to its definition. What we’d like instead is one single procedure that lets you choose a constant factor when you invoke it. This new procedure will take a second argument besides the linear dimension <code>r</code> (the radius or side): a <code>shape</code> argument whose value is the desired constant factor.</p>
+<div class="sourceCode" id="cb49"><pre class="sourceCode scheme"><code class="sourceCode scheme"><span id="cb49-1"><a href="#cb49-1"></a>(<span class="ex">define</span><span class="fu"> </span>(area shape r) (* shape r r))</span>
+<span id="cb49-2"><a href="#cb49-2"></a></span>
+<span id="cb49-3"><a href="#cb49-3"></a>(<span class="ex">define</span><span class="fu"> square </span><span class="dv">1</span>)</span>
+<span id="cb49-4"><a href="#cb49-4"></a></span>
+<span id="cb49-5"><a href="#cb49-5"></a>(<span class="ex">define</span><span class="fu"> circle </span>pi)</span>
+<span id="cb49-6"><a href="#cb49-6"></a></span>
+<span id="cb49-7"><a href="#cb49-7"></a>(<span class="ex">define</span><span class="fu"> sphere </span>(* <span class="dv">4</span> pi))</span>
+<span id="cb49-8"><a href="#cb49-8"></a></span>
+<span id="cb49-9"><a href="#cb49-9"></a>(<span class="ex">define</span><span class="fu"> hexagon </span>(* (<span class="kw">sqrt</span> <span class="dv">3</span>) <span class="fl">1.5</span>))</span>
+<span id="cb49-10"><a href="#cb49-10"></a></span>
+<span id="cb49-11"><a href="#cb49-11"></a>(area sphere <span class="dv">7</span>)</span>
+<span id="cb49-12"><a href="#cb49-12"></a><span class="co">; 615.752160184</span></span></code></pre></div>
+<p>We started with several procedures. Then we found that they had certain points of similarity and certain differences. In order to write a single procedure that generalizes the points of similarity, we had to use an additional argument for each point of difference. (In this example, there was only one point of difference.)</p>
+<p>This idea of using a procedure to generalize a pattern is part of the larger idea of abstraction that we’ve been discussing throughout the book. We notice an algorithm that we need to use repeatedly, and so we separate the algorithm from any particular data values and give it a name.</p>
+<hr />
+<h3 id="the-every-pattern-revisited">The <code>every</code> Pattern Revisited</h3>
+<p><strong>What is <code>every</code> template like?</strong></p>
+<div class="sourceCode" id="cb50"><pre class="sourceCode scheme"><code class="sourceCode scheme"><span id="cb50-1"><a href="#cb50-1"></a>(<span class="ex">define</span><span class="fu"> </span>( every-something sent)</span>
+<span id="cb50-2"><a href="#cb50-2"></a>  (<span class="kw">if</span> (empty? sent)</span>
+<span id="cb50-3"><a href="#cb50-3"></a>      &#39;()</span>
+<span id="cb50-4"><a href="#cb50-4"></a>      (se (_______ (first sent))</span>
+<span id="cb50-5"><a href="#cb50-5"></a>          (every -something (bf sent)))))</span></code></pre></div>
+<p><strong>How to define <code>every</code>?</strong></p>
+<p>You’ve been writing <code>every</code>-like procedures by filling in the blank with a specific function. To generalize the pattern, we’ll use the trick of adding an argument, as we discussed in the last section.</p>
+<div class="sourceCode" id="cb51"><pre class="sourceCode scheme"><code class="sourceCode scheme"><span id="cb51-1"><a href="#cb51-1"></a>(<span class="ex">define</span><span class="fu"> </span>(every fn sent)</span>
+<span id="cb51-2"><a href="#cb51-2"></a>  (<span class="kw">if</span> (empty? sent)</span>
+<span id="cb51-3"><a href="#cb51-3"></a>      &#39;()</span>
+<span id="cb51-4"><a href="#cb51-4"></a>      (se (fn (first sent))</span>
+<span id="cb51-5"><a href="#cb51-5"></a>          (every fn (bf sent)))))</span></code></pre></div>
+<p>The version shown here does indeed work for words, because <code>first</code> and <code>butfirst</code> work for words. So probably “stuff” would be a better formal parameter than “sent.” (The result from <code>every</code> is always a sentence, because <code>sentence</code> is used to construct the result.)</p>
+<hr />
+<h3 id="the-difference-between-map-and-every">The Difference between <code>map</code> and <code>every</code></h3>
+<p><strong>How to define <code>map</code> procedure?</strong></p>
+<div class="sourceCode" id="cb52"><pre class="sourceCode scheme"><code class="sourceCode scheme"><span id="cb52-1"><a href="#cb52-1"></a>(<span class="ex">define</span><span class="fu"> </span>(map fn lst)</span>
+<span id="cb52-2"><a href="#cb52-2"></a>  (<span class="kw">if</span> (<span class="kw">null?</span> lst)</span>
+<span id="cb52-3"><a href="#cb52-3"></a>      &#39;()</span>
+<span id="cb52-4"><a href="#cb52-4"></a>      (<span class="kw">cons</span> (fn (<span class="kw">car</span> lst))</span>
+<span id="cb52-5"><a href="#cb52-5"></a>            (map fn (<span class="kw">cdr</span> lst)))))</span></code></pre></div>
+<p>The structure here is identical to that of <code>every</code>; the only difference is that we use <code>cons</code>, <code>car</code>, and <code>cdr</code> instead of <code>se</code>, <code>first</code> , and <code>butfirst</code>.</p>
+<p>One implication of this is that you can’t use <code>map</code> with a word, since it’s an error to take the <code>car</code> of a word.</p>
+<p><strong>When is it advantageous to use <code>map</code> instead of <code>every</code>?</strong></p>
+<p>Suppose you’re using <code>map</code> with a structured list, like this:</p>
+<div class="sourceCode" id="cb53"><pre class="sourceCode scheme"><code class="sourceCode scheme"><span id="cb53-1"><a href="#cb53-1"></a>(map (<span class="kw">lambda</span> (flavor) (se flavor &#39;(is great)))</span>
+<span id="cb53-2"><a href="#cb53-2"></a>     &#39;(ginger (ultra chocolate) pumpkin (rum raisin)))</span>
+<span id="cb53-3"><a href="#cb53-3"></a><span class="co">; ((GINGER IS GREAT) (ULTRA CHOCOLATE IS GREAT)</span></span>
+<span id="cb53-4"><a href="#cb53-4"></a><span class="co">;  (PUMPKIN IS GREAT) (RUM RAISIN IS GREAT))</span></span>
+<span id="cb53-5"><a href="#cb53-5"></a></span>
+<span id="cb53-6"><a href="#cb53-6"></a>(every (<span class="kw">lambda</span> (flavor) (se flavor &#39;(is great)))</span>
+<span id="cb53-7"><a href="#cb53-7"></a>       &#39;(ginger (ultra chocolate) pumpkin (rum raisin)))</span>
+<span id="cb53-8"><a href="#cb53-8"></a><span class="co">; (GINGER IS GREAT ULTRA CHOCOLATE IS GREAT PUMPKIN IS GREAT</span></span>
+<span id="cb53-9"><a href="#cb53-9"></a><span class="co">;  RUM RAISIN IS GREAT)</span></span></code></pre></div>
+<p><strong>Why does <code>map</code> preserve the structure of the sublists while <code>every</code> doesn’t?</strong></p>
+<p><code>map</code> uses <code>cons</code> to combine the elements of the result, whereas <code>every</code> uses <code>sentence</code> :</p>
+<div class="sourceCode" id="cb54"><pre class="sourceCode scheme"><code class="sourceCode scheme"><span id="cb54-1"><a href="#cb54-1"></a>(<span class="kw">cons</span> &#39;(pumpkin is great)</span>
+<span id="cb54-2"><a href="#cb54-2"></a>      (<span class="kw">cons</span> &#39;(rum raisin is great)</span>
+<span id="cb54-3"><a href="#cb54-3"></a>            &#39;()))</span>
+<span id="cb54-4"><a href="#cb54-4"></a><span class="co">; ((PUMPKIN IS GREAT) (RUM RAISIN IS GREAT))</span></span>
+<span id="cb54-5"><a href="#cb54-5"></a></span>
+<span id="cb54-6"><a href="#cb54-6"></a>(se &#39;(pumpkin is great)</span>
+<span id="cb54-7"><a href="#cb54-7"></a>    (se &#39;(rum raisin is great)</span>
+<span id="cb54-8"><a href="#cb54-8"></a>        &#39;()))</span>
+<span id="cb54-9"><a href="#cb54-9"></a><span class="co">; (PUMPKIN IS GREAT RUM RAISIN IS GREAT)</span></span></code></pre></div>
+<hr />
+<h3 id="filter"><code>filter</code></h3>
+<p><strong>How to define <code>filter</code>?</strong></p>
+<div class="sourceCode" id="cb55"><pre class="sourceCode scheme"><code class="sourceCode scheme"><span id="cb55-1"><a href="#cb55-1"></a>(<span class="ex">define</span><span class="fu"> </span>(filter pred lst)</span>
+<span id="cb55-2"><a href="#cb55-2"></a>  (<span class="kw">cond</span> ((<span class="kw">null?</span> lst) &#39;())</span>
+<span id="cb55-3"><a href="#cb55-3"></a>        ((pred (<span class="kw">car</span> lst))</span>
+<span id="cb55-4"><a href="#cb55-4"></a>         (<span class="kw">cons</span> (<span class="kw">car</span> lst) (filter pred (<span class="kw">cdr</span> lst))))</span>
+<span id="cb55-5"><a href="#cb55-5"></a>        (<span class="kw">else</span> (filter pred (<span class="kw">cdr</span> lst)))))</span></code></pre></div>
+<p>Like <code>map</code>, this uses <code>cons</code> as the constructor so that it will work properly on structured lists.</p>
+<p>(Aside from the difference between lists and sentences, this is just like the keep template on page 224.)</p>
+<hr />
+<h3 id="accumulate-and-reduce"><code>accumulate</code> and <code>reduce</code></h3>
+<p><strong>How to define accumulate with only two arguments?</strong></p>
+<p><em>The trick is that in our <code>reduce</code> and <code>accumulate</code> the base case is a one-element argument</em>, rather than an empty argument. When we’re down to one element in the argument, we just return that element:</p>
+<div class="sourceCode" id="cb56"><pre class="sourceCode scheme"><code class="sourceCode scheme"><span id="cb56-1"><a href="#cb56-1"></a>(<span class="ex">define</span><span class="fu"> </span>(accumulate combiner stuff)  <span class="co">;; first version</span></span>
+<span id="cb56-2"><a href="#cb56-2"></a>  (<span class="kw">if</span> (empty? (bf stuff))</span>
+<span id="cb56-3"><a href="#cb56-3"></a>      (first stuff)</span>
+<span id="cb56-4"><a href="#cb56-4"></a>      (combiner (first stuff)</span>
+<span id="cb56-5"><a href="#cb56-5"></a>                (accumulate combiner (bf stuff)))))</span></code></pre></div>
+<p>This version is a simplification of the one we actually provide. What happens if <code>stuff</code> is empty? This version blows up, since it tries to take the <code>butfirst</code> of stuff immediately. Our final version has a specific check for empty arguments:</p>
+<div class="sourceCode" id="cb57"><pre class="sourceCode scheme"><code class="sourceCode scheme"><span id="cb57-1"><a href="#cb57-1"></a>(<span class="ex">define</span><span class="fu"> </span>(accumulate combiner stuff)</span>
+<span id="cb57-2"><a href="#cb57-2"></a>  (<span class="kw">cond</span> ((<span class="kw">not</span> (empty? stuff)) (real-accumulate combiner stuff))</span>
+<span id="cb57-3"><a href="#cb57-3"></a>        ((<span class="kw">member</span> combiner (<span class="kw">list</span> <span class="op">+</span> * word se <span class="kw">append</span>))</span>
+<span id="cb57-4"><a href="#cb57-4"></a>         (combiner))</span>
+<span id="cb57-5"><a href="#cb57-5"></a>        (<span class="kw">else</span> (error</span>
+<span id="cb57-6"><a href="#cb57-6"></a>               <span class="st">&quot;Can’t accumulate empty input with that combiner&quot;</span>))))</span>
+<span id="cb57-7"><a href="#cb57-7"></a></span>
+<span id="cb57-8"><a href="#cb57-8"></a>(<span class="ex">define</span><span class="fu"> </span>(real-accumulate combiner stuff)</span>
+<span id="cb57-9"><a href="#cb57-9"></a>  (<span class="kw">if</span> (empty? (bf stuff))</span>
+<span id="cb57-10"><a href="#cb57-10"></a>      (first stuff)</span>
+<span id="cb57-11"><a href="#cb57-11"></a>      (combiner (first stuff) (real-accumulate combiner (bf stuff)))))</span></code></pre></div>
+<p><code>reduce</code> is the same, except that it uses <code>null?</code>, <code>car</code>, and <code>cdr</code>.</p>
+<p>As we mentioned in Chapter 8, many of Scheme’s primitive procedures return their identity element when invoked with no arguments. We can take advantage of this; if <code>accumulate</code> is invoked with an empty second argument and one of the procedures <code>+</code>, <code>*</code>, <code>word</code>, <code>sentence</code>, <code>append</code> or <code>list</code>, we invoke the combiner with no arguments to produce the return value.</p>
+<p>On the other hand, if <code>accumulate</code>’s combiner argument is something like <code>(lambda (x y) (word x ’- y))</code> or <code>max</code>, then there’s nothing <code>accumulate</code> can return, so we give an error message.</p>
+<hr />
+<h3 id="robustness">Robustness</h3>
+<p><strong>How to define <code>accumulate</code> in a non-robust version?</strong></p>
+<div class="sourceCode" id="cb58"><pre class="sourceCode scheme"><code class="sourceCode scheme"><span id="cb58-1"><a href="#cb58-1"></a>(<span class="ex">define</span><span class="fu"> </span>(accumulate combiner stuff)   <span class="co">;; non-robust version</span></span>
+<span id="cb58-2"><a href="#cb58-2"></a>  (<span class="kw">if</span> (<span class="kw">not</span> (empty? stuff))</span>
+<span id="cb58-3"><a href="#cb58-3"></a>      (real-accumulate combiner stuff)</span>
+<span id="cb58-4"><a href="#cb58-4"></a>      (combiner)))</span></code></pre></div>
+<p><strong>What is the reasoning in favor of non-robust programming?</strong></p>
+<p>In either version, the user who tries to evaluate an expression like</p>
+<div class="sourceCode" id="cb59"><pre class="sourceCode scheme"><code class="sourceCode scheme"><span id="cb59-1"><a href="#cb59-1"></a>(accumulate <span class="kw">max</span> &#39;())</span></code></pre></div>
+<p>is going to get an error message. In the longer version we’ve spent both our own programming effort and a little of the computer’s time on every invocation just to give a <em>different</em> error message from the one that Scheme would have given anyway. What’s the point?</p>
+<p><strong>What is the reasoning in favor of the robust programming?</strong></p>
+<p>Here is the reasoning in favor of the longer version: In practice, the empty-argument situation isn’t going to arise because someone uses a quoted empty sentence; instead the second argument to accumulate will be some expression whose value happens to be empty under certain conditions. The user will then have to debug the program that caused those conditions. Debugging is hard; we should make it easier for the user, if we can, by giving an error message that points clearly to the problem.</p>
+<p><strong>What is a robust program?</strong></p>
+<p>A program that behaves politely when given incorrect input is called <em>robust</em>. It’s not always a matter of better or worse error messages.</p>
+<p><strong>Robust program vs non-robust program?</strong></p>
+<p>It’s possible to pay either too little or too much attention to program robustness. If you’re a professional programmer, your employer will expect your programs to survive errors that are likely to happen. On the other hand, your programs will be hard to read and debug if the error checking swamps the real work! As a student, unless you are specifically asked to “bulletproof” your program, don’t answer exam questions by writing procedures like this one:</p>
+<div class="sourceCode" id="cb60"><pre class="sourceCode scheme"><code class="sourceCode scheme"><span id="cb60-1"><a href="#cb60-1"></a>(<span class="ex">define</span><span class="fu"> </span>(<span class="kw">even?</span> num)  <span class="co">;; silly example</span></span>
+<span id="cb60-2"><a href="#cb60-2"></a>  (<span class="kw">cond</span> ((<span class="kw">not</span> (<span class="kw">number?</span> num)) (error <span class="st">&quot;Not a number.&quot;</span>))</span>
+<span id="cb60-3"><a href="#cb60-3"></a>        ((<span class="kw">not</span> (<span class="kw">integer?</span> num)) (error <span class="st">&quot;Not an integer.&quot;</span>))</span>
+<span id="cb60-4"><a href="#cb60-4"></a>        ((<span class="op">&lt;</span> num <span class="dv">0</span>) (error <span class="st">&quot;Argument must be positive.&quot;</span>))</span>
+<span id="cb60-5"><a href="#cb60-5"></a>        (<span class="kw">else</span> (<span class="op">=</span> (<span class="kw">remainder</span> num <span class="dv">2</span>) <span class="dv">0</span>))))</span></code></pre></div>
+<hr />
+<h3 id="higher-order-functions-for-structured-lists">Higher-Order Functions for Structured Lists</h3>
+<p>Any time you notice yourself writing what feels like the same procedure over again, but with different details, consider inventing a higher-order function.</p>
+<p>For example, here’s a procedure we defined in Chapter 17.</p>
+<div class="sourceCode" id="cb61"><pre class="sourceCode scheme"><code class="sourceCode scheme"><span id="cb61-1"><a href="#cb61-1"></a>(<span class="ex">define</span><span class="fu"> </span>(deep-pigl structure)</span>
+<span id="cb61-2"><a href="#cb61-2"></a>  (<span class="kw">cond</span> ((word? structure) (pigl structure))</span>
+<span id="cb61-3"><a href="#cb61-3"></a>        ((<span class="kw">null?</span> structure) &#39;())</span>
+<span id="cb61-4"><a href="#cb61-4"></a>        (<span class="kw">else</span> (<span class="kw">cons</span> (deep-pigl (<span class="kw">car</span> structure))</span>
+<span id="cb61-5"><a href="#cb61-5"></a>                    (deep-pigl (<span class="kw">cdr</span> structure))))))</span></code></pre></div>
+<p>This procedure converts every word in a structured list to Pig Latin. Suppose we have a structure full of numbers and we want to compute all of their squares. We could write a specific procedure <code>deep-square</code> , but instead, we’ll write a higher-order procedure:</p>
+<div class="sourceCode" id="cb62"><pre class="sourceCode scheme"><code class="sourceCode scheme"><span id="cb62-1"><a href="#cb62-1"></a>(<span class="ex">define</span><span class="fu"> </span>(deep-map f structure)</span>
+<span id="cb62-2"><a href="#cb62-2"></a>  (<span class="kw">cond</span> ((word? structure) (f structure))</span>
+<span id="cb62-3"><a href="#cb62-3"></a>        ((<span class="kw">null?</span> structure) &#39;())</span>
+<span id="cb62-4"><a href="#cb62-4"></a>        (<span class="kw">else</span> (<span class="kw">cons</span> (deep-map f (<span class="kw">car</span> structure))</span>
+<span id="cb62-5"><a href="#cb62-5"></a>                    (deep-map f (<span class="kw">cdr</span> structure))))))</span></code></pre></div>
+<hr />
+<h3 id="the-zero-trip-do-loop">The Zero-trip Do Loop</h3>
+<p><strong>What is the <code>do</code> control mechanism in Fortran?</strong></p>
+<p>Fortran includes a control mechanism called <code>do</code>, a sort of higher-order procedure that carries out a computation repeatedly, as <code>every</code> does. But instead of carrying out the computation once for each element of a given collection of data (like the sentence argument to <code>every</code>), <code>do</code> performs a computation once for each integer in a range specified by its endpoints. “For every number between 4 and 16, do such-and-such.”</p>
+<p><strong>What is “zero-trip <code>do</code> loop” proposal?</strong></p>
+<p>What if you specify endpoints such that the starting value is greater than the ending value? In the first implementation of Fortran, nobody thought very hard about this question, and they happened to implement <code>do</code> in such a way that if you specified a backward range, the computation was done once, for the given starting value, before Fortran noticed that it was past the ending value.</p>
+<p>Twenty years later, a bunch of computer scientists argued that this behavior was wrong—that a <code>do</code> loop with its starting value greater than its ending value should not carry out its computation at all. This proposal for a “<em>zero-trip do loop</em>” was strongly opposed by Fortran old-timers, not because of any principle but because of all the thousands of Fortran programs that had been written to rely on the one-trip behavior.</p>
+<p><strong>What is the point of “zero-trip <code>do</code> loop” story?</strong></p>
+<p>The point of this story is that the Fortran users had to debate the issue so heatedly because they are stuck with only the control mechanisms that are built into the language. Fortran doesn’t have the idea of function as data, so Fortran programmers can’t write their own higher-order procedures. But you, using the techniques of this chapter, can create precisely the control mechanism that you need for whatever problem you happen to be working on.</p>
+<hr />
+<h3 id="pitfalls-2">Pitfalls</h3>
+<ul>
+<li><p>The most crucial point in inventing a higher-order function is to make sure that the pattern you have in mind really does generalize. For example, if you want to write a higher-order function for structured data, what is the base case? Will you use the tree abstract data type, or will you use car / cdr recursion?</p></li>
+<li><p>When you generalize a pattern by adding a new argument (typically a procedure), be sure you add it to the recursive invocation(s) as well as to the formal parameter list!</p></li>
+</ul>
+<hr />
+<h3 id="exercises-19.1">Exercises 19.1</h3>
+<p><a href="https://github.com/mengsince1986/Simply-Scheme-exercises/blob/master/SS%20Exercises/Exercise%2019.1.scm">Solution</a></p>
+<h3 id="exercises-19.2-19.13">Exercises 19.2-19.13</h3>
+<p><a href="https://github.com/mengsince1986/Simply-Scheme-exercises/blob/master/SS%20Exercises/Exercises%2019.2-19.13.scm">Solution</a></p>
+</body>
+</html>
