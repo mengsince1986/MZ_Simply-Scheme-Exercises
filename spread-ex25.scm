@@ -33,9 +33,9 @@
 
 ;;; Spreadsheet size
 
-(define *total-cols* 52)
+(define *total-cols* 26)
 
-(define *total-rows* 52)
+(define *total-rows* 30)
 
 ;;; Commands
 
@@ -535,30 +535,49 @@
 (define (cell-structure-from-indices col row)
   (global-array-lookup col row))
 
-(define *the-spreadsheet-array* (make-vector *total-rows*))
+; (define *the-spreadsheet-array* (make-vector *total-rows*))
+(define *the-spreadsheet-array* (make-vector (* *total-cols* *total-rows*)))
+
+; (define (global-array-lookup col row)
+;   (if (and (<= row *total-rows*) (<= col *total-cols*))
+;       (vector-ref (vector-ref *the-spreadsheet-array* (- row 1))
+;                   (- col 1))
+;       (error "Out of bounds")))
 
 (define (global-array-lookup col row)
   (if (and (<= row *total-rows*) (<= col *total-cols*))
-      (vector-ref (vector-ref *the-spreadsheet-array* (- row 1))
-                  (- col 1))
+      (vector-ref *the-spreadsheet-array* (global-array-index col row))
       (error "Out of bounds")))
 
+(define (global-array-index col row)
+  (- (+ (* 26 (- row 1)) col) 1))
+
+; (define (init-array)
+;   (fill-array-with-rows (- *total-rows* 1)))
+
+; (define (fill-array-with-rows n)
+;   (if (< n 0)
+;       'done
+;       (begin (vector-set! *the-spreadsheet-array* n (make-vector *total-cols*))
+;              (fill-row-with-cells
+;                (vector-ref *the-spreadsheet-array* n) (- *total-cols* 1))
+;              (fill-array-with-rows (- n 1)))))
+
+; (define (fill-row-with-cells vec n)
+;   (if (< n 0)
+;       'done
+;       (begin (vector-set! vec n (make-cell))
+;              (fill-row-with-cells vec (- n 1)))))
+
 (define (init-array)
-  (fill-array-with-rows (- *total-rows* 1)))
+  (fill-array-with-cell *the-spreadsheet-array*
+                        (- (vector-length *the-spreadsheet-array*) 1)))
 
-(define (fill-array-with-rows n)
-  (if (< n 0)
+(define (fill-array-with-cell vec index)
+  (if (< index 0)
       'done
-      (begin (vector-set! *the-spreadsheet-array* n (make-vector *total-cols*))
-             (fill-row-with-cells
-               (vector-ref *the-spreadsheet-array* n) (- *total-cols* 1))
-             (fill-array-with-rows (- n 1)))))
-
-(define (fill-row-with-cells vec n)
-  (if (< n 0)
-      'done
-      (begin (vector-set! vec n (make-cell))
-             (fill-row-with-cells vec (- n 1)))))
+      (begin (vector-set! vec index (make-cell))
+             (fill-array-with-cell vec (- index 1)))))
 
 ;;; Utility Functions
 
