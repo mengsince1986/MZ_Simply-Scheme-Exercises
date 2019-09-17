@@ -51,5 +51,9 @@
 
 ; 25.4 The procedures get-function and get-command are almost identical in struc- ture; both look for an argument in an association list. They differ, however, in their handling of the situation in which the argument is not present in the list. Why?
 
-; answer:
-; 
+; answer: to make the program robust, it's necessary to add error message in get-function.
+; If the user input a function that's not included in *the-functions*, the program would stop and return an error by scheme itself. A specified error message would help users debug the program.
+; While if the user input a command that's not included in *the-commands*, the program will still continue in `process-command` and treat the user input as a formula which will invoke `get-function`. So it's not necessary to add specified error message for `get-command`.
+
+; **********************************************************
+
