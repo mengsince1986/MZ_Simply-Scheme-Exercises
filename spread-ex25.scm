@@ -482,19 +482,32 @@
 
 ;; Cell IDs
 
+;(define (make-id col row)
+;  (list 'id col row))
+
 (define (make-id col row)
-  (list 'id col row))
+  (vector col row))
+
+;(define (id-column id)
+;  (cadr id))
 
 (define (id-column id)
-  (cadr id))
+  (vector-ref id 0))
+
+;(define (id-row id)
+;  (caddr id))
 
 (define (id-row id)
-  (caddr id))
+  (vector-ref id 1))
+
+;(define (id? x)
+;  (and (list? x)
+;       (not (null? x))
+;       (equal? 'id (car x))))
 
 (define (id? x)
-  (and (list? x)
-       (not (null? x))
-       (equal? 'id (car x))))
+  (and (vector? x)
+       (= (vector-length x) 2)))
 
 ;; Cells
 

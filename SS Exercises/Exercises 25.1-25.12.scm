@@ -57,3 +57,50 @@
 
 ; **********************************************************
 
+; 25.5 The reason we had to include the word id in each cell ID was so we would be able to distinguish a list representing a cell ID from a list of some other kind in an expression. Another way to distinguish cell IDs would be to represent them as vectors, since vectors do not otherwise appear within expressions. Change the implementation of cell IDs from three-element lists to two-element vectors:
+
+(make-id 4 2)
+; #(4 2)
+
+; Make sure the rest of the program still works.
+
+; solution: spread-ex25.scm
+; modify the procedures in Cell IDs section
+
+(define (make-id col row)
+  (vector col row))
+
+(define (id-column id)
+  (vector-ref id 0))
+
+(define (id-row id)
+  (vector-ref id 1))
+
+(define (id? x)
+  (and (vector? x)
+       (= (vector-length x) 2)))
+
+; **********************************************************
+
+; 25.6 The put command can be used to label a cell by using a quoted word as the “formula.” How does that work? For example, how is such a formula translated into an expression? How is that expression evaluated? What if the labeled cell has children?
+
+; answer: When put command take a quoted word as the formula:
+; 1. put command calls put-formula-in-cell with the quoted word.
+; 2. put-formula-in-cell calls put-expr.
+; 3. put-expr calls pin-down which translates the quoted word into expression.
+; 4. pin-down takes the label as its first argument. Since (word? formula) is true, pin-down returns the quoted word back to put-expr.
+; 5. put-expr:
+;    * removes the labeled cell from all its former parents,
+;    * sets the labeled cell's expression with the quoted word,
+;    * sets the cell's parents as an empty list,
+;    * invoke figure with the label cell's id
+; 6. figure invokes setvalue with the label cell's id and its expression--quoted  word.
+; 7. setvalue calls figure for all the children of the labeled cell.
+; 8. figure sets all its children's value into '(), since all-evaluated? returns false.
+
+; **********************************************************
+
+; 25.7 Add commands to move the “window” of cells displayed on the screen without changing the selected cell. (There are a lot of possible user interfaces for this feature; pick anything reasonable.)
+
+
+
