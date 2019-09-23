@@ -102,5 +102,58 @@
 
 ; 25.7 Add commands to move the “window” of cells displayed on the screen without changing the selected cell. (There are a lot of possible user interfaces for this feature; pick anything reasonable.)
 
+; solution:
 
+; first addd window moving commands in *the-commands*:
 
+(define *the-commands*
+  (list (list 'p prev-row)
+        (list 'n next-row)
+        (list 'b prev-col)
+        (list 'f next-col)
+        (list 'select select)
+        (list 'window-p win-p)
+        (list 'window-n win-n)
+        (list 'window-b win-b)
+        (list 'window-f win-f)
+        (list 'put put)
+        (list 'load spreadsheet-load)))
+
+; then define the matching procedure one by one.
+
+; Window selection commands: window-f, window-b, window-n, window-p:
+
+(define (win-p delta)
+  (let ((row (id-row (screen-corner-cell-id))))
+    (if (< (- row delta) 1)
+        (error "Already shown the top row")
+        (begin (set-corner-row! (- row delta))
+               (print-screen)))))
+
+(define (win-n delta)
+  (let ((row (id-row (screen-corner-cell-id))))
+    (if (> (+ row delta 19) *total-rows*)
+        (error "Already shown the bottom row")
+        (begin (set-corner-row! (+ row delta))
+               (print-screen)))))
+
+(define (win-b delta)
+  (let ((col (id-column (screen-corner-cell-id))))
+    (if (< (- col delta) 1)
+        (error "Already shown the left-most column")
+        (begin (set-corner-column! (- col delta))
+               (print-screen)))))
+
+(define (win-f delta)
+  (let ((col (id-column (screen-corner-cell-id))))
+    (if (> (+ col delta 5) *total-cols*)
+        (error "Already shown the right-most column")
+        (begin (set-corner-column! (+ col delta))
+               (print-screen)))))
+
+**********************************************************
+; 25.8 Modify the put command so that after doing its work it prints
+
+; 14 cells modified
+
+; (but, of course, using the actual number of cells modified instead of 14). This number may not be the entire length of a row or column because put doesn’t change an existing formula in a cell when you ask it to set an entire row or column.

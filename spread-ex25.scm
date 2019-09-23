@@ -102,6 +102,35 @@
   (set-screen-corner-cell-id!
     (make-id new-column (id-row (screen-corner-cell-id)))))
 
+;; Window selection commands: window-f, window-b, window-n, window-p
+
+(define (win-p delta)
+  (let ((row (id-row (screen-corner-cell-id))))
+    (if (< (- row delta) 1)
+        (error "Already shown the top row")
+        (begin (set-corner-row! (- row delta))
+               (print-screen)))))
+
+(define (win-n delta)
+  (let ((row (id-row (screen-corner-cell-id))))
+    (if (> (+ row delta 19) *total-rows*)
+        (error "Already shown the bottom row")
+        (begin (set-corner-row! (+ row delta))
+               (print-screen)))))
+
+(define (win-b delta)
+  (let ((col (id-column (screen-corner-cell-id))))
+    (if (< (- col delta) 1)
+        (error "Already shown the left-most column")
+        (begin (set-corner-column! (- col delta))
+               (print-screen)))))
+
+(define (win-f delta)
+  (let ((col (id-column (screen-corner-cell-id))))
+    (if (> (+ col delta 5) *total-cols*)
+        (error "Already shown the right-most column")
+        (begin (set-corner-column! (+ col delta))
+               (print-screen)))))
 
 ;; LOAD
 
@@ -164,12 +193,25 @@
         #f
         (cadr result))))
 
+;(define *the-commands*
+;  (list (list 'p prev-row)
+;        (list 'n next-row)
+;        (list 'b prev-col)
+;        (list 'f next-col)
+;        (list 'select select)
+;        (list 'put put)
+;        (list 'load spreadsheet-load)))
+
 (define *the-commands*
   (list (list 'p prev-row)
         (list 'n next-row)
         (list 'b prev-col)
         (list 'f next-col)
         (list 'select select)
+        (list 'window-p win-p)
+        (list 'window-n win-n)
+        (list 'window-b win-b)
+        (list 'window-f win-f)
         (list 'put put)
         (list 'load spreadsheet-load)))
 
@@ -395,7 +437,7 @@
 ;   (display (align (if (null? val) "" val) 9 2)))
 
 (define (display-value val col)
-  (display-val-helper val col 9))
+  (display-val-helper val col 9))                   ; make cell wider when col > 26
 
 (define (display-val-helper val col width)
   (display (align (if (null? val) "" val)
