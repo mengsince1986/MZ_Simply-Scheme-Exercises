@@ -157,3 +157,55 @@
 ; 14 cells modified
 
 ; (but, of course, using the actual number of cells modified instead of 14). This number may not be the entire length of a row or column because put doesn’t change an existing formula in a cell when you ask it to set an entire row or column.
+
+; solution: modify the PUT section as following
+
+(define (put formula . where)
+  (put-helper formula where 0))
+
+(define (put-helper formula where modified-num)
+  (cond ((null? where)
+         (begin (display-status (+ 1 modified-num))
+                (put-formula-in-cell formula (selection-cell-id))))
+        ((cell-name? (car where))
+         (begin (display-status (+ 1 modified-num))
+                (put-formula-in-cell formula (cell-name->id (car where)))))
+        ((number? (car where))
+         (begin (display-status (if (null? formula)
+                                    *total-cols*
+                                    (noval-cells (car where))))
+                (put-all-cells-in-row formula (car where))))
+        ((letter? (car where))
+         (begin (display-status (if (null? formula)
+                                    *total-rows*
+                                    (noval-cells (car where))))
+                (put-all-cells-in-col formula (letter->number (car where)))))
+        (else (error "Put it where?")))
+  )
+
+(define (display-status num)
+  (newline)
+  (display "status: ")
+  (display num)
+  (if (> num 1)
+      (display " cells modified")
+      (display " cell modified")))
+
+(define (noval-cells row-or-col)   ; return the number of the cells which has no values
+  (if (number? row-or-col)
+      (noval-row-cells row-or-col *total-cols* 0)
+      (noval-col-cells row-or-col *total-rows* 0)))
+
+(define (noval-row-cells row total-cells noval-cell-num)
+  (cond ((= total-cells 0) noval-cell-num)
+        ((null? (cell-value (make-id total-cells row)))
+         (noval-row-cells row (- total-cells 1) (+ noval-cell-num 1)))
+        (else (noval-row-cells row (- total-cells 1) noval-cell-num))))
+
+(define (noval-col-cells col total-cells noval-cell-num)
+  (cond ((= total-cells 0) noval-cell-num)
+        ((null? (cell-value (make-id (letter->number col) total-cells)))
+         (noval-col-cells col (- total-cells 1) (+ noval-cell-num 1)))
+        (else (noval-col-cells col (- total-cells 1) noval-cell-num))))
+
+
