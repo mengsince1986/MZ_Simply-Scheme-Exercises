@@ -132,6 +132,16 @@
         (begin (set-corner-column! (+ col delta))
                (print-screen)))))
 
+;; column decimal digit command
+
+(define (col-decimal num . where)
+  (let ((col (if (null? where)
+                 (id-column (selection-cell-id))
+                 (letter->number (car where)))))
+    (if (and (> col 0) (< col *total-cols*))
+        (set-col-decimal-digit! col num)
+        #f)))
+
 ;; LOAD
 
 (define (spreadsheet-load filename)
@@ -261,7 +271,8 @@
         (list 'window-b win-b)
         (list 'window-f win-f)
         (list 'put put)
-        (list 'load spreadsheet-load)))
+        (list 'load spreadsheet-load)
+        (list 'col-decimal col-decimal)))
 
 
 ;;; Pinning Down Formulas Into Expressions
@@ -433,6 +444,8 @@
   (show (cell-value (selection-cell-id)))
   (display-expression (cell-expr (selection-cell-id)))
   (newline)
+  (display-decimal (selection-cell-id))
+  (newline)
   (display "?? "))
 
 (define (display-cell-name id)
@@ -490,7 +503,7 @@
 (define (display-val-helper val col width)
   (display (align (if (null? val) "" val)
                   (if (> col 26) (+ 1 width) width)
-                  2)))
+                  (col-decimal-digit col))))                              ; get the digits after the decimal point from *column-decimal-digits*
 
 (define (display-expression expr)
   (cond ((null? expr) (display '()))
@@ -509,6 +522,9 @@
             (cdr expr))
   (display ")"))
 
+(define (display-decimal id)
+  (display "decimal: ")
+  (display (col-decimal-digit (id-column id))))
 
 ;;; Abstract Data Types
 
@@ -717,3 +733,28 @@
 (define (remove bad-item lst)
   (filter (lambda (item) (not (equal? item bad-item)))
           lst))
+
+;; Column decimal digit recorder
+
+(define (init-decimal-digits vec digit index)  ; constructor
+  (if (= index 0)
+      vec
+      (begin (vector-set! vec (- index 1) (vector (number->letter index) digit))
+             (init-decimal-digits vec digit (- index 1)))))
+
+(define *column-decimal-digits* (init-decimal-digits (make-vector *total-cols*)
+                                                     2  ; initial decimal digit
+                                                     *total-cols*))
+
+(define (col-decimal-digit col)  ; selector
+  (vector-ref (vector-ref *column-decimal-digits* (- col 1))
+              1))
+
+(define (set-col-decimal-digit! col digit)
+  (vector-set! (vector-ref *column-decimal-digits* (- col 1))
+               1
+               digit))
+
+
+
+

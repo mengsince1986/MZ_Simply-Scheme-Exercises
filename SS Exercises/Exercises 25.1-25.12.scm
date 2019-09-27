@@ -208,4 +208,31 @@
          (noval-col-cells col (- total-cells 1) (+ noval-cell-num 1)))
         (else (noval-col-cells col (- total-cells 1) noval-cell-num))))
 
+; **********************************************************
 
+; 25.9 Modify the program so that each column remembers the number of digits that should be displayed after the decimal point (currently always 2). Add a command to set this value for a specified column. And, of course, modify print-screen to use this information.
+
+; solution: spread-ex25.scm
+
+;; Column decimal digit recorder
+
+(define (init-decimal-digits vec digit index)  ; constructor
+  (if (= index 0)
+      vec
+      (begin (vector-set! vec (- index 1) (vector (number->letter index) digit))
+             (init-decimal-digits vec digit (- index 1)))))
+
+(define *column-decimal-digits* (init-decimal-digits (make-vector *total-cols*)
+                                                     2  ; initial decimal digit
+                                                     *total-cols*))
+
+(define (col-decimal-digit col)  ; selector
+  (vector-ref (vector-ref *column-decimal-digits* (- col 1))
+              1))
+
+(define (set-col-decimal-digit! col digit)
+  (vector-set! (vector-ref *column-decimal-digits* (- col 1))
+               1
+               digit))
+
+;; also modified related procedures in Print section and Command section
