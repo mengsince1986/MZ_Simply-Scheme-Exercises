@@ -45,25 +45,29 @@
   (let ((row (id-row (selection-cell-id))))
     (if (< (- row delta) 1)
         (error "Already at top.")
-        (set-selected-row! (- row delta)))))
+        (begin (log-undo-cmd next-row (list delta))  ; exercise-25.10
+               (set-selected-row! (- row delta))))))
 
 (define (next-row delta)
   (let ((row (id-row (selection-cell-id))))
     (if (> (+ row delta) *total-rows*)
         (error "Already at bottom.")
-        (set-selected-row! (+ row delta)))))
+        (begin (log-undo-cmd prev-row (list delta))  ; exercise-25.10
+               (set-selected-row! (+ row delta))))))
 
 (define (prev-col delta)
   (let ((col (id-column (selection-cell-id))))
     (if (< (- col delta) 1)
         (error "Already at left.")
-        (set-selected-column! (- col delta)))))
+        (begin (log-undo-cmd next-col (list delta))  ; exercise-25.10
+               (set-selected-column! (- col delta))))))
 
 (define (next-col delta)
   (let ((col (id-column (selection-cell-id))))
     (if (> (+ col delta) *total-cols*)
         (error "Already at right.")
-        (set-selected-column! (+ col delta)))))
+        (begin (log-undo-cmd prev-col (list delta))  ; exercise-25.10
+               (set-selected-column! (+ col delta))))))
 
 (define (set-selected-row! new-row)
   (select-id! (make-id (id-column (selection-cell-id)) new-row)))
@@ -76,6 +80,7 @@
   (adjust-screen-boundaries))
 
 (define (select cell-name)
+  (log-undo-cmd select-id! (list (selection-cell-id)))
   (select-id! (cell-name->id cell-name)))
 
 (define (adjust-screen-boundaries)
@@ -108,29 +113,29 @@
   (let ((row (id-row (screen-corner-cell-id))))
     (if (< (- row delta) 1)
         (error "Already shown the top row")
-        (begin (set-corner-row! (- row delta))
-               (print-screen)))))
+        (begin (log-undo-cmd win-n (list delta))  ; exercise-25.10
+               (set-corner-row! (- row delta))))))
 
 (define (win-n delta)
   (let ((row (id-row (screen-corner-cell-id))))
     (if (> (+ row delta 19) *total-rows*)
         (error "Already shown the bottom row")
-        (begin (set-corner-row! (+ row delta))
-               (print-screen)))))
+        (begin (log-undo-cmd win-p (list delta))  ; exercise-25.10
+               (set-corner-row! (+ row delta))))))
 
 (define (win-b delta)
   (let ((col (id-column (screen-corner-cell-id))))
     (if (< (- col delta) 1)
         (error "Already shown the left-most column")
-        (begin (set-corner-column! (- col delta))
-               (print-screen)))))
+        (begin (log-undo-cmd win-f (list delta)) ; exercise-25.10
+               (set-corner-column! (- col delta))))))
 
 (define (win-f delta)
   (let ((col (id-column (screen-corner-cell-id))))
     (if (> (+ col delta 5) *total-cols*)
         (error "Already shown the right-most column")
-        (begin (set-corner-column! (+ col delta))
-               (print-screen)))))
+        (begin (log-undo-cmd win-b (list delta)) ; exercise-25.10
+               (set-corner-column! (+ col delta))))))
 
 ;; column decimal digit command
 
@@ -139,8 +144,38 @@
                  (id-column (selection-cell-id))
                  (letter->number (car where)))))
     (if (and (> col 0) (< col *total-cols*))
-        (set-col-decimal-digit! col num)
+        (begin (log-undo-cmd set-col-decimal-digit! ; exercise-25.10
+                             (list col (col-decimal-digit col)))
+               (set-col-decimal-digit! col num))
         #f)))
+
+;; undo command exercise-25.10
+
+(define (undo anything)  ; the argument allows users use undo instead of (undo)
+  (if (null? (vector-ref *undo-cmd-data* 0))
+      (if (null-data? *undo-put-data* (- (vector-length *undo-put-data*) 1))
+          (begin (newline)
+                 (display "already the oldest command"))
+          (undo-put))
+      (apply (vector-ref *undo-cmd-data* 0)
+             (vector-ref *undo-cmd-data* 1))))
+
+(define (null-data? data index)
+  (cond ((< index 0) #t)
+        ((null? (vector-ref data index))
+         (null-data? data (- index 1)))
+        (else #f)))
+
+(define (undo-put)
+ (undo-put-helper *undo-put-data*
+                  (- (vector-length *undo-put-data*) 1)))
+
+(define (undo-put-helper data index)
+  (cond ((< index 0) 'done)
+        ((null? (vector-ref data index))
+         (undo-put-helper data (- index 1)))
+        (else (begin (apply put-formula-in-cell (vector-ref *undo-put-data* index))
+               (undo-put-helper data (- index 1))))))
 
 ;; LOAD
 
@@ -172,6 +207,8 @@
 ;         (else (error "Put it where?"))))
 
 (define (put formula . where)
+  (init-undo-data *undo-cmd-data*)
+  (init-undo-data *undo-put-data*)
   (put-helper formula where 0))
 
 (define (put-helper formula where modified-num)
@@ -237,6 +274,7 @@
       'do-nothing))
 
 (define (put-formula-in-cell formula id)
+  (log-undo-put (cell-expr id) id) ; exercise-25.10
   (put-expr (pin-down formula id) id))
 
 
@@ -272,7 +310,8 @@
         (list 'window-f win-f)
         (list 'put put)
         (list 'load spreadsheet-load)
-        (list 'col-decimal col-decimal)))
+        (list 'col-decimal col-decimal)
+        (list 'undo undo)))  ; exercise-25.10
 
 
 ;;; Pinning Down Formulas Into Expressions
@@ -669,7 +708,7 @@
       (error "Out of bounds")))
 
 (define (global-array-index col row)
-  (- (+ (* 26 (- row 1)) col) 1))
+  (- (+ (* *total-cols* (- row 1)) col) 1))
 
 ; (define (init-array)
 ;   (fill-array-with-rows (- *total-rows* 1)))
@@ -734,7 +773,7 @@
   (filter (lambda (item) (not (equal? item bad-item)))
           lst))
 
-;; Column decimal digit recorder
+;;; Column decimal digit recorder
 
 (define (init-decimal-digits vec digit index)  ; constructor
   (if (= index 0)
@@ -755,6 +794,37 @@
                1
                digit))
 
+;;; undo data --exercise 25.10
 
+(define (init-undo-data data)
+  (init-undo-data-helper data (- (vector-length data) 1)))
 
+(define (init-undo-data-helper data index)
+  (if (< index 0)
+      data
+      (begin (vector-set! data index null)
+             (init-undo-data-helper data (- index 1)))))
 
+;; *undo-cmd-data*
+
+(define *undo-cmd-data* (vector null null))
+
+;; *undo-put-data*
+
+(define *undo-put-data*
+  (init-undo-data (make-vector (* *total-rows* *total-cols*))))
+
+;;; log undo command --exercise 25.10
+
+(define (log-undo-cmd procedure arg-lst)
+  (init-undo-data *undo-cmd-data*)
+  (init-undo-data *undo-put-data*)
+  (vector-set! *undo-cmd-data* 0 procedure)
+  (vector-set! *undo-cmd-data* 1 arg-lst))
+
+(define (log-undo-put expr cell-id)
+  (let ((col (id-column cell-id))
+        (row (id-row cell-id)))
+    (vector-set! *undo-put-data*
+                 (global-array-index col row)
+                 (list expr cell-id))))

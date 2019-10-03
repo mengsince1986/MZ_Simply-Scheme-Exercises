@@ -214,6 +214,16 @@
 
 ; solution: spread-ex25.scm
 
+;; Column decimal digit command
+
+(define (col-decimal num . where)
+  (let ((col (if (null? where)
+                 (id-column (selection-cell-id))
+                 (letter->number (car where)))))
+    (if (and (> col 0) (< col *total-cols*))
+        (set-col-decimal-digit! col num)
+        #f)))
+
 ;; Column decimal digit recorder
 
 (define (init-decimal-digits vec digit index)  ; constructor
@@ -236,3 +246,80 @@
                digit))
 
 ;; also modified related procedures in Print section and Command section
+
+; **********************************************************
+
+; 25.10 Add an undo command, which causes the effect of the previous command to be nullified. That is, if the previous command was a cell selection command, undo will return to the previously selected cell. If the previous command was a put, undo will re-put the previous expressions in every affected cell. You don’t need to undo load or exit commands. To do this, you’ll need to modify the way the other commands work.
+
+; solution: spread-ex25.scm
+
+; command==log-undo-cmd/log-undo-put-cmd==>*undo-data*
+; undo==>*undo-data*
+
+;;; undo data
+
+(define (init-undo-data data)
+  (init-undo-data-helper data (- (vector-length data) 1)))
+
+(define (init-undo-data-helper data index)
+  (if (< index 0)
+      data
+      (begin (vector-set! data index null)
+             (init-undo-data-helper data (- index 1)))))
+
+;; *undo-cmd-data*
+
+(define *undo-cmd-data* (vector null null))
+
+;; *undo-put-data*
+
+(define *undo-put-data*
+  (init-undo-data (make-vector (* *total-rows* *total-cols*))))
+
+;;; log undo command --exercise 25.10
+
+(define (log-undo-cmd procedure arg-lst)
+  (init-undo-data *undo-cmd-data*)
+  (init-undo-data *undo-put-data*)
+  (vector-set! *undo-cmd-data* 0 procedure)
+  (vector-set! *undo-cmd-data* 1 arg-lst))
+
+(define (log-undo-put expr cell-id)
+  (let ((col (id-column cell-id))
+        (row (id-row cell-id)))
+    (vector-set! *undo-put-data*
+                 (global-array-index col row)
+                 (list expr cell-id))))
+
+;; undo command
+
+(define (undo anything)  ; the argument allows users use undo instead of (undo)
+  (if (null? (vector-ref *undo-cmd-data* 0))
+      (if (null-data? *undo-put-data* (- (vector-length *undo-put-data*) 1))
+          (begin (newline)
+                 (display "already the oldest command"))
+          (undo-put))
+      (apply (vector-ref *undo-cmd-data* 0)
+             (vector-ref *undo-cmd-data* 1))))
+
+(define (null-data? data index)
+  (cond ((< index 0) #t)
+        ((null? (vector-ref data index))
+         (null-data? data (- index 1)))
+        (else #f)))
+
+(define (undo-put)
+ (undo-put-helper *undo-put-data*
+                  (- (vector-length *undo-put-data*) 1)))
+
+(define (undo-put-helper data index)
+  (cond ((< index 0) 'done)
+        ((null? (vector-ref data index))
+         (undo-put-helper data (- index 1)))
+        (else (begin (apply put-formula-in-cell (vector-ref *undo-put-data* index))
+               (undo-put-helper data (- index 1))))))
+
+; and modify the other commands respectively.
+
+; **********************************************************
+
