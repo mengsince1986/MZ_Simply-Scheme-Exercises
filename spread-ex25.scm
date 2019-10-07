@@ -195,17 +195,6 @@
 
 ;; PUT
 
-; (define (put formula . where)
-;   (cond ((null? where)
-;          (put-formula-in-cell formula (selection-cell-id)))
-;         ((cell-name? (car where))
-;          (put-formula-in-cell formula (cell-name->id (car where))))
-;         ((number? (car where))
-;          (put-all-cells-in-row formula (car where)))
-;         ((letter? (car where))
-;          (put-all-cells-in-col formula (letter->number (car where))))
-;         (else (error "Put it where?"))))
-
 (define (put formula . where)
   (init-undo-data *undo-cmd-data*)
   (init-undo-data *undo-put-data*)
@@ -289,15 +278,6 @@
         #f
         (cadr result))))
 
-;(define *the-commands*
-;  (list (list 'p prev-row)
-;        (list 'n next-row)
-;        (list 'b prev-col)
-;        (list 'f next-col)
-;        (list 'select select)
-;        (list 'put put)
-;        (list 'load spreadsheet-load)))
-
 (define *the-commands*
   (list (list 'p prev-row)
         (list 'n next-row)
@@ -322,6 +302,8 @@
         ((null? formula) '())
         ((equal? (car formula) 'cell)
          (pin-down-cell (cdr formula) id))
+        ((equal? (car formula) 'accumulate)  ; exercise-25.11
+         (pin-down-accu-formula (cdr formula) id))
         (else (bound-check
                 (map (lambda (subformula) (pin-down subformula id))
                      formula)))))
@@ -363,6 +345,42 @@
         ((equal? (first new) '<) (- old (bf new)))
         (else (error "What row?"))))
 
+;; pin-down-accu-formula
+
+(define (pin-down-accu-formula formula id)
+  (if (and (= (length formula) 3)
+           (cell-name? (cadr formula))
+           (cell-name? (caddr formula)))
+      (pin-down (spell-accu-cells (car formula)
+                                  (first (cadr formula))
+                                  (last (cadr formula))
+                                  (first (caddr formula))
+                                  (last (caddr formula)))
+                id)
+      (begin (newline)
+             (display "illegal accumulate formula: ")
+             (display formula)
+             (newline))))
+
+(define (spell-accu-cells fun start-col start-row end-col end-row)
+  (let ((start-col-index (- (letter->number start-col) 1))
+        (end-col-index (- (letter->number end-col) 1)))
+    (cons fun (sac-helper start-col-index
+                  start-col-index start-row
+                  end-col-index end-row))))
+
+(define (sac-helper col
+                    start-col-index row
+                    end-col-index end-row)
+  (cond ((> row end-row) '())
+        ((> col end-col-index)
+         (sac-helper start-col-index
+                     start-col-index (+ row 1)
+                     end-col-index end-row))
+        (else (cons (word (vector-ref alphabet col) row)
+                    (sac-helper (+ col 1)
+                                start-col-index row
+                                end-col-index end-row)))))
 
 ;;; Dependency Management
 
@@ -513,14 +531,6 @@
           (newline)
           (show-rows (- to-go 1) col (+ row 1)))))
 
-; (define (show-row to-go col row)
-;   (cond ((= to-go 0) 'done)
-;         (else
-;           (display (if (selected-indices? col row) ">" " "))
-;           (display-value (cell-value-from-indices col row))
-;           (display (if (selected-indices? col row) "<" " "))
-;           (show-row (- to-go 1) (+ 1 col) row))))
-
 (define (show-row to-go col row)
    (cond ((= to-go 0) 'done)
          (else
@@ -532,9 +542,6 @@
 (define (selected-indices? col row)
   (and (= col (id-column (selection-cell-id)))
        (= row (id-row (selection-cell-id)))))
-
-; (define (display-value val)
-;   (display (align (if (null? val) "" val) 9 2)))
 
 (define (display-value val col)
   (display-val-helper val col 9))                   ; make cell wider when col > 26
@@ -610,45 +617,20 @@
 (define (cell-name-row cell-name)
   (cut-number cell-name))
 
-; (define (cell-name? expr)
-;   (and (word? expr)
-;        (letter? (first expr))
-;        (number? (bf expr))))
-
-; (define (cell-name-column cell-name)
-;   (letter->number (first cell-name)))
-
-; (define (cell-name-row cell-name)
-;   (bf cell-name))
-
 (define (cell-name->id cell-name)
   (make-id (cell-name-column cell-name)
            (cell-name-row cell-name)))
 
 ;; Cell IDs
 
-;(define (make-id col row)
-;  (list 'id col row))
-
 (define (make-id col row)
   (vector col row))
-
-;(define (id-column id)
-;  (cadr id))
 
 (define (id-column id)
   (vector-ref id 0))
 
-;(define (id-row id)
-;  (caddr id))
-
 (define (id-row id)
   (vector-ref id 1))
-
-;(define (id? x)
-;  (and (list? x)
-;       (not (null? x))
-;       (equal? 'id (car x))))
 
 (define (id? x)
   (and (vector? x)
@@ -696,12 +678,6 @@
 ; (define *the-spreadsheet-array* (make-vector *total-rows*))
 (define *the-spreadsheet-array* (make-vector (* *total-cols* *total-rows*)))
 
-; (define (global-array-lookup col row)
-;   (if (and (<= row *total-rows*) (<= col *total-cols*))
-;       (vector-ref (vector-ref *the-spreadsheet-array* (- row 1))
-;                   (- col 1))
-;       (error "Out of bounds")))
-
 (define (global-array-lookup col row)
   (if (and (<= row *total-rows*) (<= col *total-cols*))
       (vector-ref *the-spreadsheet-array* (global-array-index col row))
@@ -709,23 +685,6 @@
 
 (define (global-array-index col row)
   (- (+ (* *total-cols* (- row 1)) col) 1))
-
-; (define (init-array)
-;   (fill-array-with-rows (- *total-rows* 1)))
-
-; (define (fill-array-with-rows n)
-;   (if (< n 0)
-;       'done
-;       (begin (vector-set! *the-spreadsheet-array* n (make-vector *total-cols*))
-;              (fill-row-with-cells
-;                (vector-ref *the-spreadsheet-array* n) (- *total-cols* 1))
-;              (fill-array-with-rows (- n 1)))))
-
-; (define (fill-row-with-cells vec n)
-;   (if (< n 0)
-;       'done
-;       (begin (vector-set! vec n (make-cell))
-;              (fill-row-with-cells vec (- n 1)))))
 
 (define (init-array)
   (fill-array-with-cell *the-spreadsheet-array*

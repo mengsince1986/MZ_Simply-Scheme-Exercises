@@ -323,3 +323,58 @@
 
 ; **********************************************************
 
+; 25.11 Add an accumulate procedure that can be used as a function in formulas. Instead of specifying a sequence of cells explicitly, in a formula like
+
+; (put (+ c2 c3 c4 c5 c6 c7) c10)
+
+; we want to be able to say
+
+; (put (accumulate + c2 c7) c10)
+
+; In general, the two cell names should be taken as corners of a rectangle, all of whose cells should be included, so these two commands are equivalent:
+
+; (put (accumulate * a3 c5) d7)
+; (put (* a3 b3 c3 a4 b4 c4 a5 b5 c5) d7)
+
+; Modify pin-down to convert the accumulate form into the corresponding spelled-out form.
+
+; solution: spread-ex25.scm
+
+(define (pin-down-accu-formula formula id)
+  (if (and (= (length formula) 3)
+           (cell-name? (cadr formula))
+           (cell-name? (caddr formula)))
+      (pin-down (spell-accu-cells (car formula)
+                                  (first (cadr formula))
+                                  (last (cadr formula))
+                                  (first (caddr formula))
+                                  (last (caddr formula)))
+                id)
+      (begin (newline)
+             (display "illegal accumulate formula: ")
+             (display formula)
+             (newline))))
+
+(define (spell-accu-cells fun start-col start-row end-col end-row)
+  (let ((start-col-index (- (letter->number start-col) 1))
+        (end-col-index (- (letter->number end-col) 1)))
+    (cons fun (sac-helper start-col-index
+                  start-col-index start-row
+                  end-col-index end-row))))
+
+(define (sac-helper col
+                    start-col-index row
+                    end-col-index end-row)
+  (cond ((> row end-row) '())
+        ((> col end-col-index)
+         (sac-helper start-col-index
+                     start-col-index (+ row 1)
+                     end-col-index end-row))
+        (else (cons (word (vector-ref alphabet col) row)
+                    (sac-helper (+ col 1)
+                                start-col-index row
+                                end-col-index end-row)))))
+
+**********************************************************
+
+
