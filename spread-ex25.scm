@@ -33,7 +33,7 @@
 
 ;;; Spreadsheet size
 
-(define *total-cols* 26)
+(define *total-cols* 52)
 
 (define *total-rows* 30)
 
@@ -266,6 +266,20 @@
   (log-undo-put (cell-expr id) id) ; exercise-25.10
   (put-expr (pin-down formula id) id))
 
+;; set-col-width command
+
+(define (set-col-width width . where)
+  (if (and (<= width 54)
+           (>= width 9))
+      (let ((col (if (null? where)
+                     (id-column (selection-cell-id))
+                     (letter->number (car where)))))
+        (log-undo-cmd col-width! (list (col-width col) col))
+        (col-width! width col))
+      (begin (display "illegal width: ")
+             (display width)
+             (newline)
+             (display "column width must between 9 to 54"))))
 
 ;;; The Association List of Commands
 
@@ -291,8 +305,8 @@
         (list 'put put)
         (list 'load spreadsheet-load)
         (list 'col-decimal col-decimal)
-        (list 'undo undo)))  ; exercise-25.10
-
+        (list 'undo undo)
+        (list 'col-width set-col-width)))  ; exercise-25.12
 
 ;;; Pinning Down Formulas Into Expressions
 
@@ -489,13 +503,18 @@
 ;;; Printing the Screen
 
 (define (print-screen)
+  (ps-helper (max-print-cols 54))) ; 54 is the col print limit
+
+(define (ps-helper print-cols)
   (newline)
   (newline)
   (newline)
-  (show-column-labels (id-column (screen-corner-cell-id)))
+  (show-column-labels (id-column (screen-corner-cell-id))
+                      print-cols) ; set col num for labels
   (show-rows 20
              (id-column (screen-corner-cell-id))
-             (id-row (screen-corner-cell-id)))
+             (id-row (screen-corner-cell-id))
+             print-cols) ; set col num for col values
   (display-cell-name (selection-cell-id))
   (display ":  ")
   (show (cell-value (selection-cell-id)))
@@ -503,33 +522,58 @@
   (newline)
   (display-decimal (selection-cell-id))
   (newline)
+  (display-col-width (selection-cell-id)) ; exercise-25.12
+  (newline)
   (display "?? "))
+
+(define (max-print-cols limit) ; 25.12 limit=sum of print values
+  (mpc-helper limit 0 0 (id-column (screen-corner-cell-id))))
+
+(define (mpc-helper limit total-width print-cols col)
+  (if (>= total-width limit)
+      (if (= print-cols 0)
+          (begin (display "column is set too wide!")
+                 0)
+          print-cols)
+      (mpc-helper limit
+                  (+ total-width (col-width col))
+                  (+ print-cols 1)
+                  (+ col 1))))
 
 (define (display-cell-name id)
   (display (number->letter (id-column id)))
   (display (id-row id)))
 
-(define (show-column-labels col-number)
+(define (show-column-labels col-number print-cols)
   (display "  ")
-  (show-label 6 col-number)
+  (show-label print-cols col-number)  ; number of print col-labels
   (newline))
 
 (define (show-label to-go this-col-number)
   (cond ((= to-go 0) '())
         (else
+          (display (align "" (lable-space this-col-number) 0))
           (display "  ----")
           (display (number->letter this-col-number))
           (display "----")
+          (display (align "" (lable-space this-col-number) 0))
           (show-label (- to-go 1) (+ 1 this-col-number)))))
 
-(define (show-rows to-go col row)
+(define (lable-space col) ; extercise-25.12
+  (let ((lable-length 11) ; 11=col-letter+"-"
+        (value-length (+ (col-width col) 2))) ; 2=space or "> <"
+    (if (> value-length lable-length)
+        (ceiling (/ (- value-length lable-length) 2))
+        0)))
+
+(define (show-rows to-go col row print-cols)
   (cond ((= to-go 0) 'done)
         (else
           (display (align row 2 0))
           (display " ")
-          (show-row 6 col row)
+          (show-row print-cols col row)  ; number of print cols
           (newline)
-          (show-rows (- to-go 1) col (+ row 1)))))
+          (show-rows (- to-go 1) col (+ row 1) print-cols))))
 
 (define (show-row to-go col row)
    (cond ((= to-go 0) 'done)
@@ -544,12 +588,12 @@
        (= row (id-row (selection-cell-id)))))
 
 (define (display-value val col)
-  (display-val-helper val col 9))                   ; make cell wider when col > 26
+  (display-val-helper val col (col-width col))) ; default value display width exercise-25.12
 
 (define (display-val-helper val col width)
   (display (align (if (null? val) "" val)
-                  (if (> col 26) (+ 1 width) width)
-                  (col-decimal-digit col))))                              ; get the digits after the decimal point from *column-decimal-digits*
+                  (if (> col 26) (+ 1 width) width)  ; make cell wider when col > 26
+                  (col-decimal-digit col))))  ; get the digits after the decimal point from *column-decimal-digits*
 
 (define (display-expression expr)
   (cond ((null? expr) (display '()))
@@ -571,6 +615,10 @@
 (define (display-decimal id)
   (display "decimal: ")
   (display (col-decimal-digit (id-column id))))
+
+(define (display-col-width id) ;exercise-25.12
+  (display "col width: " )
+  (display (col-width (id-column id))))
 
 ;;; Abstract Data Types
 
@@ -753,7 +801,7 @@
                1
                digit))
 
-;;; undo data --exercise 25.10
+;;; undo data --exercise-25.10
 
 (define (init-undo-data data)
   (init-undo-data-helper data (- (vector-length data) 1)))
@@ -787,3 +835,30 @@
     (vector-set! *undo-put-data*
                  (global-array-index col row)
                  (list expr cell-id))))
+
+;;; column width data --exercise-25.12
+
+;; init column width data
+
+(define (init-col-widths data index default-width)
+  (if (< index 0)
+      data
+      (begin (vector-set! data index (vector (+ 1 index) default-width))
+             (init-col-widths data (- index 1) default-width))))
+
+;; define column width global variable
+
+(define *column-widths*
+  (init-col-widths (make-vector *total-cols*) (- *total-cols* 1) 9))
+
+;; column width selector
+
+(define (col-width col)
+  (vector-ref (vector-ref *column-widths* (- col 1)) 1))
+
+;; column width mutator
+
+(define (col-width! width col)
+  (vector-set! (vector-ref *column-widths* (- col 1))
+               1
+               width))

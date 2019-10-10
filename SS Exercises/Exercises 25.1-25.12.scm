@@ -375,6 +375,31 @@
                                 start-col-index row
                                 end-col-index end-row)))))
 
-**********************************************************
+; **********************************************************
 
+; 25.12 Add variable-width columns to the spreadsheet. There should be a command to set the print width of a column. This may mean that the spreadsheet can display more or fewer than six columns.
 
+; solution: spread-ex25.scm
+
+;; init column width data
+
+(define (init-col-widths data index default-width)
+  (if (< index 0)
+      data
+      (begin (vector-set! data index (vector (+ 1 index) default-width))
+             (init-col-widths data (- index 1) default-width))))
+
+;; define column width global variable
+
+(define *column-widths*
+  (init-col-widths (make-vector *total-cols*) (- *total-cols* 1) 9))
+
+;; column width selector
+
+(define (col-width col)
+  (vector-ref (vector-ref *column-widths* (- col 1)) 1))
+
+;; column width mutator
+
+(define (set-col-width! col width)
+  (vector-set! (vector-ref *column-widths* (- (letter->number col) 1)) 1 width))
