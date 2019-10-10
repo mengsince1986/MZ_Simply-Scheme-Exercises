@@ -3224,4 +3224,6 @@ The spreadsheet program begins by invoking `init-array` to set up this large arr
 
 ### Exercises 25.1-25.12
 
-[Solution]()
+[Solution](https://github.com/mengsince1986/Simply-Scheme-exercises/blob/master/SS%20Exercises/Exercises%2025.1-25.12.scm)
+
+[Modified Spread Source Code](https://github.com/mengsince1986/Simply-Scheme-exercises/blob/master/spread-ex25.scm)
