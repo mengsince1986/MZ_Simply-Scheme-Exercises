@@ -61,17 +61,17 @@
 
 (define (get-record)
   (get-record-loop 0
-		   (make-vector (length (current-fields)))
-		   (current-fields)))
+                   (make-vector (length (current-fields)))
+                   (current-fields)))
 
 (define (get-record-loop which-field record fields)
   (if (null? fields)
       record
       (begin (display "Value for ")
-	     (display (car fields))
-	     (display "--> ")
-	     (vector-set! record which-field (read))
-	     (get-record-loop (+ which-field 1) record (cdr fields)))))
+             (display (car fields))
+             (display "--> ")
+             (vector-set! record which-field (read))
+             (get-record-loop (+ which-field 1) record (cdr fields)))))
 
 ;;; Utilities
 
@@ -79,6 +79,6 @@
   (display question)
   (let ((answer (read)))
     (cond ((equal? (first answer) 'y) #t)
-	  ((equal? (first answer) 'n) #f)
-	  (else (show "Please type Y or N.")
-		(ask question)))))
+          ((equal? (first answer) 'n) #f)
+          (else (show "Please type Y or N.")
+                (ask question)))))

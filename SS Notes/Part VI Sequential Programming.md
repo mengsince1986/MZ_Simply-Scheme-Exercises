@@ -3227,3 +3227,26 @@ The spreadsheet program begins by invoking `init-array` to set up this large arr
 [Solution](https://github.com/mengsince1986/Simply-Scheme-exercises/blob/master/SS%20Exercises/Exercises%2025.1-25.12.scm)
 
 [Modified Spread Source Code](https://github.com/mengsince1986/Simply-Scheme-exercises/blob/master/spread-ex25.scm)
+
+## Project: A Database Program
+
+**What is a database?**
+
+A *database* is a large file with lots of related data in it.
+
+**What is a field in a database?**
+
+For example, you might have a database of your local Chinese restaurants, listing their names, their addresses, and how good their potstickers are.
+
+There are six *records* in this database, one for each restaurant. Each record contains four pieces of information; we say that the database has four *fields*.
+
+**What is a database program?**
+
+A **database program** is a program that can create, store, modify, and examine databases.  At the very least, a database program must let you create new databases, enter records, and save the database to a file.
+
+More sophisticated operations involve sorting the records in a database by a particular field, printing out the contents of the database, counting the number of records that satisfy a certain condition, taking statistics such as averages, and so on.
+
+###
+
+
+

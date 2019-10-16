@@ -8,22 +8,22 @@
   (print-screen)
   (let ((command-or-formula (read)))
     (if (equal? command-or-formula 'exit)
-	"Bye!"
-	(begin (process-command command-or-formula)
-	       (command-loop)))))
+        "Bye!"
+        (begin (process-command command-or-formula)
+               (command-loop)))))
 
 (define (process-command command-or-formula)
   (cond ((and (list? command-or-formula)
-	      (command? (car command-or-formula)))
-	 (execute-command command-or-formula))
-	((command? command-or-formula)
-	 (execute-command (list command-or-formula 1)))
-	(else (exhibit (ss-eval (pin-down command-or-formula
-					  (selection-cell-id)))))))
+              (command? (car command-or-formula)))
+         (execute-command command-or-formula))
+        ((command? command-or-formula)
+         (execute-command (list command-or-formula 1)))
+        (else (exhibit (ss-eval (pin-down command-or-formula
+                                          (selection-cell-id)))))))
 
 (define (execute-command command)
   (apply (get-command (car command))
-	 (cdr command)))
+         (cdr command)))
 
 (define (exhibit val)
   (show val)
@@ -39,26 +39,26 @@
 (define (prev-row delta)
   (let ((row (id-row (selection-cell-id))))
     (if (< (- row delta) 1)
-	(error "Already at top.")
-	(set-selected-row! (- row delta)))))
+        (error "Already at top.")
+        (set-selected-row! (- row delta)))))
 
 (define (next-row delta)
   (let ((row (id-row (selection-cell-id))))
     (if (> (+ row delta) 30)
-	(error "Already at bottom.")
-	(set-selected-row! (+ row delta)))))
+        (error "Already at bottom.")
+        (set-selected-row! (+ row delta)))))
 
 (define (prev-col delta)
   (let ((col (id-column (selection-cell-id))))
     (if (< (- col delta) 1)
-	(error "Already at left.")
-	(set-selected-column! (- col delta)))))
+        (error "Already at left.")
+        (set-selected-column! (- col delta)))))
 
 (define (next-col delta)
   (let ((col (id-column (selection-cell-id))))
     (if (> (+ col delta) 26)
-	(error "Already at right.")
-	(set-selected-column! (+ col delta)))))
+        (error "Already at right.")
+        (set-selected-column! (+ col delta)))))
 
 (define (set-selected-row! new-row)
   (select-id! (make-id (id-column (selection-cell-id)) new-row)))
@@ -75,27 +75,27 @@
 
 (define (adjust-screen-boundaries)
   (let ((row (id-row (selection-cell-id)))
-	(col (id-column (selection-cell-id))))
+        (col (id-column (selection-cell-id))))
     (if (< row (id-row (screen-corner-cell-id)))
-	(set-corner-row! row)
-	'do-nothing)
+        (set-corner-row! row)
+        'do-nothing)
     (if (>= row (+ (id-row (screen-corner-cell-id)) 20))
-	(set-corner-row! (- row 19))
-	'do-nothing)
+        (set-corner-row! (- row 19))
+        'do-nothing)
     (if (< col (id-column (screen-corner-cell-id)))
-	(set-corner-column! col)
-	'do-nothing)
+        (set-corner-column! col)
+        'do-nothing)
     (if (>= col (+ (id-column (screen-corner-cell-id)) 6))
-	(set-corner-column! (- col 5))
-	'do-nothing)))
+        (set-corner-column! (- col 5))
+        'do-nothing)))
 
 (define (set-corner-row! new-row)
   (set-screen-corner-cell-id!
-   (make-id (id-column (screen-corner-cell-id)) new-row)))
+    (make-id (id-column (screen-corner-cell-id)) new-row)))
 
 (define (set-corner-column! new-column)
   (set-screen-corner-cell-id!
-   (make-id new-column (id-row (screen-corner-cell-id)))))
+    (make-id new-column (id-row (screen-corner-cell-id)))))
 
 
 ;; LOAD
@@ -108,24 +108,24 @@
 (define (sl-helper port)
   (let ((command (read port)))
     (if (eof-object? command)
-	'done
-	(begin (show command)
-	       (process-command command)
-	       (sl-helper port)))))
+        'done
+        (begin (show command)
+               (process-command command)
+               (sl-helper port)))))
 
 
 ;; PUT
 
 (define (put formula . where)
   (cond ((null? where)
-	 (put-formula-in-cell formula (selection-cell-id)))
-	((cell-name? (car where))
-	 (put-formula-in-cell formula (cell-name->id (car where))))
-	((number? (car where))
-	 (put-all-cells-in-row formula (car where)))
-	((letter? (car where))
-	 (put-all-cells-in-col formula (letter->number (car where))))
-	(else (error "Put it where?"))))
+         (put-formula-in-cell formula (selection-cell-id)))
+        ((cell-name? (car where))
+         (put-formula-in-cell formula (cell-name->id (car where))))
+        ((number? (car where))
+         (put-all-cells-in-row formula (car where)))
+        ((letter? (car where))
+         (put-all-cells-in-col formula (letter->number (car where))))
+        (else (error "Put it where?"))))
 
 (define (put-all-cells-in-row formula row)
   (put-all-helper formula (lambda (col) (make-id col row)) 1 26))
@@ -137,7 +137,7 @@
   (if (> this max)
       'done
       (begin (try-putting formula (id-maker this))
-	     (put-all-helper formula id-maker (+ 1 this) max))))
+             (put-all-helper formula id-maker (+ 1 this) max))))
 
 (define (try-putting formula id)
   (if (or (null? (cell-value id)) (null? formula))
@@ -156,30 +156,30 @@
 (define (get-command name)
   (let ((result (assoc name *the-commands*)))
     (if (not result)
-	#f
-	(cadr result))))
+        #f
+        (cadr result))))
 
 (define *the-commands*
   (list (list 'p prev-row)
-	(list 'n next-row)
-	(list 'b prev-col)
-	(list 'f next-col)
-	(list 'select select)
-	(list 'put put)
-	(list 'load spreadsheet-load)))
+        (list 'n next-row)
+        (list 'b prev-col)
+        (list 'f next-col)
+        (list 'select select)
+        (list 'put put)
+        (list 'load spreadsheet-load)))
 
 
 ;;; Pinning Down Formulas Into Expressions
 
 (define (pin-down formula id)
   (cond ((cell-name? formula) (cell-name->id formula))
-	((word? formula) formula)
-	((null? formula) '())
-	((equal? (car formula) 'cell)
-	 (pin-down-cell (cdr formula) id))
-	(else (bound-check
-	       (map (lambda (subformula) (pin-down subformula id))
-		    formula)))))
+        ((word? formula) formula)
+        ((null? formula) '())
+        ((equal? (car formula) 'cell)
+         (pin-down-cell (cdr formula) id))
+        (else (bound-check
+                (map (lambda (subformula) (pin-down subformula id))
+                     formula)))))
 
 (define (bound-check form)
   (if (member 'out-of-bounds form)
@@ -188,93 +188,93 @@
 
 (define (pin-down-cell args reference-id)
   (cond ((null? args)
-	 (error "Bad cell specification: (cell)"))
-	((null? (cdr args))
-	 (cond ((number? (car args))         ; they chose a row
-		(make-id (id-column reference-id) (car args)))
-	       ((letter? (car args))         ; they chose a column
-		(make-id (letter->number (car args))
-			 (id-row reference-id)))
-	       (else (error "Bad cell specification:"
-			    (cons 'cell args)))))
-	(else
-	 (let ((col (pin-down-col (car args) (id-column reference-id)))
-	       (row (pin-down-row (cadr args) (id-row reference-id))))
-	   (if (and (>= col 1) (<= col 26) (>= row 1) (<= row 30))
-	       (make-id col row)
-	       'out-of-bounds)))))
+         (error "Bad cell specification: (cell)"))
+        ((null? (cdr args))
+         (cond ((number? (car args))         ; they chose a row
+                (make-id (id-column reference-id) (car args)))
+               ((letter? (car args))         ; they chose a column
+                (make-id (letter->number (car args))
+                         (id-row reference-id)))
+               (else (error "Bad cell specification:"
+                            (cons 'cell args)))))
+        (else
+          (let ((col (pin-down-col (car args) (id-column reference-id)))
+                (row (pin-down-row (cadr args) (id-row reference-id))))
+            (if (and (>= col 1) (<= col 26) (>= row 1) (<= row 30))
+                (make-id col row)
+                'out-of-bounds)))))
 
 (define (pin-down-col new old)
   (cond ((equal? new '*) old)
-	((equal? (first new) '>) (+ old (bf new)))
-	((equal? (first new) '<) (- old (bf new)))
-	((letter? new) (letter->number new))
-	(else (error "What column?"))))
+        ((equal? (first new) '>) (+ old (bf new)))
+        ((equal? (first new) '<) (- old (bf new)))
+        ((letter? new) (letter->number new))
+        (else (error "What column?"))))
 
 (define (pin-down-row new old)
   (cond ((number? new) new)
-	((equal? new '*) old)
-	((equal? (first new) '>) (+ old (bf new)))
-	((equal? (first new) '<) (- old (bf new)))
-	(else (error "What row?"))))
+        ((equal? new '*) old)
+        ((equal? (first new) '>) (+ old (bf new)))
+        ((equal? (first new) '<) (- old (bf new)))
+        (else (error "What row?"))))
 
 
 ;;; Dependency Management
 
 (define (put-expr expr-or-out-of-bounds id)
   (let ((expr (if (equal? expr-or-out-of-bounds 'out-of-bounds)
-		  '()
-		  expr-or-out-of-bounds)))
+                  '()
+                  expr-or-out-of-bounds)))
     (for-each (lambda (old-parent)
-		(set-cell-children!
-		 old-parent
-		 (remove id (cell-children old-parent))))
-	      (cell-parents id))
+                (set-cell-children!
+                  old-parent
+                  (remove id (cell-children old-parent))))
+              (cell-parents id))
     (set-cell-expr! id expr)
     (set-cell-parents! id (remdup (extract-ids expr)))
     (for-each (lambda (new-parent)
-		(set-cell-children!
-		 new-parent
-		 (cons id (cell-children new-parent))))
-	      (cell-parents id))
+                (set-cell-children!
+                  new-parent
+                  (cons id (cell-children new-parent))))
+              (cell-parents id))
     (figure id)))
 
 (define (extract-ids expr)
   (cond ((id? expr) (list expr))
-	((word? expr) '())
-	((null? expr) '())
-	(else (append (extract-ids (car expr))
-		      (extract-ids (cdr expr))))))
+        ((word? expr) '())
+        ((null? expr) '())
+        (else (append (extract-ids (car expr))
+                      (extract-ids (cdr expr))))))
 
 (define (figure id)
   (cond ((null? (cell-expr id)) (setvalue id '()))
-	((all-evaluated? (cell-parents id))
-	 (setvalue id (ss-eval (cell-expr id))))
-	(else (setvalue id '()))))
+        ((all-evaluated? (cell-parents id))
+         (setvalue id (ss-eval (cell-expr id))))
+        (else (setvalue id '()))))
 
 (define (all-evaluated? ids)
   (cond ((null? ids) #t)
-	((not (number? (cell-value (car ids)))) #f)
-	(else (all-evaluated? (cdr ids)))))
+        ((not (number? (cell-value (car ids)))) #f)
+        (else (all-evaluated? (cdr ids)))))
 
 (define (setvalue id value)
   (let ((old (cell-value id)))
     (set-cell-value! id value)
     (if (not (equal? old value))
-	(for-each figure (cell-children id))
-	'do-nothing)))
+        (for-each figure (cell-children id))
+        'do-nothing)))
 
 
 ;;; Evaluating Expressions
 
 (define (ss-eval expr)
   (cond ((number? expr) expr)
-	((quoted? expr) (quoted-value expr))
-	((id? expr) (cell-value expr))
-	((invocation? expr)
-	 (apply (get-function (car expr))
-		(map ss-eval (cdr expr))))
-	(else (error "Invalid expression:" expr))))
+        ((quoted? expr) (quoted-value expr))
+        ((id? expr) (cell-value expr))
+        ((invocation? expr)
+         (apply (get-function (car expr))
+                (map ss-eval (cdr expr))))
+        (else (error "Invalid expression:" expr))))
 
 (define (quoted? expr)
   (or (string? expr)
@@ -291,37 +291,37 @@
 (define (get-function name)
   (let ((result (assoc name *the-functions*)))
     (if (not result)
-	(error "No such function: " name)
-	(cadr result))))
+        (error "No such function: " name)
+        (cadr result))))
 
 (define *the-functions*
   (list (list '* *)
-	(list '+ +)
-	(list '- -)
-	(list '/ /)
-	(list 'abs abs)
-	(list 'acos acos)
-	(list 'asin asin)
-	(list 'atan atan)
-	(list 'ceiling ceiling)
-	(list 'cos cos)
-	(list 'count count)
-	(list 'exp exp)
-	(list 'expt expt)
-	(list 'floor floor)
-	(list 'gcd gcd)
-	(list 'lcm lcm)
-	(list 'log log)
-	(list 'max max)
-	(list 'min min)
-	(list 'modulo modulo)
-	(list 'quotient quotient)
-	(list 'remainder remainder)
-	(list 'round round)
-	(list 'sin sin)
-	(list 'sqrt sqrt)
-	(list 'tan tan)
-	(list 'truncate truncate)))
+        (list '+ +)
+        (list '- -)
+        (list '/ /)
+        (list 'abs abs)
+        (list 'acos acos)
+        (list 'asin asin)
+        (list 'atan atan)
+        (list 'ceiling ceiling)
+        (list 'cos cos)
+        (list 'count count)
+        (list 'exp exp)
+        (list 'expt expt)
+        (list 'floor floor)
+        (list 'gcd gcd)
+        (list 'lcm lcm)
+        (list 'log log)
+        (list 'max max)
+        (list 'min min)
+        (list 'modulo modulo)
+        (list 'quotient quotient)
+        (list 'remainder remainder)
+        (list 'round round)
+        (list 'sin sin)
+        (list 'sqrt sqrt)
+        (list 'tan tan)
+        (list 'truncate truncate)))
 
 ;;; Printing the Screen
 
@@ -331,8 +331,8 @@
   (newline)
   (show-column-labels (id-column (screen-corner-cell-id)))
   (show-rows 20
-	     (id-column (screen-corner-cell-id))
-	     (id-row (screen-corner-cell-id)))
+             (id-column (screen-corner-cell-id))
+             (id-row (screen-corner-cell-id)))
   (display-cell-name (selection-cell-id))
   (display ":  ")
   (show (cell-value (selection-cell-id)))
@@ -351,28 +351,28 @@
 
 (define (show-label to-go this-col-number)
   (cond ((= to-go 0) '())
-	(else
-	 (display "  -----")
-	 (display (number->letter this-col-number))
-	 (display "----")
-	 (show-label (- to-go 1) (+ 1 this-col-number)))))
+        (else
+          (display "  -----")
+          (display (number->letter this-col-number))
+          (display "----")
+          (show-label (- to-go 1) (+ 1 this-col-number)))))
 
 (define (show-rows to-go col row)
   (cond ((= to-go 0) 'done)
-	(else
-	 (display (align row 2 0))
-	 (display " ")
-	 (show-row 6 col row)
-	 (newline)
-	 (show-rows (- to-go 1) col (+ row 1)))))
+        (else
+          (display (align row 2 0))
+          (display " ")
+          (show-row 6 col row)
+          (newline)
+          (show-rows (- to-go 1) col (+ row 1)))))
 
 (define (show-row to-go col row)
   (cond ((= to-go 0) 'done)
-	(else
-	   (display (if (selected-indices? col row) ">" " "))
-	   (display-value (cell-value-from-indices col row))
-	   (display (if (selected-indices? col row) "<" " "))
-	   (show-row (- to-go 1) (+ 1 col) row))))
+        (else
+          (display (if (selected-indices? col row) ">" " "))
+          (display-value (cell-value-from-indices col row))
+          (display (if (selected-indices? col row) "<" " "))
+          (show-row (- to-go 1) (+ 1 col) row))))
 
 (define (selected-indices? col row)
   (and (= col (id-column (selection-cell-id)))
@@ -383,21 +383,21 @@
 
 (define (display-expression expr)
   (cond ((null? expr) (display '()))
-	((quoted? expr) (display (quoted-value expr)))
-	((word? expr) (display expr))
-	((id? expr)
-	 (display-cell-name expr))
-	(else (display-invocation expr))))
+        ((quoted? expr) (display (quoted-value expr)))
+        ((word? expr) (display expr))
+        ((id? expr)
+         (display-cell-name expr))
+        (else (display-invocation expr))))
 
 (define (display-invocation expr)
   (display "(")
   (display-expression (car expr))
   (for-each (lambda (subexpr)
-	      (display " ")
-	      (display-expression subexpr))
-	    (cdr expr))
+              (display " ")
+              (display-expression subexpr))
+            (cdr expr))
   (display ")"))
-      
+
 
 ;;; Abstract Data Types
 
@@ -433,8 +433,8 @@
 
 (define (cell-name->id cell-name)
   (make-id (cell-name-column cell-name)
-	   (cell-name-row cell-name)))
-	
+           (cell-name-row cell-name)))
+
 ;; Cell IDs
 
 (define (make-id col row)
@@ -485,7 +485,7 @@
 
 (define (cell-structure id)
   (global-array-lookup (id-column id)
-		       (id-row id)))
+                       (id-row id)))
 
 (define (cell-structure-from-indices col row)
   (global-array-lookup col row))
@@ -495,7 +495,7 @@
 (define (global-array-lookup col row)
   (if (and (<= row 30) (<= col 26))
       (vector-ref (vector-ref *the-spreadsheet-array* (- row 1))
-		  (- col 1))
+                  (- col 1))
       (error "Out of bounds")))
 
 (define (init-array)
@@ -505,15 +505,15 @@
   (if (< n 0)
       'done
       (begin (vector-set! *the-spreadsheet-array* n (make-vector 26))
-	     (fill-row-with-cells
-	      (vector-ref *the-spreadsheet-array* n) 25)
-	     (fill-array-with-rows (- n 1)))))
+             (fill-row-with-cells
+               (vector-ref *the-spreadsheet-array* n) 25)
+             (fill-array-with-rows (- n 1)))))
 
 (define (fill-row-with-cells vec n)
   (if (< n 0)
       'done
       (begin (vector-set! vec n (make-cell))
-	     (fill-row-with-cells vec (- n 1)))))
+             (fill-row-with-cells vec (- n 1)))))
 
 ;;; Utility Functions
 
@@ -536,15 +536,15 @@
 
 (define (vector-member-helper thing vector index)
   (cond ((= index (vector-length vector)) #f)
-	((equal? thing (vector-ref vector index)) index)
-	(else (vector-member-helper thing vector (+ 1 index)))))
+        ((equal? thing (vector-ref vector index)) index)
+        (else (vector-member-helper thing vector (+ 1 index)))))
 
 (define (remdup lst)
   (cond ((null? lst) '())
-	((member (car lst) (cdr lst))
-	 (remdup (cdr lst)))
-	(else (cons (car lst) (remdup (cdr lst))))))
+        ((member (car lst) (cdr lst))
+         (remdup (cdr lst)))
+        (else (cons (car lst) (remdup (cdr lst))))))
 
 (define (remove bad-item lst)
   (filter (lambda (item) (not (equal? item bad-item)))
-	  lst))
+          lst))
