@@ -87,7 +87,7 @@
 
 (define (list-db-helper fields records index)
   (if (null? records)
-      "Listed"
+      (display "Listed")
       (begin (display "Record ")
              (display index)
              (newline)
@@ -113,7 +113,7 @@
       (list-record fields record 0 (- (length fields) 1))
       (edit-record-helper fields record)
       (newline)
-      'Edited)))
+      (display "Edited"))))
 
 (define (edit-record-helper fields record)
   (display "Edit which field?")
@@ -122,7 +122,7 @@
         'done
         (if (member command fields)
             (begin (edit-field fields command record)
-                   (list-record fields record 
+                   (list-record fields record
                                 0 (- (length fields) 1))
                    (edit-record-helper fields record))
             (begin (display "No such filed in this data")
@@ -147,6 +147,38 @@
   (if (equal? field (car fields))
       index
       (field-index-helper field (cdr fields) (+ index 1))))
+
+;; save-db and load-db
+;; Write save-db and load-db. Save-db should take no arguments and should save the current database into a file with the name that was given when the database was created. Make sure to save the field names as well as the information in the records.
+
+;; load-db should take one argument, the filename of the database you want to load.  It should replace the current database with the one in the specified file. (Needless to say, it should expect files to be in the format that save-db creates.)
+
+;; In order to save information to a file in a form that Scheme will be able to read back later, you will need to use the write procedure instead of display or show, as discussed in Chapter 22.
+
+(define (save-db file-name)
+  (let ((db (current-db))
+        (out-p (open-output-file file-name)))
+    (if (no-db?)
+        'done
+        (write db out-p))
+    (close-output-port out-p)))
+
+(define (load-db file-name)
+  (let ((in-p (open-input-file file-name)))
+    (let ((db (read in-p)))
+      (set-current-db! db))
+    (close-input-port in-p)
+    (display "Data ")
+    (display file-name)
+    (display " is loaded")
+    (newline)))
+
+;; clear-current-db!
+;; The new-db and load-db procedures change the current database. New-db creates a new, blank database, while load-db reads in an old database from a file. In both cases, the program just throws out the current database. If you forgot to save it, you could lose a lot of work.
+
+;; Write a procedure clear-current-db! that clears the current database. If there is no current database, clear-current-db! should do nothing. Otherwise, it should ask the user whether to save the database, and if so it should call save-db.
+
+;; Modify new-db and load-db to invoke clear-current-db!.
 
 ;;; Utilities
 
