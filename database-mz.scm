@@ -219,7 +219,40 @@
 ;; sort
 ;; Write a sort command that takes a predicate as its argument and sorts the database according to that predicate. The predicate should take two records as arguments and return #t if the first record belongs before the second one, or #f otherwise.
 
+;; Note: Don’t invent a sorting algorithm for this problem. You can just use one of the sorting procedures from Chapter 15 and modify it slightly to sort a list of records instead of a sentence of words.
 
+(define (sort predicate)
+  (let ((db (current-db)))
+    (db-set-records! db
+                     (mergesort (db-records db) predicate))
+    (newline)
+    'done
+    (display "sorted")))
+
+(define (mergesort records predicate)
+  (if (<= (length records) 1)
+      records
+      (merge predicate
+             (mergesort (one-half records) predicate)
+             (mergesort (other-half records) predicate))))
+
+(define (merge predicate left right)
+  (cond ((null? left) right)
+        ((null? right) left)
+        ((predicate (car left) (car right))
+         (cons (car left) (merge predicate (cdr left) right)))
+        (else (cons (car right) (merge predicate
+                                       left (cdr right))))))
+
+(define (one-half records)
+  (if (<= (length records) 1)
+      records
+      (cons (car records) (one-half (cddr records)))))
+
+(define (other-half records)
+  (if (<= (length records) 1)
+      '()
+      (cons (car (cdr records)) (other-half (cddr records)))))
 
 ;;; Utilities
 
