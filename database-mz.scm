@@ -86,7 +86,7 @@
 
 (define (list-db-helper fields records index)
   (if (null? records)
-      (display "Listed")
+      (display "Listed ")
       (begin (display "Record ")
              (display index)
              (newline)
@@ -114,7 +114,7 @@
       (list-record record fields)
       (edit-record-helper fields record)
       (newline)
-      (display "Edited"))))
+      (display "Edited "))))
 
 (define (edit-record-helper fields record)
   (newline)
@@ -150,7 +150,7 @@
     (let ((out-p (open-output-file (db-filename db))))
       (write db out-p)
       (close-output-port out-p)
-      (display "current data is saved"))))
+      (display "current data is saved "))))
 
 (define (load-db file-name)
   (clear-current-db!)
@@ -160,7 +160,7 @@
     (close-input-port in-p)
     (display "Data ")
     (display file-name)
-    (display " is loaded")))
+    (display " is loaded ")))
 
 ;; clear-current-db!
 ;; The new-db and load-db procedures change the current database. New-db creates a new, blank database, while load-db reads in an old database from a file. In both cases, the program just throws out the current database. If you forgot to save it, you could lose a lot of work.
@@ -225,9 +225,8 @@
   (let ((db (current-db)))
     (db-set-records! db
                      (mergesort (db-records db) predicate))
-    (newline)
     'done
-    (display "sorted")))
+    (display "sorted ")))
 
 (define (mergesort records predicate)
   (if (<= (length records) 1)
@@ -253,6 +252,66 @@
   (if (<= (length records) 1)
       '()
       (cons (car (cdr records)) (other-half (cddr records)))))
+
+;; Sort-on-by
+
+;;; Although sort is a very general-purpose tool, the way that you have to specify how to sort the database is cumbersome. Write a procedure sort-on-by that takes two arguments, the name of a field and a predicate. It should invoke sort with an appropriate predicate to achieve the desired sort. For example, you could say
+
+;;; (sort-on-by 'title before?)
+
+;;; and
+
+;;; (sort-on-by 'year <)
+
+;;; instead of the two sort examples we showed earlier.
+
+(define (sort-on-by field predicate)
+  (sort (lambda (r1 r2) (predicate (get r1 field) (get r2 field)))))
+
+;; Generic-before?
+
+;;; The next improvement is to eliminate the need to specify a predicate explicitly. Write a procedure generic-before? that takes two arguments of any types and returns #t if the first comes before the second. The meaning of “before” depends on the types of the arguments.
+
+(define (generic-before? arg-1 arg-2)
+  (cond ((and (number? arg-1) (number? arg-2))
+         (< arg-1 arg-2))
+        ((and (word? arg-1) (word? arg-2))
+         (before? arg-1 arg-2))
+        ((and (list? arg-1) (list? arg-2))
+         (list-before? arg-1 arg-2))
+        ((or (and (word? arg-1) (list? arg-2))
+             (and (list? arg-1) (word? arg-2)))
+         (generic-before? (to-list arg-1) (to-list-arg-2)))
+        (else (error "generic-before? doesn't understand the type of arguments"))))
+
+(define (list-before? lst-1 lst-2)
+  (cond ((null? lst-1) #t)
+        ((null? lst-2) #f)
+        ((and (list? (car lst-1)) (list? (car lst-2))) ; this cond deals with substructed lists
+         (let ((sub-lst-1 (car lst-1)) ; the substructed lists should be symmetric
+               (sub-lst-2 (car lst-2)))
+           (if (list-before? sub-lst-1 sub-lst-2)
+               #t
+               (if (list-before? sub-lst-2 sub-lst-1)
+                   #f
+                   (list-before? (cdr lst-1) (cdr lst-2))))))
+        ((before? (car lst-1) (car lst-2)) #t)
+        ((before? (car lst-2) (car lst-1)) #f)
+        (else (list-before? (cdr lst-1) (cdr lst-2)))))
+
+;; Sort-on
+
+;;; Now write sort-on , which takes the name of a field as its argument and sorts the current database on that field, using generic- before? as the comparison predicate.
+
+(define (sort-on field)
+  (sort-on-by field generic-before?))
+
+;; Add-field
+
+;;; Sometimes you discover that you don’t have enough fields in your database. Write a procedure add-field that takes two arguments: the name of a new field and an initial value for that field. Add-field should modify the current database to include the new field. Any existing records in the database should be given the indicated initial value for the field.
+
+(define (add-field field initial)
+  ())
 
 ;;; Utilities
 
