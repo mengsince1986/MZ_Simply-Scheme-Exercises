@@ -197,16 +197,22 @@
 ;; Modify the rest of the database program to use this ADT instead of directly manipulating the records as vectors.
 
 (define (get record field)
-  (vector-ref record (field-index field
-                                  (current-fields))))
+  (get-with-specific-fields record field (current-fields)))
+
+(define (get-with-specific-fields record field fields)
+  (vector-ref record (field-index field fields)))
 
 (define (blank-record)
-  (make-vector (length (current-fields))))
+  (blank-record-with-specific-fields (current-fields)))
+
+(define (blank-record-with-specific-fields fields)
+  (make-vector (length fields)))
 
 (define (record-set! record field new-val)
-  (vector-set! record
-               (field-index field (current-fields))
-               new-val))
+  (record-set-with-specific-fields! record field (current-fields) new-val))
+
+(define (record-set-with-specific-fields! record field fields new-val)
+  (vector-set! record (field-index field fields) new-val))
 
 (define (field-index field fields)
   (field-index-helper field fields 0))
@@ -310,8 +316,83 @@
 
 ;;; Sometimes you discover that you don’t have enough fields in your database. Write a procedure add-field that takes two arguments: the name of a new field and an initial value for that field. Add-field should modify the current database to include the new field. Any existing records in the database should be given the indicated initial value for the field.
 
-(define (add-field field initial)
-  ())
+;;; If you like, you can write add-field so that it will accept either one or two arguments. If given only one argument, it should use #f as the default field value.
+
+;;; solution:
+
+;;; Modify the related record ADT procedures get, record-set! and blank-record
+
+(define (add-field new-field . initial)
+  (if (null? initial)
+      (add-field-helper new-field #f)
+      (add-field-helper new-field (car initial))))
+
+(define (add-field-helper new-field initial)
+  (let ((db (current-db))
+        (current-fields (current-fields)))
+    (let ((new-fields (cons new-field current-fields)))
+      (db-set-records! db
+                       (recreate-records '()
+                                         (cons new-field current-fields)
+                                         current-fields
+                                         new-field
+                                         initial
+                                         (count-db)))
+      (db-set-fields! db new-fields)
+      (display "field ")
+      (display new-field)
+      (display " is added to the current records"))))
+
+(define (recreate-records new-records
+                          new-fields current-fields
+                          new-field new-field-initial
+                          index)
+  (if (< index 1)
+      new-records
+      (recreate-records (cons (recreate-record (blank-record-with-specific-fields new-fields)
+                                               new-fields current-fields
+                                               new-field new-field-initial
+                                               index)
+                              new-records)
+                        new-fields current-fields
+                        new-field new-field-initial
+                        (- index 1))))
+
+(define (recreate-record new-record
+                         new-fields current-fields
+                         new-field new-field-initial
+                         index)
+  (record-set-with-specific-fields! new-record
+                                    new-field new-fields
+                                    new-field-initial)
+  (append-current-fields new-record
+                         new-fields current-fields
+                         index)
+  new-record)
+
+(define (append-current-fields new-record
+                               new-fields current-fields
+                               index)
+  (let ((current-record (list-ref (db-records (current-db)) (- index 1))))
+    (append-current-field current-record new-record
+                          current-fields current-fields
+                          new-fields)))
+
+(define (append-current-field current-record new-record
+                              current-fields fields-to-cp
+                              new-fields)
+  (if (null? fields-to-cp)
+      'done
+      (begin (let ((current-field (car fields-to-cp)))
+               (record-set-with-specific-fields! new-record
+                                                 current-field new-fields
+                                                 (get-with-specific-fields current-record
+                                                                           current-field
+                                                                           current-fields)))
+             (append-current-field current-record new-record
+                                   current-fields (cdr fields-to-cp)
+                                   new-fields))))
+
 
 ;;; Utilities
 

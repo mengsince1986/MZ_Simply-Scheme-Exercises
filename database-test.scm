@@ -6,8 +6,10 @@
 
 ;; (sort-on-by 'name before?)
 
-(sort-on 'name)
+;; (sort-on 'name)
 
+;; (get (car (db-records (current-db))) 'name)
 
+;; (list-db)
 
 
