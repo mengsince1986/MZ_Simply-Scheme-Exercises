@@ -26,7 +26,7 @@
 
 ;;; Stuff about the current state
 
-(define current-state (vector #f))
+(define current-state (vector #f #t)) ; #f is the default db. #t is the default predicate for selected-records
 
 (define (no-db?)
   (not (vector-ref current-state 0)))
@@ -41,6 +41,30 @@
 
 (define (current-fields)
   (db-fields (current-db)))
+
+(define (current-state-predicate)
+  (vector-ref current-state 1))
+
+(define (current-selected-records)
+  (let ((unfiltered-records (db-records (current-db)))
+        (predicate (current-state-predicate)))
+    (select-specified-records unfiltered-records predicate
+                      '())))
+
+(define (select-specified-records unfiltered-records predicate
+                          selected-records)
+  (cond ((null? unfiltered-records) selected-records)
+        ((predicate (car unfiltered-records))
+         (select-specified-records (cdr unfiltered-records) predicate
+                           (cons (car unfiltered-records) selected-records)))
+        (else (select-specified-records (cdr unfiltered-records) predicate
+                                selected-records))))
+
+(define (selected-db)
+  (let ((db (current-db)))
+    (make-db (db-filename db)
+             (db-fields db)
+             (current-selected-records))))
 
 ;; User commands
 
@@ -75,7 +99,12 @@
 ;; Implement the count-db procedure. It should take no arguments, and it should return the number of records in the current database.
 
 (define (count-db)
-  (length (vector-ref (current-db) 2)))
+  (length (db-records (current-db))))
+
+;; count-selected
+
+(define (count-selected)
+  (length (current-selected-records)))
 
 ;; list-db
 ;; Implement the list-db procedure. It should take no arguments, and it should print the current database in the format shown earlier.
@@ -83,6 +112,13 @@
 (define (list-db)
   (let ((db (current-db)))
     (list-db-helper (db-fields db) (db-records db) 1)))
+
+;; list-selected
+(define (list-selected)
+  (let ((db (current-db)))
+    (list-db-helper (db-fields db)
+                    (current-selected-records)
+                    1)))
 
 (define (list-db-helper fields records index)
   (if (null? records)
@@ -393,6 +429,25 @@
                                    current-fields (cdr fields-to-cp)
                                    new-fields))))
 
+;; Select-by
+
+;;; Change the current-state vector to have another element: a selection predicate. This predicate takes a record as its argument and returns whether or not to include this record in the restricted database. Also write count-selected and list-selected, which are just like count-db and list-db but include only those records that satisfy the predicate. The initial predicate should include all records.
+
+;;; You can’t just throw away the records that aren’t selected. You have to keep them in memory somehow, but make them invisible to count-selected and list-selected.  The way to do that is to create another selector, current-selected-records, that returns a list of the selected records of the current database.
+
+(define (select-by predicate)
+  (vector-set! current-state 1 predicate)
+  (display "Selected "))
+
+;; Save-selection
+
+;;; Write a save-selection procedure that’s similar to save-db but saves only the currently selected records. It should take a file name as its argument.
+
+(define (save-selection file-name)
+  (let ((out-p (open-output-file file-name)))
+    (write (selected-db) out-p)
+    (close-output-port out-p)
+    (display "data is saved with selected records ")))
 
 ;;; Utilities
 

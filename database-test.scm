@@ -12,4 +12,5 @@
 
 ;; (list-db)
 
+(select-by (lambda (record) (> (get record 'age) 10)))
 
