@@ -42,6 +42,9 @@
 (define (current-fields)
   (db-fields (current-db)))
 
+(define (current-records)
+  (db-records (current-db)))
+
 (define (current-state-predicate)
   (vector-ref current-state 1))
 
@@ -194,9 +197,20 @@
     (let ((db (read in-p)))
       (set-current-db! db))
     (close-input-port in-p)
-    (display "Data ")
+    (display "Database ")
     (display file-name)
     (display " is loaded ")))
+
+;; read-db-from-disk
+
+(define (read-db-from-disk file-name)
+  (let ((in-p (open-input-file file-name)))
+    (let ((db (read in-p)))
+      (close-input-port in-p)
+      (display "Database ")
+      (display file-name)
+      (display " is loaded ")
+      db)))
 
 ;; clear-current-db!
 ;; The new-db and load-db procedures change the current database. New-db creates a new, blank database, while load-db reads in an old database from a file. In both cases, the program just throws out the current database. If you forgot to save it, you could lose a lot of work.
@@ -449,7 +463,147 @@
     (close-output-port out-p)
     (display "data is saved with selected records ")))
 
-;;; Utilities
+;; Merge-db
+
+;;; The effect of the merge-db command is to add fields from the specified database to the records of the current database.
+
+(define (merge-db other-name common-field)
+  (let ((other-db (read-db-from-disk other-name))
+        (original-fields (current-fields)))
+    (set-current-fields! (merge-fields original-fields
+                                       (db-fields other-db)))
+    (set-current-records! (merge-db-helper original-fields
+                                           (current-records)
+                                           (db-fields other-db)
+                                           (db-records other-db)
+                                           common-field))))
+
+(define (set-current-fields! merged-fields)
+  (db-set-fields! (current-db) merged-fields))
+
+(define (merge-fields original-fields additional-fields)
+  (append original-fields
+          (remove-duplicates additional-fields original-fields)))
+
+(define (remove-duplicates target-lst reference-lst)
+  (cond ((null? target-lst) target-lst)
+        ((member (car target-lst) reference-lst)
+         (remove-duplicates (cdr target-lst) reference-lst))
+        (else (cons (car target-lst)
+                    (remove-duplicates (cdr target-lst) reference-lst)))))
+
+(define (set-current-records! merged-records)
+  (db-set-records! (current-db) merged-records))
+
+(define (merge-db-helper original-fields original-records
+                         additional-fields additional-records
+                         common-field)
+  (cond ((null? original-records) '())
+        ((equal? (get-with-specific-fields (car original-records)
+                                           common-field
+                                           original-fields)
+                 (get-with-specific-fields (car additional-records)
+                                           common-field
+                                           additional-fields))
+         (cons (merge-records (blank-record)
+                              original-fields (car original-records)
+                              additional-fields (car additional-records)
+                              common-field)
+               (merge-db-helper original-fields (cdr original-records)
+                                additional-fields additional-records
+                                common-field)))
+        ((generic-before? (get-with-specific-fields (car original-records)
+                                                    common-field
+                                                    original-fields)
+                          (get-with-specific-fields (car additional-records)
+                                                    common-field
+                                                    additional-fields))
+         (cons (merge-records-vacant-fields (blank-record)
+                                            original-fields (car original-records)
+                                            additional-fields
+                                            common-field #f)
+               (merge-db-helper original-fields (cdr original-records)
+                                additional-fields additional-records
+                                common-field)))
+        (else (merge-db-helper original-fields original-records
+                               additional-fields (cdr additional-records)
+                               common-field))))
+
+(define (merge-records merged-record
+                       original-fields original-record
+                       additional-fields additional-record
+                       common-field)
+  (merge-original-record merged-record
+                         original-fields original-fields
+                         original-record)
+  (merge-additional-record merged-record
+                           additional-fields additional-fields
+                           additional-record
+                           common-field)
+  merged-record)
+
+(define (merge-original-record merged-record
+                               original-fields to-merge-fields
+                               original-record)
+  (if (null? to-merge-fields)
+      'done
+      (begin (record-set! merged-record (car to-merge-fields)
+                          (get-with-specific-fields original-record
+                                                    (car to-merge-fields)
+                                                    original-fields))
+             (merge-original-record merged-record
+                                    original-fields (cdr to-merge-fields)
+                                    original-record))))
+
+(define (merge-additional-record merged-record
+                                 additional-fields to-merge-fields
+                                 additional-record
+                                 common-field)
+  (cond ((null? to-merge-fields) 'done)
+        ((equal? common-field (car to-merge-fields))
+         (merge-additional-record merged-record
+                                  additional-fields (cdr to-merge-fields)
+                                  additional-record
+                                  common-field))
+        (else (begin (record-set! merged-record (car to-merge-fields)
+                                  (get-with-specific-fields additional-record
+                                                            (car to-merge-fields)
+                                                            additional-fields))
+                     (merge-additional-record merged-record
+                                              additional-fields (cdr to-merge-fields)
+                                              additional-record
+                                              common-field)))))
+
+(define (merge-records-vacant-fields merged-record
+                                     original-fields original-record
+                                     additional-fields
+                                     common-field initial-value)
+  (merge-original-record merged-record
+                         original-fields original-fields
+                         original-record)
+  (merge-additional-record-vacant-fields merged-record
+                                         additional-fields common-field
+                                         initial-value)
+  merged-record)
+
+(define (merge-additional-record-vacant-fields merged-record
+                                               to-merge-fields common-field
+                                               initial-value)
+  (cond ((null? to-merge-fields) 'done)
+        ((equal? common-field (car to-merge-fields))
+         (merge-additional-record-vacant-fields merged-record
+                                                (cdr to-merge-fields) common-field
+                                                initial-value))
+        (else (begin (record-set! merged-record
+                                  (car to-merge-fields)
+                                  initial-value)
+                     (merge-additional-record-vacant-fields merged-record
+                                                            (cdr to-merge-fields) common-field
+                                                            initial-value)))))
+
+
+
+;; Utilities
 
 (define (ask question)
   (display question)
